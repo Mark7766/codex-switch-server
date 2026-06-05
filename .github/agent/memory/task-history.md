@@ -125,3 +125,13 @@
 - **部署信息**：IP 43.134.110.192, 域名 www.codexswtich.cloud, 路径 /home/lighthouse/codex-switch-server, ADMIN_TOKEN=627202abef4a70438c36c23cefc9e031
 - **注意事项**：ajepro 已永久停服。证书到期手动换 certs/ 后 restart。更新流程：ssh → git pull → docker compose up -d --build
 
+---
+
+### [TASK-012] 后台上传安装包 + 门户真实下载
+- **日期**：2026-06-05
+- **类型**：feat
+- **摘要**：实现安装包后台上传和门户下载功能。PackageManager（JSON registry + 文件系统存储，支持 add/list/delete/get_download_path）、admin router 新增 GET /admin/packages（管理页面）+ POST /admin/packages/upload（上传）+ POST /admin/packages/delete（删除）、packages API 改为读取真实 registry、admin 新增 packages.html 模板（上传表单+包列表表格）。部署到生产服务器验证通过。
+- **变更文件**：src/services/package_manager.py, src/admin/router.py, src/admin/templates/packages.html, src/api/v1/packages.py, src/portal/templates/download.html, tests/unit/test_package_manager.py, tests/integration/test_admin_packages.py
+- **验证**：ruff ✅, pytest 79/79 ✅, 容器内 API ✅, admin/packages 页面 ✅
+- **注意事项**：安装包存储在 data/packages/ 目录，registry 为 JSON 文件。上传通过 admin/packages 页面操作，需先登录 admin。用户下载从 /api/v1/packages/{name}/{ver}/{plat}-{arch}。
+

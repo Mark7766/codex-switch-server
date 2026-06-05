@@ -1,6 +1,73 @@
 {% extends "base.html" %}
 {% block title %}下载{% endblock %}
 
+{% block head %}
+<script>
+// Fetch real release data from API on page load
+document.addEventListener('DOMContentLoaded', function() {
+  fetch('/api/v1/update/releases')
+    .then(function(r) { return r.json(); })
+    .then(function(releases) {
+      if (!releases || !releases.length) return;
+      var latest = releases[0];
+
+      var platforms = [
+        {id:'macos', label:'macOS', ext:'dmg', arch:'arm64'},
+        {id:'windows', label:'Windows', ext:'exe', arch:'x64'},
+        {id:'linux', label:'Linux', ext:'AppImage', arch:'x64'}
+      ];
+
+      platforms.forEach(function(p) {
+        var file = null;
+        for (var i = 0; i < (latest.files || []).length; i++) {
+          if (latest.files[i].platform === p.id) {
+            file = latest.files[i];
+            break;
+          }
+        }
+        if (!file) return;
+
+        var panel = document.getElementById('platform-' + p.id);
+        if (!panel) return;
+
+        var v = latest.version.startsWith('v') ? latest.version : 'v' + latest.version;
+        var sizeMB = file.file_size ? (file.file_size / 1048576).toFixed(0) : '?';
+        var dlUrl = '/api/v1/update/download/' + latest.version + '/' + p.id + '-' + p.arch;
+
+        panel.innerHTML =
+          '<div class="version-card">' +
+            '<div class="version-card__version">' + v + '</div>' +
+            '<div class="version-card__date">发布于 ' + (latest.release_date || '') + '</div>' +
+            '<div class="version-card__download">' +
+              '<a href="' + dlUrl + '" class="btn btn--primary btn--large">下载 .' + p.ext + '</a>' +
+            '</div>' +
+            '<div class="version-card__info">' + sizeMB + ' MB · Intel · Apple Silicon 通用</div>' +
+          '</div>' +
+          '<div class="requirements">' +
+            '<div class="requirements__title">系统要求</div>' +
+            '<ul class="requirements__list">' +
+              '<li>' + p.label + ' 最新版本</li>' +
+              '<li>4 GB RAM 及以上</li>' +
+              '<li>100 MB 可用磁盘空间</li>' +
+              '<li>需要网络连接（用于代理 DeepSeek API）</li>' +
+            '</ul>' +
+          '</div>';
+      });
+
+      // Fill history from older releases
+      var hist = document.getElementById('historyList');
+      if (hist && releases.length > 1) {
+        var rows = '';
+        for (var i = 1; i < releases.length; i++) {
+          rows += '<div class="history__row"><span>v' + releases[i].version + '</span><span>' + (releases[i].release_date || '') + '</span></div>';
+        }
+        hist.innerHTML = rows;
+      }
+    });
+});
+</script>
+{% endblock %}
+
 {% block content %}
 
 <section class="page-header">
@@ -19,12 +86,8 @@
 
   <div id="platform-macos" class="platform-panel">
     <div class="version-card">
-      <div class="version-card__version">v1.4.0</div>
-      <div class="version-card__date">发布于 2026-06-05</div>
-      <div class="version-card__download">
-        <a href="#" class="btn btn--primary btn--large">下载 .dmg</a>
-      </div>
-      <div class="version-card__info">124 MB · Intel 芯片 · Apple Silicon 通用</div>
+      <div class="version-card__version">加载中...</div>
+      <div class="version-card__date">正在获取最新版本信息</div>
     </div>
     <div class="requirements">
       <div class="requirements__title">系统要求</div>
@@ -39,12 +102,8 @@
 
   <div id="platform-windows" class="platform-panel" style="display:none;">
     <div class="version-card">
-      <div class="version-card__version">v1.4.0</div>
-      <div class="version-card__date">发布于 2026-06-05</div>
-      <div class="version-card__download">
-        <a href="#" class="btn btn--primary btn--large">下载 .exe</a>
-      </div>
-      <div class="version-card__info">118 MB · x64 · ARM64 通用</div>
+      <div class="version-card__version">加载中...</div>
+      <div class="version-card__date">正在获取最新版本信息</div>
     </div>
     <div class="requirements">
       <div class="requirements__title">系统要求</div>
@@ -59,12 +118,8 @@
 
   <div id="platform-linux" class="platform-panel" style="display:none;">
     <div class="version-card">
-      <div class="version-card__version">v1.4.0</div>
-      <div class="version-card__date">发布于 2026-06-05</div>
-      <div class="version-card__download">
-        <a href="#" class="btn btn--primary btn--large">下载 .AppImage</a>
-      </div>
-      <div class="version-card__info">135 MB · x64</div>
+      <div class="version-card__version">加载中...</div>
+      <div class="version-card__date">正在获取最新版本信息</div>
     </div>
     <div class="requirements">
       <div class="requirements__title">系统要求</div>
@@ -81,9 +136,9 @@
 <section class="history" style="max-width:680px; margin:0 auto var(--space-6); padding:0 var(--space-3);">
   <details>
     <summary>全部版本</summary>
-    <div class="history__row"><span>v1.3.0</span><span>2026-05-20</span></div>
-    <div class="history__row"><span>v1.2.0</span><span>2026-05-10</span></div>
-    <div class="history__row"><span>v1.1.0</span><span>2026-04-28</span></div>
+    <div id="historyList">
+      <div class="history__row"><span>加载中...</span></div>
+    </div>
   </details>
 </section>
 
@@ -100,9 +155,8 @@
     btn.addEventListener('click', function() {
       btns.forEach(function(b) { b.classList.remove('segment-control__btn--active'); });
       btn.classList.add('segment-control__btn--active');
-      var platform = btn.getAttribute('data-platform');
       Object.keys(panels).forEach(function(k) {
-        panels[k].style.display = k === platform ? 'block' : 'none';
+        panels[k].style.display = k === btn.getAttribute('data-platform') ? 'block' : 'none';
       });
     });
   });

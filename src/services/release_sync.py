@@ -57,13 +57,13 @@ class ReleaseSyncService:
             latest_version=latest.version,
             release_date=str(latest.release_date),
             release_notes=latest.release_notes,
-            download_url=file_info.get("path", ""),
+            download_url=f"/api/v1/update/download/{latest.version}/{platform}-{arch}",
             file_size=file_info.get("file_size", 0),
             sha256=file_info.get("sha256", ""),
             is_critical=latest.is_critical,
         )
 
-    async def sync_from_github(self) -> dict[str, int]:
+    async def sync_from_github(self, download_files: bool = True) -> dict[str, int]:
         data = await self._http.get_json(GITHUB_RELEASES_API, headers={"Accept": "application/vnd.github+json"})
         releases: list[dict] = data if isinstance(data, list) else []
 
@@ -83,13 +83,30 @@ class ReleaseSyncService:
                 name: str = asset.get("name", "")
                 plat, arch, ftype = _detect_platform(name)
                 if plat:
+                    download_url = asset.get("browser_download_url", "")
+                    file_size = asset.get("size", 0)
+                    local_path = ""
+
+                    if download_files and download_url:
+                        try:
+                            local_name = f"codex-switch/{version}/{plat}-{arch}.{ftype}"
+                            tmp_dest = Path(f"/tmp/codex-switch-{version}-{plat}-{arch}.{ftype}")
+                            await self._http.download(download_url, tmp_dest)
+                            local_path = await self._storage.put(tmp_dest, local_name)
+                            tmp_dest.unlink(missing_ok=True)
+                            logger.info("Downloaded %s → %s", name, local_path)
+                        except Exception:
+                            logger.exception("Failed to download %s, will proxy from GitHub", name)
+
                     files_data.append(
                         {
                             "platform": plat,
                             "arch": arch,
                             "file_type": ftype,
-                            "file_size": asset.get("size", 0),
-                            "download_url": asset.get("browser_download_url", ""),
+                            "file_size": file_size,
+                            "sha256": "",
+                            "download_url": download_url,
+                            "path": local_path,
                         }
                     )
 
@@ -127,6 +144,16 @@ class ReleaseSyncService:
                     return await self._storage.get_path(path_str)
         return None
 
+    async def get_github_download_url(self, version: str, platform: str, arch: str) -> str | None:
+        result = await self._db.execute(select(Release).where(Release.version == version))
+        release: Release | None = result.scalar_one_or_none()
+        if release is None:
+            return None
+        for f in release.files:
+            if f.get("platform") == platform and f.get("arch") == arch:
+                return f.get("download_url") or None
+        return None
+
     async def record_download(
         self,
         version: str,
@@ -152,12 +179,12 @@ class ReleaseSyncService:
         await self._db.commit()
 
     async def get_download_stats(self, range_days: int = 7) -> DownloadStats:
+        from datetime import timedelta
+
         from sqlalchemy import func
 
         total_result = await self._db.execute(select(func.count()).select_from(DownloadRecord))
         total = total_result.scalar() or 0
-
-        from datetime import timedelta
 
         cutoff = datetime.now() - timedelta(days=range_days)
         active_result = await self._db.execute(
