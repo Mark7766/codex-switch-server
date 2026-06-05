@@ -10,7 +10,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import settings
 from src.models.download import DownloadRecord
-from src.models.release import Release
 from src.schemas.release import DownloadStats, UpdateCheckResponse
 from src.utils.http import HttpClient
 from src.utils.storage import LocalStorage
@@ -110,9 +109,7 @@ class ReleaseSyncService:
                 return await self._storage.get_path(path)
         return None
 
-    async def download_and_cache(
-        self, download_url: str, version: str, platform: str, arch: str, ftype: str
-    ) -> Path:
+    async def download_and_cache(self, download_url: str, version: str, platform: str, arch: str, ftype: str) -> Path:
         """Download from GitHub and cache locally. Returns the local file path."""
         cache_key = f"codex-switch/{version}/{platform}-{arch}.{ftype}"
         tmp_dest = Path(f"/tmp/codex-switch-{version}-{platform}-{arch}.{ftype}")
@@ -122,9 +119,7 @@ class ReleaseSyncService:
         logger.info("Cached %s", cache_key)
         return local_path
 
-    async def get_github_asset_info(
-        self, version: str, platform: str, arch: str
-    ) -> dict | None:
+    async def get_github_asset_info(self, version: str, platform: str, arch: str) -> dict | None:
         """Get GitHub asset info for a specific version/platform/arch.
         Only returns info if the requested version matches the latest release."""
         info = await self.get_latest_from_github()
@@ -139,9 +134,7 @@ class ReleaseSyncService:
 
     # ── Update check ────────────────────────────────────────
 
-    async def check_for_updates(
-        self, current_version: str, platform: str, arch: str
-    ) -> UpdateCheckResponse:
+    async def check_for_updates(self, current_version: str, platform: str, arch: str) -> UpdateCheckResponse:
         info = await self.get_latest_from_github()
         version = info.get("version", "")
         if not version:
@@ -216,9 +209,7 @@ class ReleaseSyncService:
 
         today_cutoff = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         today_result = await self._db.execute(
-            select(func.count()).select_from(DownloadRecord).where(
-                DownloadRecord.downloaded_at >= today_cutoff
-            )
+            select(func.count()).select_from(DownloadRecord).where(DownloadRecord.downloaded_at >= today_cutoff)
         )
         today = today_result.scalar() or 0
 
