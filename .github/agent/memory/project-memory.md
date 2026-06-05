@@ -97,17 +97,24 @@
 ## 🔄 核心业务流程
 
 ```
-版本同步（定时/手动触发）:
-  GitHub Releases API → 检测新版本 → 下载安装包(.dmg/.exe/.zip)
-  → 校验 SHA256 → 存入 data/ → 更新 releases 表
+版本同步（实时，无需手动触发）:
+  /api/v1/update/latest → GitHub Releases API（5min 内存缓存）
+  → 返回最新版本号、发布日期、各平台文件列表（标注是否已缓存）
 
 用户下载 codex-switch:
-  访问首页 / → 点击下载 → /download 页选择平台
-  → 点击下载按钮 → 直接返回 data/ 中的文件（或 COS 签名 URL）
+  访问 /download → JS fetch /api/v1/update/latest → 显示最新版本
+  → 点击下载 → 检查本地缓存 data/codex-switch/{ver}/{plat}-{arch}.{ext}
+  → 命中缓存 → 直接流式返回（秒下）
+  → 未命中 → 服务端从 GitHub 下载 → 缓存 → 流式返回（首次较慢，后续秒下）
 
 客户端检查更新:
   codex-switch 启动 → POST /api/v1/update/check
-  → 对比版本号 → 返回最新版本信息和下载 URL
+  → 调用 get_latest_from_github() → 对比版本号 → 返回更新信息
+
+用户下载 AI 工具安装包:
+  访问首页 / → 首页"下载 AI 编程工具"区块
+  → JS fetch /api/v1/packages → 为已上传的包生成下载按钮
+  → 点击下载 → 直接从 data/packages/ 流式返回
 
 遥测上报:
   codex-switch 定时 POST /api/v1/telemetry/events
@@ -132,7 +139,7 @@
 | src/api/v1/update.py | 版本检查 + 客户端下载 API | ✅ Phase 3 |
 | src/api/v1/packages.py | 工具包（Node.js/Git/Desktop）下载 API | ✅ Phase 3 |
 | src/api/v1/telemetry.py | 遥测事件上报 API | ✅ Phase 4 |
-| src/services/release_sync.py | GitHub Release 检测、下载、缓存、清理 | ✅ Phase 3 |
+| src/services/release_sync.py | 实时 GitHub 最新版查询 + 首次代理下载缓存 + 下载统计 | ✅ Phase 3（v2: 2026-06-06 重构为实时模式） |
 | src/services/telemetry.py | 事件验证、去重、聚合统计 | ✅ Phase 4 |
 | src/services/package_manager.py | 包文件索引、上传、代理缓存 | 🚫 合并至 packages API |
 | src/portal/ | 门户路由 + 首页/下载/指南模板 | ✅ Phase 2 |
@@ -232,7 +239,9 @@
 
 | 编号 | 问题描述 | 解决方案 | 日期 |
 |------|---------|---------|------|
-| 1 | 项目刚初始化，暂无已知问题 | — | 2026-06-05 |
+| 1 | `.env` 必须配置 `GITHUB_TOKEN`，否则 GitHub API 403 限速，下载页无法显示版本 | 创建 `.env`，填入 Fine-grained PAT，参考 `.env.example` | 2026-06-06 |
+| 2 | 首次下载某个平台/架构组合需 1-2 分钟（从 GitHub 拉取并缓存），用户可能以为卡死 | 下载页 JS 显示"首次下载需从 GitHub 获取，请耐心等待"提示 | 2026-06-06 |
+| 3 | `_detect_platform` 要求 Windows .exe 必须有显式 arch 后缀（-x64/-arm64），无后缀文件（如 `-win.exe`）会跳过 | Windows 发布时确保 asset 名称包含 `-x64` 或 `-arm64` | 2026-06-06 |
 
 ---
 
@@ -247,6 +256,6 @@ uv sync && uv run uvicorn src.main:app --reload
 ```
 DATABASE_URL=sqlite+aiosqlite:///data/app.db
 ADMIN_TOKEN=your-secret-token-here
-GITHUB_TOKEN=ghp_xxx  # 可选，提高 API 限速
+GITHUB_TOKEN=github_pat_xxx  # 必需！否则 GitHub API 403，下载页无版本数据
 COS_BUCKET=  # 可选，部署到腾讯云时填写
 ```

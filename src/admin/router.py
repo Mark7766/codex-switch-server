@@ -49,23 +49,13 @@ async def dashboard(request: Request, db: AsyncSession = _db_dep) -> HTMLRespons
     telem_svc = TelemetryService(db)
     telem_stats = await telem_svc.get_stats(range_days=30)
 
-    release_count = len(await dl_svc.get_releases(limit=100))
-
     ctx = {
         "download_stats": dl_stats,
         "telemetry": telem_stats,
-        "release_count": release_count,
         "type_counts_json": json.dumps([t.model_dump() for t in telem_stats.event_type_counts]),
         "trend_json": json.dumps([t.model_dump() for t in telem_stats.daily_trend]),
     }
     return templates.TemplateResponse(request, "dashboard.html", ctx)
-
-
-@router.post("/sync-releases", dependencies=[Depends(verify_admin_token)])
-async def sync_releases(db: AsyncSession = _db_dep) -> RedirectResponse:
-    svc = ReleaseSyncService(db)
-    result = await svc.sync_from_github(download_files=True)
-    return RedirectResponse(url=f"/admin?synced={result['new_count']}", status_code=302)
 
 
 @router.get("/packages", response_class=HTMLResponse, dependencies=[Depends(verify_admin_token)])
@@ -95,14 +85,14 @@ async def upload_package(
     try:
         mgr = PackageManager()
         await mgr.add_package(
-            name=name,
-            display_name=display_name,
-            version=version,
-            platform=platform,
-            arch=arch,
-            description=description,
+            name=name.strip(),
+            display_name=display_name.strip(),
+            version=version.strip(),
+            platform=platform.strip(),
+            arch=arch.strip(),
+            description=description.strip(),
             local_file=tmp_path,
-            original_filename=file.filename,
+            original_filename=file.filename.strip() if file.filename else "",
         )
     finally:
         tmp_path.unlink(missing_ok=True)

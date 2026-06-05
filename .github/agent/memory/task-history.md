@@ -135,3 +135,19 @@
 - **验证**：ruff ✅, pytest 79/79 ✅, 容器内 API ✅, admin/packages 页面 ✅
 - **注意事项**：安装包存储在 data/packages/ 目录，registry 为 JSON 文件。上传通过 admin/packages 页面操作，需先登录 admin。用户下载从 /api/v1/packages/{name}/{ver}/{plat}-{arch}。
 
+---
+
+### [TASK-013] 下载流程重构：实时 GitHub + 首次代理缓存 + 首页动态安装包下载
+- **日期**：2026-06-06
+- **类型**：refactor
+- **摘要**：
+  1. **Codex Switch 下载流程重构**：废弃 DB 存储 release + 手动同步模式。改为 `/api/v1/update/latest` 实时查 GitHub 最新版（5 分钟内存缓存），下载端点首次从 GitHub 代理拉取并缓存到 `data/codex-switch/{ver}/{plat}-{arch}.{ext}`，二次下载直接走本地缓存（92MB 从 98s 降至 0.78s）。
+  2. **首页动态安装包下载**：tool-card 改为动态加载，JS fetch `/api/v1/packages`，为 Codex Desktop/Claude Desktop 自动生成下载按钮（显示平台+文件大小）。
+  3. **首页布局调整**："下载 AI 编程工具"区块移到 Hero 下方最优先位置，features 区块下移。
+  4. **Logo**：从 codex-switch 项目复制 icon.png 到 static/images/，nav 导航栏和 favicon 均显示。
+  5. **Bug 修复**：admin 上传表单加 trim 防空格包名、`_detect_platform` 过滤 blockmap/yml/zip、Windows exe 无显式 arch 则拒绝、`get_github_asset_info` 版本不匹配时返回 None。
+  6. **测试更新**：11 个旧测试适配新架构，81/81 passed，覆盖率 86%。
+- **变更文件**：src/services/release_sync.py（重写）、src/api/v1/update.py（重写）、src/portal/templates/download.html、src/portal/templates/index.html、src/portal/templates/base.html、src/admin/router.py、src/admin/templates/dashboard.html、src/static/css/apple.css、tests/*.py（7 个文件）
+- **验证**：ruff ✅, pytest 81/81 ✅, coverage 86% ✅, API /latest 返回 v1.4.0 ✅, 首次下载缓存 ✅, 二次下载秒下 ✅, 首页安装包下载 ✅
+- **注意事项**：不再需要手动同步 release。admin dashboard 移除了同步按钮。`.env` 中 GITHUB_TOKEN 必须配置。首次下载每个平台/架构组合会慢（~1-2 分钟），之后走缓存。
+

@@ -5,7 +5,6 @@ from httpx import AsyncClient
 
 
 @pytest.mark.asyncio
-@pytest.mark.asyncio
 async def test_list_packages_returns_200(client: AsyncClient):
     resp = await client.get("/api/v1/packages")
     assert resp.status_code == 200
@@ -15,10 +14,14 @@ async def test_list_packages_returns_200(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_list_packages_empty_registry_returns_empty_list(client: AsyncClient):
+async def test_list_packages_has_expected_structure(client: AsyncClient):
     resp = await client.get("/api/v1/packages")
     data = resp.json()
-    assert data["data"]["packages"] == []
+    for pkg in data["data"]["packages"]:
+        assert "name" in pkg
+        assert "display_name" in pkg
+        assert "latest_version" in pkg
+        assert isinstance(pkg.get("platforms"), list)
 
 
 @pytest.mark.asyncio

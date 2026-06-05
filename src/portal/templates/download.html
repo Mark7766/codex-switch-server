@@ -3,13 +3,12 @@
 
 {% block head %}
 <script>
-// Fetch real release data from API on page load
+// Fetch latest release from GitHub via API on page load
 document.addEventListener('DOMContentLoaded', function() {
-  fetch('/api/v1/update/releases')
+  fetch('/api/v1/update/latest')
     .then(function(r) { return r.json(); })
-    .then(function(releases) {
-      if (!releases || !releases.length) return;
-      var latest = releases[0];
+    .then(function(latest) {
+      if (!latest || !latest.version) return;
 
       var platforms = [
         {id:'macos', label:'macOS', ext:'dmg', arch:'arm64'},
@@ -18,11 +17,21 @@ document.addEventListener('DOMContentLoaded', function() {
       ];
 
       platforms.forEach(function(p) {
+        // Find matching file (prefer native arch for each platform)
         var file = null;
         for (var i = 0; i < (latest.files || []).length; i++) {
-          if (latest.files[i].platform === p.id) {
+          if (latest.files[i].platform === p.id && latest.files[i].arch === p.arch) {
             file = latest.files[i];
             break;
+          }
+        }
+        // Fallback: any file for this platform
+        if (!file) {
+          for (var i = 0; i < (latest.files || []).length; i++) {
+            if (latest.files[i].platform === p.id) {
+              file = latest.files[i];
+              break;
+            }
           }
         }
         if (!file) return;
@@ -32,16 +41,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
         var v = latest.version.startsWith('v') ? latest.version : 'v' + latest.version;
         var sizeMB = file.file_size ? (file.file_size / 1048576).toFixed(0) : '?';
-        var dlUrl = '/api/v1/update/download/' + latest.version + '/' + p.id + '-' + p.arch;
+        var dlUrl = '/api/v1/update/download/' + latest.version + '/' + p.id + '-' + file.arch;
+        var cachedTag = file.cached ? '' : ' <span style="font-size:12px;color:#86868b;">（首次下载需从 GitHub 获取，请耐心等待）</span>';
 
         panel.innerHTML =
           '<div class="version-card">' +
             '<div class="version-card__version">' + v + '</div>' +
-            '<div class="version-card__date">发布于 ' + (latest.release_date || '') + '</div>' +
+            '<div class="version-card__date">发布于 ' + (latest.release_date || '') + cachedTag + '</div>' +
             '<div class="version-card__download">' +
-              '<a href="' + dlUrl + '" class="btn btn--primary btn--large">下载 .' + p.ext + '</a>' +
+              '<a href="' + dlUrl + '" class="btn btn--primary btn--large">下载 .' + file.file_type + '</a>' +
             '</div>' +
-            '<div class="version-card__info">' + sizeMB + ' MB · Intel · Apple Silicon 通用</div>' +
+            '<div class="version-card__info">' + sizeMB + ' MB</div>' +
           '</div>' +
           '<div class="requirements">' +
             '<div class="requirements__title">系统要求</div>' +
@@ -54,15 +64,18 @@ document.addEventListener('DOMContentLoaded', function() {
           '</div>';
       });
 
-      // Fill history from older releases
-      var hist = document.getElementById('historyList');
-      if (hist && releases.length > 1) {
-        var rows = '';
-        for (var i = 1; i < releases.length; i++) {
-          rows += '<div class="history__row"><span>v' + releases[i].version + '</span><span>' + (releases[i].release_date || '') + '</span></div>';
+      // All panels with no matching files: show "not available"
+      platforms.forEach(function(p) {
+        var panel = document.getElementById('platform-' + p.id);
+        if (!panel) return;
+        if (panel.querySelector('.version-card__version').textContent === '加载中...') {
+          panel.querySelector('.version-card__version').textContent = '暂不可用';
+          panel.querySelector('.version-card__date').textContent = '该平台暂无最新版本安装包';
         }
-        hist.innerHTML = rows;
-      }
+      });
+    })
+    .catch(function() {
+      // API unavailable — leave "loading..." text
     });
 });
 </script>
@@ -133,13 +146,11 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </section>
 
-<section class="history" style="max-width:680px; margin:0 auto var(--space-6); padding:0 var(--space-3);">
-  <details>
-    <summary>全部版本</summary>
-    <div id="historyList">
-      <div class="history__row"><span>加载中...</span></div>
-    </div>
-  </details>
+<section class="history" style="max-width:680px; margin:0 auto var(--space-6); padding:0 var(--space-3); text-align:center;">
+  <p style="color: var(--color-text-secondary); font-size: 14px;">
+    查看历史版本请访问
+    <a href="https://github.com/Mark7766/codex-switch/releases" target="_blank" rel="noopener" style="color: var(--color-accent);">GitHub Releases &nearr;</a>
+  </p>
 </section>
 
 <script src="/static/js/portal.js"></script>

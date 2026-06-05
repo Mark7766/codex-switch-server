@@ -303,6 +303,21 @@ img {
   min-width: 180px;
 }
 
+.btn--small {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-label);
+  border-radius: var(--radius-sm);
+}
+
+/* Tool card hint / download buttons */
+.tool-card__hint {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  margin-top: var(--space-2);
+}
+
 /* ── Section Titles ───────────────────────────────────── */
 
 .section-title {

@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime
+import time
+from datetime import datetime
 from pathlib import Path
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.config import settings
 from src.models.download import DownloadRecord
 from src.models.release import Release
 from src.schemas.release import DownloadStats, UpdateCheckResponse
@@ -16,6 +18,11 @@ from src.utils.storage import LocalStorage
 logger = logging.getLogger(__name__)
 
 GITHUB_RELEASES_API = "https://api.github.com/repos/Mark7766/codex-switch/releases"
+
+# In-memory cache for latest release info (avoid hitting GitHub on every page load)
+_latest_cache: dict | None = None
+_cache_time: float = 0
+_CACHE_TTL = 300  # 5 minutes
 
 
 def _parse_semver(version: str) -> tuple[int, ...]:
@@ -28,131 +35,146 @@ class ReleaseSyncService:
         self._http = http or HttpClient()
         self._storage = storage or LocalStorage()
 
-    async def check_for_updates(self, current_version: str, platform: str, arch: str) -> UpdateCheckResponse:
-        stmt = select(Release).order_by(Release.created_at.desc()).limit(1)
-        result = await self._db.execute(stmt)
-        latest: Release | None = result.scalar_one_or_none()
+    # ── GitHub latest release info ──────────────────────────
 
-        if latest is None:
+    async def get_latest_from_github(self, force_refresh: bool = False) -> dict:
+        """Fetch latest release info from GitHub, with 5-min in-memory cache."""
+        global _latest_cache, _cache_time
+        now = time.time()
+        if not force_refresh and _latest_cache and (now - _cache_time) < _CACHE_TTL:
+            # Refresh cache-status flags (files may have been downloaded since last fetch)
+            for f in _latest_cache.get("files", []):
+                f["cached"] = await self._storage.exists(f.get("path", ""))
+            return _latest_cache
+
+        headers = {"Accept": "application/vnd.github+json"}
+        if settings.github_token:
+            headers["Authorization"] = f"Bearer {settings.github_token}"
+
+        try:
+            data = await self._http.get_json(GITHUB_RELEASES_API, headers=headers)
+        except Exception:
+            logger.exception("Failed to fetch GitHub releases")
+            return _latest_cache or {"version": "", "files": []}
+
+        releases: list[dict] = data if isinstance(data, list) else []
+        if not releases:
+            return {"version": "", "files": []}
+
+        latest = releases[0]
+        tag = latest.get("tag_name", "")
+        version = tag.lstrip("v")
+        published = latest.get("published_at", "")
+        rel_date = published[:10] if published else ""
+
+        files = []
+        for asset in latest.get("assets", []):
+            name: str = asset.get("name", "")
+            plat, arch, ftype = _detect_platform(name)
+            if plat:
+                cache_key = f"codex-switch/{version}/{plat}-{arch}.{ftype}"
+                files.append(
+                    {
+                        "platform": plat,
+                        "arch": arch,
+                        "file_type": ftype,
+                        "file_size": asset.get("size", 0),
+                        "download_url": asset.get("browser_download_url", ""),
+                        "path": cache_key,
+                        "cached": await self._storage.exists(cache_key),
+                    }
+                )
+
+        result = {
+            "version": version,
+            "release_date": rel_date,
+            "release_notes": latest.get("body", ""),
+            "is_critical": latest.get("prerelease", False) is False,
+            "files": files,
+        }
+
+        _latest_cache = result
+        _cache_time = now
+        logger.info("Fetched latest release %s from GitHub (%d files)", version, len(files))
+        return result
+
+    # ── Download with cache-or-proxy ────────────────────────
+
+    async def get_download_path(self, version: str, platform: str, arch: str) -> Path | None:
+        """Check if the file is cached locally. No DB lookup needed."""
+        # Scan cache directory for matching file
+        prefix = f"codex-switch/{version}/{platform}-{arch}"
+        for ext in ("dmg", "exe", "appimage"):
+            path = f"{prefix}.{ext}"
+            if await self._storage.exists(path):
+                return await self._storage.get_path(path)
+        return None
+
+    async def download_and_cache(
+        self, download_url: str, version: str, platform: str, arch: str, ftype: str
+    ) -> Path:
+        """Download from GitHub and cache locally. Returns the local file path."""
+        cache_key = f"codex-switch/{version}/{platform}-{arch}.{ftype}"
+        tmp_dest = Path(f"/tmp/codex-switch-{version}-{platform}-{arch}.{ftype}")
+        await self._http.download(download_url, tmp_dest)
+        local_path = await self._storage.put(tmp_dest, cache_key)
+        tmp_dest.unlink(missing_ok=True)
+        logger.info("Cached %s", cache_key)
+        return local_path
+
+    async def get_github_asset_info(
+        self, version: str, platform: str, arch: str
+    ) -> dict | None:
+        """Get GitHub asset info for a specific version/platform/arch.
+        Only returns info if the requested version matches the latest release."""
+        info = await self.get_latest_from_github()
+        if info.get("version") != version:
+            info = await self.get_latest_from_github(force_refresh=True)
+        if info.get("version") != version:
+            return None
+        for f in info.get("files", []):
+            if f["platform"] == platform and f["arch"] == arch:
+                return f
+        return None
+
+    # ── Update check ────────────────────────────────────────
+
+    async def check_for_updates(
+        self, current_version: str, platform: str, arch: str
+    ) -> UpdateCheckResponse:
+        info = await self.get_latest_from_github()
+        version = info.get("version", "")
+        if not version:
             return UpdateCheckResponse(has_update=False)
 
         try:
             current_ver = _parse_semver(current_version)
-            latest_ver = _parse_semver(latest.version)
+            latest_ver = _parse_semver(version)
             has_update = latest_ver > current_ver
         except (ValueError, IndexError):
-            has_update = current_version != latest.version
+            has_update = current_version != version
 
         if not has_update:
-            return UpdateCheckResponse(has_update=False, latest_version=latest.version)
+            return UpdateCheckResponse(has_update=False, latest_version=version)
 
         file_info = {}
-        for f in latest.files:
+        for f in info.get("files", []):
             if f.get("platform") == platform and f.get("arch") == arch:
                 file_info = f
                 break
 
         return UpdateCheckResponse(
             has_update=True,
-            latest_version=latest.version,
-            release_date=str(latest.release_date),
-            release_notes=latest.release_notes,
-            download_url=f"/api/v1/update/download/{latest.version}/{platform}-{arch}",
+            latest_version=version,
+            release_date=info.get("release_date", ""),
+            release_notes=info.get("release_notes", ""),
+            download_url=f"/api/v1/update/download/{version}/{platform}-{arch}",
             file_size=file_info.get("file_size", 0),
             sha256=file_info.get("sha256", ""),
-            is_critical=latest.is_critical,
+            is_critical=info.get("is_critical", False),
         )
 
-    async def sync_from_github(self, download_files: bool = True) -> dict[str, int]:
-        data = await self._http.get_json(GITHUB_RELEASES_API, headers={"Accept": "application/vnd.github+json"})
-        releases: list[dict] = data if isinstance(data, list) else []
-
-        new_count = 0
-        for rel in releases:
-            tag = rel.get("tag_name", "")
-            version = tag.lstrip("v")
-            exists = await self._db.execute(select(Release).where(Release.version == version))
-            if exists.scalar_one_or_none():
-                continue
-
-            published = rel.get("published_at", "")
-            rel_date = date.fromisoformat(published[:10]) if published else date.today()
-
-            files_data = []
-            for asset in rel.get("assets", []):
-                name: str = asset.get("name", "")
-                plat, arch, ftype = _detect_platform(name)
-                if plat:
-                    download_url = asset.get("browser_download_url", "")
-                    file_size = asset.get("size", 0)
-                    local_path = ""
-
-                    if download_files and download_url:
-                        try:
-                            local_name = f"codex-switch/{version}/{plat}-{arch}.{ftype}"
-                            tmp_dest = Path(f"/tmp/codex-switch-{version}-{plat}-{arch}.{ftype}")
-                            await self._http.download(download_url, tmp_dest)
-                            local_path = await self._storage.put(tmp_dest, local_name)
-                            tmp_dest.unlink(missing_ok=True)
-                            logger.info("Downloaded %s → %s", name, local_path)
-                        except Exception:
-                            logger.exception("Failed to download %s, will proxy from GitHub", name)
-
-                    files_data.append(
-                        {
-                            "platform": plat,
-                            "arch": arch,
-                            "file_type": ftype,
-                            "file_size": file_size,
-                            "sha256": "",
-                            "download_url": download_url,
-                            "path": local_path,
-                        }
-                    )
-
-            record = Release(
-                version=version,
-                release_date=rel_date,
-                release_notes=rel.get("body", ""),
-                is_critical=rel.get("prerelease", False) is False,
-                files=files_data,
-            )
-            self._db.add(record)
-            await self._db.commit()
-            new_count += 1
-
-        logger.info("Synced %d new releases from GitHub", new_count)
-        return {"new_count": new_count}
-
-    async def get_latest_release(self) -> Release | None:
-        result = await self._db.execute(select(Release).order_by(Release.created_at.desc()).limit(1))
-        return result.scalar_one_or_none()
-
-    async def get_releases(self, limit: int = 20) -> list[Release]:
-        result = await self._db.execute(select(Release).order_by(Release.created_at.desc()).limit(limit))
-        return list(result.scalars().all())
-
-    async def get_download_path(self, version: str, platform: str, arch: str) -> Path | None:
-        result = await self._db.execute(select(Release).where(Release.version == version))
-        release: Release | None = result.scalar_one_or_none()
-        if release is None:
-            return None
-        for f in release.files:
-            if f.get("platform") == platform and f.get("arch") == arch:
-                path_str = f.get("path", "")
-                if path_str and await self._storage.exists(path_str):
-                    return await self._storage.get_path(path_str)
-        return None
-
-    async def get_github_download_url(self, version: str, platform: str, arch: str) -> str | None:
-        result = await self._db.execute(select(Release).where(Release.version == version))
-        release: Release | None = result.scalar_one_or_none()
-        if release is None:
-            return None
-        for f in release.files:
-            if f.get("platform") == platform and f.get("arch") == arch:
-                return f.get("download_url") or None
-        return None
+    # ── Download tracking ───────────────────────────────────
 
     async def record_download(
         self,
@@ -164,10 +186,8 @@ class ReleaseSyncService:
         ip_hash: str = "",
         user_agent: str = "",
     ) -> None:
-        result = await self._db.execute(select(Release).where(Release.version == version))
-        release: Release | None = result.scalar_one_or_none()
         record = DownloadRecord(
-            release_id=release.id if release else None,
+            release_id=None,
             client_id=client_id,
             package_name=package_name,
             platform=platform,
@@ -178,10 +198,10 @@ class ReleaseSyncService:
         self._db.add(record)
         await self._db.commit()
 
+    # ── Stats (for admin dashboard) ─────────────────────────
+
     async def get_download_stats(self, range_days: int = 7) -> DownloadStats:
         from datetime import timedelta
-
-        from sqlalchemy import func
 
         total_result = await self._db.execute(select(func.count()).select_from(DownloadRecord))
         total = total_result.scalar() or 0
@@ -196,7 +216,9 @@ class ReleaseSyncService:
 
         today_cutoff = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         today_result = await self._db.execute(
-            select(func.count()).select_from(DownloadRecord).where(DownloadRecord.downloaded_at >= today_cutoff)
+            select(func.count()).select_from(DownloadRecord).where(
+                DownloadRecord.downloaded_at >= today_cutoff
+            )
         )
         today = today_result.scalar() or 0
 
@@ -215,21 +237,13 @@ class ReleaseSyncService:
             platform_distribution=platform_dist,
         )
 
-    async def cleanup_old_files(self, keep_versions: int = 5) -> int:
-        result = await self._db.execute(select(Release).order_by(Release.created_at.desc()).offset(keep_versions))
-        old_releases = result.scalars().all()
-        removed = 0
-        for rel in old_releases:
-            for f in rel.files:
-                path_str = f.get("path", "")
-                if path_str:
-                    await self._storage.delete(path_str)
-                    removed += 1
-        return removed
-
 
 def _detect_platform(filename: str) -> tuple[str, str, str]:
     name = filename.lower()
+
+    if ".blockmap" in name or name.endswith(".yml") or name.endswith(".yaml"):
+        return "", "", ""
+
     plat = ""
     arch = "x64"
     ftype = ""
@@ -241,7 +255,13 @@ def _detect_platform(filename: str) -> tuple[str, str, str]:
     elif ".appimage" in name:
         plat, ftype = "linux", "appimage"
 
+    if not plat:
+        return "", "", ""
+
     if "arm64" in name or "aarch64" in name:
         arch = "arm64"
+    elif plat == "windows" and "x64" not in name and "x86" not in name and "amd64" not in name:
+        # Windows .exe must have an explicit arch suffix to avoid ambiguous files
+        return "", "", ""
 
     return plat, arch, ftype

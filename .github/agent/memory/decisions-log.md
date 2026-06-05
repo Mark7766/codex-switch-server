@@ -173,3 +173,44 @@
 > - `src/services/` 是代码量最大的目录，每个 service 文件对应一个业务领域
 > - `src/models/` 和 `src/schemas/` 是纯数据定义，一眼看清数据结构
 > - 测试分为三层：单元测试测 service（mock DB）、集成测试测路由（真实 SQLite）、E2E 测试测完整场景
+
+---
+
+### ADR-005: Codex Switch 下载改为实时 GitHub + 首次代理缓存
+
+- **日期**：2026-06-06
+- **状态**：✅ 已采纳
+- **决策者**：wangliang + Claude
+
+#### 背景
+> 原有下载流程依赖管理员手动触发 GitHub Release 同步，将 release 元数据和文件缓存到 SQLite + 本地文件系统。流程存在以下问题：
+> 1) 管理员忘记同步则用户看到过时版本或"加载中..."
+> 2) 同步过程耗时（需下载 4 个平台的大文件），HTTP 请求易超时
+> 3) release 表与 GitHub 实际状态可能不一致
+> 4) DB 存储 release 元数据增加了不必要的持久化复杂性
+>
+> 用户明确要求："通过访问 GitHub 地址，把最新版本显示出来，下载时如果没有缓存就先去 GitHub 下载再传给用户"。
+
+#### 方案对比
+
+| 方案 | 优点 | 缺点 |
+|------|------|------|
+| 保持原方案（DB + 手动同步） | 离线可用、下载即秒下 | 需手动触发、可能过时、同步超时风险、DB 元数据维护成本 |
+| 实时 GitHub + 首次代理缓存 | 永远最新、零维护、首次下载后同样秒下 | 首次下载慢（需 GitHub 下载 + 本地缓存）、依赖 GitHub 可用性 |
+
+#### 决策
+> 选择 **实时 GitHub + 首次代理缓存**。
+
+#### 理由
+> 1) 版本信息 5 分钟内存缓存，页面加载不每次打 GitHub API
+> 2) 用户首次下载时服务端从 GitHub 拉取并缓存，后续下载秒下（实测 92MB 从 98s → 0.78s）
+> 3) 不需要手动同步，零运维成本
+> 4) 释放 SQLite releases 表的维护负担（仅保留 download_records 统计用）
+> 5) 使用 GitHub Fine-grained Personal Access Token 突破 API 限速
+
+#### 影响
+> - `ReleaseSyncService` 完全重写：移除 DB 依赖的 `sync_from_github`/`_purge_all_releases`/`get_releases`，新增 `get_latest_from_github`（内存缓存）/`download_and_cache`/`get_github_asset_info`
+> - `/api/v1/update/latest` 新端点替代 `/api/v1/update/releases`
+> - 下载端点改为 cache-or-proxy 模式：检查本地缓存 → 从 GitHub 下载并缓存 → 流式返回
+> - 管理后台移除"同步 Release"按钮，改为提示"版本信息实时取自 GitHub"
+> - `_detect_platform` 加强过滤：拒绝 blockmap/yml/zip、Windows exe 必须显式标注架构后缀

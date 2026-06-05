@@ -30,10 +30,7 @@
   <header class="admin-header">
     <h1>Codex Switch 运营后台</h1>
     <div style="display:flex;gap:var(--space-2);align-items:center;">
-      <span style="font-size:var(--text-label);color:var(--color-text-tertiary);">版本: {{ release_count }}</span>
-      <form method="post" action="/admin/sync-releases" onsubmit="this.querySelector('button').textContent='同步中...'" style="margin:0;">
-        <button type="submit" class="btn btn--primary" style="font-size:var(--text-label);padding:var(--space-1) var(--space-2);">🔄 同步 Release</button>
-      </form>
+      <span style="font-size:var(--text-label);color:var(--color-text-tertiary);">版本信息实时取自 GitHub</span>
       <a href="/admin/packages" style="font-size:var(--text-label);color:var(--color-text-secondary);">安装包管理</a>
       <a href="/" class="btn btn--outline" style="font-size:var(--text-label);padding:var(--space-1) var(--space-2);">返回首页</a>
     </div>
