@@ -28,3 +28,6 @@ Thumbs.db
 certs/
 .coverage
 codexswtich.cloud_nginx.zip
+
+# Deployment info (local only, contains credentials)
+.deploy/
