@@ -14,7 +14,7 @@
 | 项目类型 | 门户网站 + Web 服务 + 后台管理 |
 | 业务场景 | 为 codex-switch 提供产品门户（展示/下载/指南），为客户端提供版本更新镜像、桌面应用/CLI 工具包下载，为管理员提供运营数据面板 |
 | 用户规模 | 数百到数千（codex-switch 用户群体，面向中国内地开发者） |
-| 当前阶段 | 0.1.0 / 开发中（Phase 4 遥测完成，下一步 Phase 5 部署） |
+| 当前阶段 | 0.1.0 / 已上线生产（https://www.codexswtich.cloud） |
 | 设计原则 | 极简实用，维护优先 — 一个人维护，一切为了简单可靠 |
 | UI/UX 哲学 | Apple Human Interface Guidelines — Clarity（清晰）、Deference（遵从）、Depth（深度） |
 | 主语言 | Python 3.12 |

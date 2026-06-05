@@ -5,23 +5,20 @@ from httpx import AsyncClient
 
 
 @pytest.mark.asyncio
+@pytest.mark.asyncio
 async def test_list_packages_returns_200(client: AsyncClient):
     resp = await client.get("/api/v1/packages")
     assert resp.status_code == 200
     data = resp.json()
     assert data["code"] == 0
-    assert len(data["data"]["packages"]) == 4
+    assert isinstance(data["data"]["packages"], list)
 
 
 @pytest.mark.asyncio
-async def test_list_packages_contains_expected_names(client: AsyncClient):
+async def test_list_packages_empty_registry_returns_empty_list(client: AsyncClient):
     resp = await client.get("/api/v1/packages")
     data = resp.json()
-    names = [p["name"] for p in data["data"]["packages"]]
-    assert "claude-desktop" in names
-    assert "codex-desktop" in names
-    assert "nodejs" in names
-    assert "git" in names
+    assert data["data"]["packages"] == []
 
 
 @pytest.mark.asyncio

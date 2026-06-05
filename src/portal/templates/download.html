@@ -26,7 +26,6 @@
       </div>
       <div class="version-card__info">124 MB · Intel 芯片 · Apple Silicon 通用</div>
     </div>
-
     <div class="requirements">
       <div class="requirements__title">系统要求</div>
       <ul class="requirements__list">
@@ -47,7 +46,6 @@
       </div>
       <div class="version-card__info">118 MB · x64 · ARM64 通用</div>
     </div>
-
     <div class="requirements">
       <div class="requirements__title">系统要求</div>
       <ul class="requirements__list">
@@ -68,7 +66,6 @@
       </div>
       <div class="version-card__info">135 MB · x64</div>
     </div>
-
     <div class="requirements">
       <div class="requirements__title">系统要求</div>
       <ul class="requirements__list">
@@ -81,27 +78,16 @@
   </div>
 </section>
 
-<section class="history">
+<section class="history" style="max-width:680px; margin:0 auto var(--space-6); padding:0 var(--space-3);">
   <details>
     <summary>全部版本</summary>
-    <div class="history__row">
-      <span>v1.3.0</span>
-      <span>2026-05-20</span>
-    </div>
-    <div class="history__row">
-      <span>v1.2.0</span>
-      <span>2026-05-10</span>
-    </div>
-    <div class="history__row">
-      <span>v1.1.0</span>
-      <span>2026-04-28</span>
-    </div>
+    <div class="history__row"><span>v1.3.0</span><span>2026-05-20</span></div>
+    <div class="history__row"><span>v1.2.0</span><span>2026-05-10</span></div>
+    <div class="history__row"><span>v1.1.0</span><span>2026-04-28</span></div>
   </details>
 </section>
 
-{% endblock %}
-
-{% block scripts %}
+<script src="/static/js/portal.js"></script>
 <script>
 (function() {
   var btns = document.querySelectorAll('#platformSelector .segment-control__btn');
@@ -110,12 +96,10 @@
     windows: document.getElementById('platform-windows'),
     linux: document.getElementById('platform-linux')
   };
-
   btns.forEach(function(btn) {
     btn.addEventListener('click', function() {
       btns.forEach(function(b) { b.classList.remove('segment-control__btn--active'); });
       btn.classList.add('segment-control__btn--active');
-
       var platform = btn.getAttribute('data-platform');
       Object.keys(panels).forEach(function(k) {
         panels[k].style.display = k === platform ? 'block' : 'none';

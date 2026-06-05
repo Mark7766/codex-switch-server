@@ -45,7 +45,9 @@ class TelemetryService:
 
             cutoff = datetime.now(UTC) - timedelta(minutes=1)
             recent_count = await self._db.execute(
-                select(func.count()).select_from(TelemetryEvent).where(
+                select(func.count())
+                .select_from(TelemetryEvent)
+                .where(
                     TelemetryEvent.client_id == payload.client_id,
                     TelemetryEvent.created_at >= cutoff,
                 )

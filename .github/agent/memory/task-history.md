@@ -113,6 +113,15 @@
 - **摘要**：完成 Phase 4 遥测系统。schemas/telemetry.py（TelemetryEventIn/Payload/IngestResult/TelemetryStats + 12 种事件类型白名单）、services/telemetry.py（TelemetryService：事件验证/三元组去重/每分钟限速/批量写入/聚合统计/趋势查询/client_id 脱敏）、api/v1/telemetry.py（POST /api/v1/telemetry/events）、admin dashboard 接入真实遥测数据（4 卡片+Chart.js 柱状图功能分布+折线图趋势+最近事件表）、commit 事务修复（解决集成测试跨 session 数据不可见问题）。测试 69 条/覆盖率 82%。
 - **变更文件**：src/schemas/telemetry.py, src/services/telemetry.py, src/api/v1/telemetry.py, src/api/router.py, src/admin/router.py, src/admin/templates/dashboard.html, src/services/release_sync.py（flush→commit）, tests/{test_api_telemetry,test_telemetry_service}.py
 - **验证**：ruff ✅, pytest 69/69 ✅, coverage 82% ✅
-- **注意事项**：遥测端点为公开 API，依赖客户端正确上报。事件类型白名单 12 种，新增类型需同步更新 VALID_EVENT_TYPES。admin dashboard 的 Chart.js 从 CDN 加载（jsdelivr），离线环境不可用但不影响表格数据展示。Phase 5 下一步为部署上线。（需实际文件存入 data/ 后才能下载）。GitHub 同步需在部署后手动触发 sync_from_github()。admin session 用 itsdangerous 签名 cookie 24h 过期。telemetry API 在 Phase 4 实现。Jinja2 模板使用 starlette.templating（非 fastapi.templating）以兼容 Jinja2 3.1.6 LRU 缓存
-- **注意事项**：项目骨架就绪。数据库表在应用启动时自动创建。下一步 Phase 2 开发门户页面（首页/下载页/使用指南）
+- **注意事项**：遥测端点为公开 API，依赖客户端正确上报。事件类型白名单 12 种，新增类型需同步更新 VALID_EVENT_TYPES。admin dashboard 的 Chart.js 从 CDN 加载（jsdelivr）。
+
+---
+
+### [TASK-011] Phase 5：生产环境部署
+- **日期**：2026-06-05
+- **类型**：deploy
+- **摘要**：Docker 部署到 43.134.110.192。clone→certs→.env→停ajepro→build→start→修复DATABASE_URL→修复supervisord→验证。所有 7 端点 HTTPS 200。生产地址 https://www.codexswtich.cloud。
+- **变更文件**：docker/supervisord.conf（uv run → .venv/bin/uvicorn）
+- **部署信息**：IP 43.134.110.192, 域名 www.codexswtich.cloud, 路径 /home/lighthouse/codex-switch-server, ADMIN_TOKEN=627202abef4a70438c36c23cefc9e031
+- **注意事项**：ajepro 已永久停服。证书到期手动换 certs/ 后 restart。更新流程：ssh → git pull → docker compose up -d --build
 

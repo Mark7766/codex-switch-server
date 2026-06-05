@@ -46,4 +46,3 @@ async def test_admin_dashboard_contains_stats(client: AsyncClient):
     resp = await client.get("/admin", headers={"Cookie": cookie})
     assert "总下载量" in resp.text
     assert "活跃用户" in resp.text
-
