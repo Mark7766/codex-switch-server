@@ -118,9 +118,9 @@ class ReleaseSyncService:
                 files=files_data,
             )
             self._db.add(record)
+            await self._db.commit()
             new_count += 1
 
-        await self._db.commit()
         logger.info("Synced %d new releases from GitHub", new_count)
         return {"new_count": new_count}
 
