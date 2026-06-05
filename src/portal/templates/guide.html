@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}使用指南{% endblock %}
+
+{% block content %}
+
+<section class="page-header">
+  <h1 class="page-header__title">使用指南</h1>
+  <p class="page-header__subtitle">从下载到配置，一步步带你完成</p>
+</section>
+
+<div class="guide">
+  <aside class="guide__sidebar">
+    <ul class="guide__nav" id="guideNav">
+      <li class="guide__nav-item"><a href="#step1" class="guide__nav-link guide__nav-link--active">1. 下载安装</a></li>
+      <li class="guide__nav-item"><a href="#step2" class="guide__nav-link">2. 获取 API Key</a></li>
+      <li class="guide__nav-item"><a href="#step3" class="guide__nav-link">3. 启动代理</a></li>
+      <li class="guide__nav-item"><a href="#step4" class="guide__nav-link">4. 配置 Codex</a></li>
+      <li class="guide__nav-item"><a href="#step5" class="guide__nav-link">5. 配置 Claude</a></li>
+      <li class="guide__nav-item"><a href="#step6" class="guide__nav-link">6. 常见问题</a></li>
+    </ul>
+  </aside>
+
+  <div class="guide__content">
+
+    <section class="guide__section" id="step1">
+      <h2>&#128229; 第一步：下载安装</h2>
+      <ol>
+        <li>前往 <a href="/download">下载页面</a> 选择你的操作系统平台。</li>
+        <li>下载对应版本的安装包。</li>
+        <li>macOS：打开 <code>.dmg</code> 文件，将 Codex Switch 拖入 Applications 文件夹。</li>
+        <li>Windows：运行 <code>.exe</code> 安装向导，按提示完成安装。</li>
+        <li>首次启动 Codex Switch 会弹出配置向导，跟随指引完成初始设置。</li>
+      </ol>
+      <div class="guide__note">
+        <strong>提示：</strong> 如果 macOS 提示"无法验证开发者"，请在系统偏好设置 → 安全性与隐私中点击"仍要打开"。
+      </div>
+    </section>
+
+    <section class="guide__section" id="step2">
+      <h2>&#128273; 第二步：获取 DeepSeek API Key</h2>
+      <ol>
+        <li>访问 <a href="https://platform.deepseek.com" target="_blank" rel="noopener">platform.deepseek.com</a> 注册账号。</li>
+        <li>登录后进入 "API Keys" 页面，点击"创建 API Key"。</li>
+        <li>复制生成的 API Key（格式为 <code>sk-xxx</code>）。</li>
+        <li>回到 Codex Switch，在配置页面填入 API Key。</li>
+      </ol>
+      <div class="guide__note">
+        <strong>提示：</strong> DeepSeek 新用户注册即送额度，可以免费试用。API Key 仅保存在你的本机，不会上传到任何服务器。
+      </div>
+    </section>
+
+    <section class="guide__section" id="step3">
+      <h2>&#128640; 第三步：启动代理</h2>
+      <ol>
+        <li>在 Codex Switch 主界面，确认默认模型已选择（推荐 DeepSeek V4 Flash）。</li>
+        <li>点击"启动代理"按钮，等待状态变为"运行中"。</li>
+        <li>默认代理地址为 <code>http://127.0.0.1:11435</code>，可在设置中修改端口。</li>
+      </ol>
+    </section>
+
+    <section class="guide__section" id="step4">
+      <h2>&#128187; 第四步：配置 Codex CLI / Desktop</h2>
+      <p>Codex Switch 可以自动配置以下工具的代理设置：</p>
+      <ul>
+        <li><strong>Codex CLI</strong> — 自动写入 <code>~/.codex/config.toml</code> 和 <code>auth.json</code></li>
+        <li><strong>Codex Desktop</strong> — 自动配置代理地址和 API Key</li>
+      </ul>
+      <p>在 Codex Switch 设置中找到对应工具的配置项，点击"自动配置"即可。</p>
+    </section>
+
+    <section class="guide__section" id="step5">
+      <h2>&#129504; 第五步：配置 Claude CLI / Desktop</h2>
+      <p>Codex Switch 同样支持 Claude 系列工具的配置：</p>
+      <ul>
+        <li><strong>Claude Code CLI</strong> — 自动写入 <code>~/.claude/settings.json</code> 和 shell 环境变量</li>
+        <li><strong>Claude Desktop</strong> — 自动配置第三方推理网关配置文件</li>
+      </ul>
+      <p>在设置中开启 "Claude CLI 管理" 或 "Claude Desktop 管理"，Codex Switch 会自动检测已安装的工具并完成配置。</p>
+    </section>
+
+    <section class="guide__section" id="step6">
+      <h2>&#10067; 第六步：常见问题</h2>
+
+      <p><strong>代理无法启动？</strong></p>
+      <p>检查端口 11435 是否被其他程序占用。可以在设置中更换端口号。</p>
+
+      <p><strong>模型调用报错？</strong></p>
+      <p>确认 API Key 是否正确填入，确认 DeepSeek 账户是否有余额。可以查看 Codex Switch 的日志定位具体错误。</p>
+
+      <p><strong>Claude Desktop 无法连接？</strong></p>
+      <p>确保 Codex Switch 代理已启动，然后在 Claude Desktop 设置中将 API 地址改为 <code>http://127.0.0.1:11435/anthropic</code>。</p>
+
+      <p><strong>下载速度慢？</strong></p>
+      <p>codex-switch-server 提供了国内镜像，在 Codex Switch 设置中将更新镜像切换为"官方镜像"。</p>
+    </section>
+
+  </div>
+</div>
+
+{% endblock %}

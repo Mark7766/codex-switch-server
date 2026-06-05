@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>运营后台 — Codex Switch</title>
+  <link rel="stylesheet" href="/static/css/apple.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    body { background:var(--color-bg-primary); }
+    .admin-header { background:#fff; padding:var(--space-2) var(--space-3); box-shadow:var(--shadow-nav); display:flex; justify-content:space-between; align-items:center; }
+    .admin-header h1 { font-size:var(--text-card-title); font-weight:600; }
+    .admin-main { max-width:1200px; margin:0 auto; padding:var(--space-3); }
+    .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:var(--space-3); margin-bottom:var(--space-4); }
+    .stat-card { background:#fff; border-radius:var(--radius-lg); padding:var(--space-3); box-shadow:var(--shadow-card); text-align:center; }
+    .stat-card__num { font-size:2rem; font-weight:600; color:var(--color-text-primary); }
+    .stat-card__label { font-size:var(--text-caption); color:var(--color-text-secondary); }
+    .chart-grid { display:grid; grid-template-columns:1fr 1fr; gap:var(--space-3); margin-bottom:var(--space-3); }
+    .chart-section { background:#fff; border-radius:var(--radius-lg); padding:var(--space-3); box-shadow:var(--shadow-card); }
+    .chart-section h2 { font-size:var(--text-card-title); margin-bottom:var(--space-2); }
+    .chart-section canvas { max-height:280px; }
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:var(--text-caption); }
+    th, td { text-align:left; padding:var(--space-1) var(--space-2); border-bottom:1px solid var(--color-separator); }
+    th { font-weight:600; color:var(--color-text-secondary); }
+    @media (max-width:767px) { .stats-row { grid-template-columns:repeat(2,1fr); } .chart-grid { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <header class="admin-header">
+    <h1>Codex Switch 运营后台</h1>
+    <a href="/" class="btn btn--outline" style="font-size:var(--text-label);padding:var(--space-1) var(--space-2);">返回首页</a>
+  </header>
+
+  <main class="admin-main">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-card__num">{{ download_stats.total_downloads }}</div>
+        <div class="stat-card__label">总下载量</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__num">{{ download_stats.active_users }}</div>
+        <div class="stat-card__label">活跃用户 (30天)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__num">{{ telemetry.today_events }}</div>
+        <div class="stat-card__label">今日遥测事件</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__num">{{ telemetry.total_events }}</div>
+        <div class="stat-card__label">遥测事件总数</div>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-section">
+        <h2>功能使用分布</h2>
+        <canvas id="typeChart"></canvas>
+      </div>
+      <div class="chart-section">
+        <h2>事件趋势 (30天)</h2>
+        <canvas id="trendChart"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-section">
+      <h2>平台下载分布</h2>
+      {% if download_stats.platform_distribution %}
+      <div class="table-wrap">
+        <table>
+          <tr><th>平台</th><th>下载次数</th></tr>
+          {% for item in download_stats.platform_distribution %}
+          <tr><td>{{ item.platform }}</td><td>{{ item.count }}</td></tr>
+          {% endfor %}
+        </table>
+      </div>
+      {% else %}
+      <p style="color:var(--color-text-secondary);font-size:var(--text-caption);">暂无数据</p>
+      {% endif %}
+    </div>
+
+    <div class="chart-section" style="margin-top:var(--space-3);">
+      <h2>最近遥测事件</h2>
+      {% if telemetry.recent_events %}
+      <div class="table-wrap">
+        <table>
+          <tr><th>时间</th><th>客户端</th><th>事件类型</th><th>平台</th><th>版本</th></tr>
+          {% for evt in telemetry.recent_events %}
+          <tr>
+            <td>{{ evt.timestamp[:19] if evt.timestamp else '' }}</td>
+            <td>{{ evt.client_id }}</td>
+            <td>{{ evt.event_type }}</td>
+            <td>{{ evt.platform }}</td>
+            <td>{{ evt.app_version }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+      {% else %}
+      <p style="color:var(--color-text-secondary);font-size:var(--text-caption);">暂无遥测数据</p>
+      {% endif %}
+    </div>
+  </main>
+
+  <script>
+    var typeCounts = {{ type_counts_json | safe }};
+    var trendData = {{ trend_json | safe }};
+
+    if (typeCounts.length) {
+      new Chart(document.getElementById('typeChart'), {
+        type: 'bar',
+        data: {
+          labels: typeCounts.map(function(d) { return d.event_type; }),
+          datasets: [{
+            label: '事件次数',
+            data: typeCounts.map(function(d) { return d.count; }),
+            backgroundColor: '#0071e3',
+            borderRadius: 4
+          }]
+        },
+        options: { responsive:true, plugins:{ legend:{display:false} } }
+      });
+    }
+
+    if (trendData.length) {
+      new Chart(document.getElementById('trendChart'), {
+        type: 'line',
+        data: {
+          labels: trendData.map(function(d) { return d.date; }),
+          datasets: [{
+            label: '事件数',
+            data: trendData.map(function(d) { return d.count; }),
+            borderColor: '#34c759',
+            backgroundColor: 'rgba(52,199,89,0.1)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 2
+          }]
+        },
+        options: { responsive:true, plugins:{ legend:{display:false} } }
+      });
+    }
+  </script>
+</body>
+</html>

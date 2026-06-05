@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+
+# Data
+data/
+*.db
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+.cursor/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+*.tar.gz
+
+# SSL certs (mount at runtime)
+certs/
+.coverage
+codexswtich.cloud_nginx.zip

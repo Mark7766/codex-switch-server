@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Codex Switch{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+  <h1 class="hero__title">让 AI 编程触手可及</h1>
+  <p class="hero__subtitle">
+    Codex Switch 帮你突破网络限制，在国内流畅使用 Codex 和 Claude，接入 DeepSeek 模型，免费、快速、本地安全。
+  </p>
+  <div class="hero__actions">
+    <a href="/download" class="btn btn--primary btn--large">下载 macOS 版</a>
+    <a href="/download" class="btn btn--outline btn--large">Windows 版</a>
+  </div>
+  <p class="hero__note">支持 macOS 11+ · Windows 10+ · Linux · 完全免费开源</p>
+</section>
+
+<section class="features">
+  <h2 class="section-title">为什么选择 Codex Switch？</h2>
+  <p class="section-subtitle">三分钟上手，从此告别复杂的网络配置</p>
+
+  <div class="features__grid">
+    <div class="feature-card">
+      <div class="feature-card__icon">&#128268;</div>
+      <h3 class="feature-card__title">一键接入</h3>
+      <p class="feature-card__desc">自动配置本地代理，无需手动设置任何网络参数，启动即用。</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card__icon">&#129504;</div>
+      <h3 class="feature-card__title">多模型支持</h3>
+      <p class="feature-card__desc">DeepSeek 全系列模型任意切换，同时兼容 OpenAI 和 Anthropic 协议。</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card__icon">&#128737;</div>
+      <h3 class="feature-card__title">本地安全</h3>
+      <p class="feature-card__desc">数据不出本机，所有请求通过本地代理转发，API Key 本地加密存储。</p>
+    </div>
+  </div>
+</section>
+
+<section class="tools">
+  <h2 class="section-title">支持你熟悉的 AI 编程工具</h2>
+  <p class="section-subtitle">一键配置，即刻使用</p>
+
+  <div class="tools__grid">
+    <div class="tool-card">
+      <div class="tool-card__icon">&#9000;</div>
+      <span class="tool-card__name">Codex CLI</span>
+    </div>
+    <div class="tool-card">
+      <div class="tool-card__icon">&#128421;</div>
+      <span class="tool-card__name">Codex Desktop</span>
+    </div>
+    <div class="tool-card">
+      <div class="tool-card__icon">&#9000;</div>
+      <span class="tool-card__name">Claude CLI</span>
+    </div>
+    <div class="tool-card">
+      <div class="tool-card__icon">&#128187;</div>
+      <span class="tool-card__name">Claude Desktop</span>
+    </div>
+  </div>
+</section>
+
+<section class="testimonials">
+  <h2 class="section-title">用户怎么说</h2>
+
+  <div class="testimonials__list">
+    <div class="testimonial">
+      <p class="testimonial__text">"以前下载 Codex 要等半小时，还经常失败。现在用 Codex Switch 几分钟就装好了，太方便了。"</p>
+      <p class="testimonial__author">— 后端开发工程师</p>
+    </div>
+    <div class="testimonial">
+      <p class="testimonial__text">"作为一个非技术背景的 PM，我居然也能自己装好 AI 编程工具，配置简单到不可思议。"</p>
+      <p class="testimonial__author">— 产品经理</p>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <h2 class="cta__title">准备好开始了吗？</h2>
+  <a href="/download" class="btn btn--primary btn--large">免费下载</a>
+</section>
+
+{% endblock %}

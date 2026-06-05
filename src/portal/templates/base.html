@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Codex Switch{% endblock %} — 让 AI 编程触手可及</title>
+  <meta name="description" content="Codex Switch 帮你突破网络限制，在国内流畅使用 Codex 和 Claude，接入 DeepSeek 模型，免费、快速、安全。">
+  <link rel="stylesheet" href="/static/css/apple.css">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <nav class="nav" id="nav">
+    <div class="nav__inner">
+      <a href="/" class="nav__brand">Codex Switch</a>
+      <ul class="nav__links" id="navLinks">
+        <li><a href="/download" class="nav__link">下载</a></li>
+        <li><a href="/guide" class="nav__link">指南</a></li>
+        <li><a href="https://github.com/Mark7766/codex-switch" class="nav__link" target="_blank" rel="noopener">GitHub</a></li>
+      </ul>
+      <button class="nav__toggle" id="navToggle" aria-label="菜单">&#9776;</button>
+    </div>
+  </nav>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <div class="footer__inner">
+      <div>
+        <strong>Codex Switch</strong>
+        <p class="footer__brand-desc">让 AI 编程触手可及</p>
+      </div>
+      <div class="footer__links">
+        <div>
+          <div class="footer__col-title">产品</div>
+          <ul class="footer__col">
+            <li><a href="/download">下载</a></li>
+            <li><a href="/guide">使用指南</a></li>
+          </ul>
+        </div>
+        <div>
+          <div class="footer__col-title">资源</div>
+          <ul class="footer__col">
+            <li><a href="https://github.com/Mark7766/codex-switch" target="_blank" rel="noopener">GitHub</a></li>
+            <li><a href="https://github.com/Mark7766/codex-switch/issues" target="_blank" rel="noopener">反馈</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer__bottom content-width">
+      <span>&copy; 2026 Codex Switch</span>
+      <span>开源软件 · MIT License</span>
+    </div>
+  </footer>
+
+  <script src="/static/js/portal.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

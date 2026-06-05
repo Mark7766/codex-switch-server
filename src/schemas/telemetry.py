@@ -1,0 +1,62 @@
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel, Field
+
+VALID_EVENT_TYPES = frozenset(
+    {
+        "app_start",
+        "app_close",
+        "proxy_start",
+        "proxy_stop",
+        "proxy_error",
+        "model_call",
+        "config_write",
+        "tool_install",
+        "tool_install_fail",
+        "update_check",
+        "update_download",
+        "error",
+    }
+)
+
+
+class TelemetryEventIn(BaseModel):
+    event_type: str
+    timestamp: datetime
+    properties: dict[str, Any] = Field(default_factory=dict)
+
+
+class TelemetryPayload(BaseModel):
+    client_id: str
+    app_version: str = ""
+    platform: str = ""
+    arch: str = ""
+    os_version: str = ""
+    events: list[TelemetryEventIn] = Field(default_factory=list, max_length=100)
+
+
+class IngestResult(BaseModel):
+    accepted: int
+    rejected: int
+
+
+class EventTypeCount(BaseModel):
+    event_type: str
+    count: int
+
+
+class DailyTrend(BaseModel):
+    date: str
+    count: int
+
+
+class TelemetryStats(BaseModel):
+    total_events: int = 0
+    today_events: int = 0
+    active_users: int = 0
+    event_type_counts: list[EventTypeCount] = []
+    daily_trend: list[DailyTrend] = []
+    recent_events: list[dict[str, Any]] = []

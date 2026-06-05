@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}下载{% endblock %}
+
+{% block content %}
+
+<section class="page-header">
+  <h1 class="page-header__title">下载 Codex Switch</h1>
+  <p class="page-header__subtitle">选择你的平台，开始使用</p>
+</section>
+
+<section class="download-section">
+  <div style="text-align:center;">
+    <div class="segment-control" id="platformSelector">
+      <button class="segment-control__btn segment-control__btn--active" data-platform="macos">macOS</button>
+      <button class="segment-control__btn" data-platform="windows">Windows</button>
+      <button class="segment-control__btn" data-platform="linux">Linux</button>
+    </div>
+  </div>
+
+  <div id="platform-macos" class="platform-panel">
+    <div class="version-card">
+      <div class="version-card__version">v1.4.0</div>
+      <div class="version-card__date">发布于 2026-06-05</div>
+      <div class="version-card__download">
+        <a href="#" class="btn btn--primary btn--large">下载 .dmg</a>
+      </div>
+      <div class="version-card__info">124 MB · Intel 芯片 · Apple Silicon 通用</div>
+    </div>
+
+    <div class="requirements">
+      <div class="requirements__title">系统要求</div>
+      <ul class="requirements__list">
+        <li>macOS 11.0 及以上</li>
+        <li>4 GB RAM 及以上</li>
+        <li>100 MB 可用磁盘空间</li>
+        <li>需要网络连接（用于代理 DeepSeek API）</li>
+      </ul>
+    </div>
+  </div>
+
+  <div id="platform-windows" class="platform-panel" style="display:none;">
+    <div class="version-card">
+      <div class="version-card__version">v1.4.0</div>
+      <div class="version-card__date">发布于 2026-06-05</div>
+      <div class="version-card__download">
+        <a href="#" class="btn btn--primary btn--large">下载 .exe</a>
+      </div>
+      <div class="version-card__info">118 MB · x64 · ARM64 通用</div>
+    </div>
+
+    <div class="requirements">
+      <div class="requirements__title">系统要求</div>
+      <ul class="requirements__list">
+        <li>Windows 10 及以上</li>
+        <li>4 GB RAM 及以上</li>
+        <li>100 MB 可用磁盘空间</li>
+        <li>需要网络连接（用于代理 DeepSeek API）</li>
+      </ul>
+    </div>
+  </div>
+
+  <div id="platform-linux" class="platform-panel" style="display:none;">
+    <div class="version-card">
+      <div class="version-card__version">v1.4.0</div>
+      <div class="version-card__date">发布于 2026-06-05</div>
+      <div class="version-card__download">
+        <a href="#" class="btn btn--primary btn--large">下载 .AppImage</a>
+      </div>
+      <div class="version-card__info">135 MB · x64</div>
+    </div>
+
+    <div class="requirements">
+      <div class="requirements__title">系统要求</div>
+      <ul class="requirements__list">
+        <li>Ubuntu 20.04+ / Debian 11+ / Fedora 38+</li>
+        <li>4 GB RAM 及以上</li>
+        <li>100 MB 可用磁盘空间</li>
+        <li>需要网络连接（用于代理 DeepSeek API）</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="history">
+  <details>
+    <summary>全部版本</summary>
+    <div class="history__row">
+      <span>v1.3.0</span>
+      <span>2026-05-20</span>
+    </div>
+    <div class="history__row">
+      <span>v1.2.0</span>
+      <span>2026-05-10</span>
+    </div>
+    <div class="history__row">
+      <span>v1.1.0</span>
+      <span>2026-04-28</span>
+    </div>
+  </details>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  var btns = document.querySelectorAll('#platformSelector .segment-control__btn');
+  var panels = {
+    macos: document.getElementById('platform-macos'),
+    windows: document.getElementById('platform-windows'),
+    linux: document.getElementById('platform-linux')
+  };
+
+  btns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      btns.forEach(function(b) { b.classList.remove('segment-control__btn--active'); });
+      btn.classList.add('segment-control__btn--active');
+
+      var platform = btn.getAttribute('data-platform');
+      Object.keys(panels).forEach(function(k) {
+        panels[k].style.display = k === platform ? 'block' : 'none';
+      });
+    });
+  });
+})();
+</script>
+{% endblock %}
