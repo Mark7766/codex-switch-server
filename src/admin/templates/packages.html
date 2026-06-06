@@ -7,118 +7,96 @@
   <link rel="stylesheet" href="/static/css/apple.css">
   <style>
     body { background:var(--color-bg-primary); }
-    .admin-header { background:#fff; padding:var(--space-2) var(--space-3); box-shadow:var(--shadow-nav); display:flex; justify-content:space-between; align-items:center; }
-    .admin-header h1 { font-size:var(--text-card-title); font-weight:600; }
-    .admin-header nav { display:flex; gap:var(--space-3); }
-    .admin-header nav a { font-size:var(--text-caption); color:var(--color-text-secondary); padding:var(--space-1) var(--space-2); border-radius:var(--radius-sm); }
-    .admin-header nav a.active { color:var(--color-accent); background:rgba(0,113,227,0.08); }
-    .admin-main { max-width:1100px; margin:0 auto; padding:var(--space-3); }
-    .section-title { font-size:var(--text-card-title); font-weight:600; margin:var(--space-4) 0 var(--space-2); }
-    .form-card { background:#fff; border-radius:var(--radius-lg); padding:var(--space-3); max-width:500px; box-shadow:var(--shadow-card); margin-bottom:var(--space-4); }
-    .form-card label { display:block; font-size:var(--text-caption); font-weight:500; margin-bottom:var(--space-0); margin-top:var(--space-2); color:var(--color-text-secondary); }
-    .form-card label:first-child { margin-top:0; }
-    .form-card input, .form-card select { width:100%; padding:var(--space-1) var(--space-2); border:1px solid var(--color-separator); border-radius:var(--radius-sm); font-size:var(--text-caption); margin-bottom:var(--space-1); }
-    .form-card input[type=file] { padding:var(--space-1) 0; border:none; }
-    .form-card .hint { font-size:var(--text-label); color:var(--color-text-tertiary); margin-bottom:var(--space-2); }
-    .pkg-table { width:100%; background:#fff; border-radius:var(--radius-lg); box-shadow:var(--shadow-card); overflow:hidden; }
-    .pkg-table th, .pkg-table td { text-align:left; padding:var(--space-2); border-bottom:1px solid var(--color-separator); font-size:var(--text-caption); }
-    .pkg-table th { font-weight:600; color:var(--color-text-secondary); background:var(--color-bg-footer); }
-    .pkg-table tr:last-child td { border-bottom:none; }
-    .badge { display:inline-block; padding:0 8px; border-radius:10px; font-size:var(--text-label); font-weight:500; background:var(--color-bg-primary); }
-    .btn--danger { background:var(--color-error); color:#fff; }
+    .admin-header { background:#fff; padding:12px 24px; box-shadow:0 1px 3px rgba(0,0,0,.06); display:flex; justify-content:space-between; align-items:center; }
+    .admin-header h1 { font-size:21px; font-weight:600; }
+    .admin-header nav a { font-size:14px; color:var(--color-text-secondary); margin-left:16px; }
+    .admin-header nav a.active { color:var(--color-accent); }
+    .admin-main { max-width:800px; margin:0 auto; padding:40px 24px; }
+    .admin-main h2 { font-size:24px; font-weight:600; margin-bottom:24px; }
+    .slots { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    .slot { background:#fff; border-radius:18px; padding:28px; box-shadow:0 1px 4px rgba(0,0,0,.05); text-align:center; }
+    .slot__icon { font-size:40px; margin-bottom:8px; }
+    .slot__name { font-size:17px; font-weight:600; margin-bottom:2px; }
+    .slot__platform { font-size:13px; color:var(--color-text-secondary); margin-bottom:16px; }
+    .slot__status { font-size:14px; margin-bottom:16px; }
+    .slot__status--ok { color:#34c759; }
+    .slot__status--empty { color:#ff9500; }
+    .slot__form { display:flex; flex-direction:column; align-items:center; gap:8px; }
+    .slot__file { font-size:13px; }
+    .slot__actions { display:flex; gap:8px; align-items:center; }
+    .btn--sm { font-size:13px; padding:6px 16px; border-radius:20px; }
+    .btn--danger { background:#ff3b30; color:#fff; border:none; cursor:pointer; font-size:12px; padding:4px 12px; border-radius:12px; }
     .btn--danger:hover { background:#e0352a; }
-    .empty { text-align:center; padding:var(--space-5); color:var(--color-text-tertiary); font-size:var(--text-caption); }
+    @media (max-width:600px) { .slots { grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
   <header class="admin-header">
-    <h1>Codex Switch 运营后台</h1>
+    <h1>安装包管理</h1>
     <nav>
       <a href="/admin">仪表盘</a>
-      <a href="/admin/packages" class="active">安装包管理</a>
+      <a href="/admin/packages" class="active">安装包</a>
       <a href="/">返回首页</a>
     </nav>
   </header>
 
   <main class="admin-main">
-
-    <div class="section-title">上传安装包</div>
-    <div class="form-card">
-      <form method="post" action="/admin/packages/upload" enctype="multipart/form-data">
-        <label>包标识 (name)</label>
-        <input name="name" placeholder="claude-desktop" required>
-        <div class="hint">英文标识，如 claude-desktop / codex-desktop</div>
-
-        <label>显示名称</label>
-        <input name="display_name" placeholder="Claude Desktop" required>
-
-        <label>版本号</label>
-        <input name="version" placeholder="1.2.0" required>
-
-        <label>平台</label>
-        <select name="platform" required>
-          <option value="macos">macOS</option>
-          <option value="windows">Windows</option>
-          <option value="linux">Linux</option>
-        </select>
-
-        <label>架构</label>
-        <select name="arch">
-          <option value="x64">x64</option>
-          <option value="arm64">arm64</option>
-        </select>
-
-        <label>描述</label>
-        <input name="description" placeholder="Anthropic 官方 Claude 桌面应用">
-
-        <label>选择文件</label>
-        <input type="file" name="file" required>
-
-        <button type="submit" class="btn btn--primary" style="width:100%;margin-top:var(--space-3);">上传</button>
-      </form>
-    </div>
-
-    <div class="section-title">已上传安装包</div>
-    {% if packages %}
-    <div style="overflow-x:auto;">
-    <table class="pkg-table">
-      <tr>
-        <th>名称</th>
-        <th>版本</th>
-        <th>平台</th>
-        <th>架构</th>
-        <th>大小</th>
-        <th>文件名</th>
-        <th>上传时间</th>
-        <th>操作</th>
-      </tr>
-      {% for pkg in packages %}
-      {% for plat in pkg.platforms %}
-      <tr>
-        <td><strong>{{ pkg.display_name }}</strong><br><span class="badge">{{ pkg.name }}</span></td>
-        <td>{{ plat.version }}</td>
-        <td>{{ plat.platform }}</td>
-        <td>{{ plat.arch }}</td>
-        <td>{{ "%.1f"|format(plat.file_size / 1048576) if plat.file_size else 0 }} MB</td>
-        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ plat.original_filename }}">{{ plat.original_filename }}</td>
-        <td>{{ plat.uploaded_at[:10] if plat.uploaded_at else '' }}</td>
-        <td>
-          <form method="post" action="/admin/packages/delete" onsubmit="return confirm('确认删除？')" style="display:inline;">
-            <input type="hidden" name="name" value="{{ pkg.name }}">
-            <input type="hidden" name="platform" value="{{ plat.platform }}">
-            <input type="hidden" name="arch" value="{{ plat.arch }}">
-            <button type="submit" class="btn btn--danger" style="font-size:var(--text-label);padding:4px 10px;">删除</button>
+    <h2>四个安装包位置</h2>
+    <div class="slots">
+      {% set slots = [
+        ('codex-desktop', 'Codex Desktop', 'macos', 'arm64', '&#63737;'),
+        ('codex-desktop', 'Codex Desktop', 'windows', 'x64', '&#128193;'),
+        ('claude-desktop', 'Claude Desktop', 'macos', 'arm64', '&#63737;'),
+        ('claude-desktop', 'Claude Desktop', 'windows', 'x64', '&#128193;')
+      ] %}
+      {% for name, display, plat, arch, icon in slots %}
+        {% set pkg = namespace(found=false, size=0, filename='', plat_data=none) %}
+        {% for p in packages %}
+          {% if p.name == name %}
+            {% for pl in p.platforms %}
+              {% if pl.platform == plat %}
+                {% set pkg.found = true %}
+                {% set pkg.size = pl.file_size %}
+                {% set pkg.filename = pl.original_filename %}
+                {% set pkg.plat_data = pl %}
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+        {% endfor %}
+        <div class="slot">
+          <div class="slot__icon">{{ icon | safe }}</div>
+          <div class="slot__name">{{ display }}</div>
+          <div class="slot__platform">{{ plat }}{% if plat == 'macos' %} ARM{% else %} x64{% endif %}</div>
+          <div class="slot__status {% if pkg.found %}slot__status--ok{% else %}slot__status--empty{% endif %}">
+            {% if pkg.found %}
+              &#10003; {{ "%.0f"|format(pkg.size / 1048576) }} MB — {{ pkg.filename }}
+            {% else %}
+              &#9888; 未上传
+            {% endif %}
+          </div>
+          <form class="slot__form" method="post" action="/admin/packages/upload" enctype="multipart/form-data">
+            <input type="hidden" name="name" value="{{ name }}">
+            <input type="hidden" name="display_name" value="{{ display }}">
+            <input type="hidden" name="version" value="latest">
+            <input type="hidden" name="platform" value="{{ plat }}">
+            <input type="hidden" name="arch" value="{{ arch }}">
+            <input type="hidden" name="description" value="{{ display }} 安装包">
+            <div class="slot__actions">
+              <input class="slot__file" type="file" name="file" required>
+              <button type="submit" class="btn btn--primary btn--sm">{% if pkg.found %}更新{% else %}上传{% endif %}</button>
+            </div>
           </form>
-        </td>
-      </tr>
+          {% if pkg.found and pkg.plat_data %}
+          <form method="post" action="/admin/packages/delete" style="margin-top:8px;" onsubmit="return confirm('确认删除？')">
+            <input type="hidden" name="name" value="{{ name }}">
+            <input type="hidden" name="platform" value="{{ plat }}">
+            <input type="hidden" name="arch" value="{{ arch }}">
+            <button type="submit" class="btn--danger">删除</button>
+          </form>
+          {% endif %}
+        </div>
       {% endfor %}
-      {% endfor %}
-    </table>
     </div>
-    {% else %}
-    <div class="empty">暂无上传的安装包</div>
-    {% endif %}
-
   </main>
 </body>
 </html>

@@ -151,3 +151,102 @@
 - **验证**：ruff ✅, pytest 81/81 ✅, coverage 86% ✅, API /latest 返回 v1.4.0 ✅, 首次下载缓存 ✅, 二次下载秒下 ✅, 首页安装包下载 ✅
 - **注意事项**：不再需要手动同步 release。admin dashboard 移除了同步按钮。`.env` 中 GITHUB_TOKEN 必须配置。首次下载每个平台/架构组合会慢（~1-2 分钟），之后走缓存。
 
+---
+
+### [TASK-014] 下载文件名修复 + 生产环境部署 + CI 修复
+- **日期**：2026-06-06
+- **类型**：fix
+- **摘要**：
+  1. **下载文件名修复**：Codex Switch 下载加 `Content-Disposition` 头，文件名取 GitHub 原始 asset 名（如 `Codex-Switch-1.4.0-mac-arm64.dmg`）；安装包下载文件名取上传时的 `original_filename`。
+  2. **生产数据库修复**：`database.py` 显式导入所有模型，解决 `NoReferencedTableError`（`download_records.release_id` FK 找不到 `releases` 表）。
+  3. **Nginx 配置修复**：`client_max_body_size` 从 16M 改到 512M（支持大安装包上传）；`location /api/v1/packages` 去尾部斜杠修复 301 重定向；移除废弃的 `/admin/sync-releases` location。
+  4. **CI 修复**：`ruff format` 格式问题 + `test_settings_defaults` CI 环境变量覆盖问题。
+  5. **部署信息存储**：`.deploy/production.md` 保存服务器 SSH 信息，`.gitignore` 添加 `.deploy/`。
+- **变更文件**：src/api/v1/update.py, src/api/v1/packages.py, src/services/package_manager.py, src/services/release_sync.py, src/database.py, docker/nginx.conf, tests/unit/test_config.py, .gitignore
+- **验证**：ruff ✅, pytest 81/81 ✅, 生产 200 ✅, download Content-Disposition ✅
+
+---
+
+### [TASK-015] 使用指南重写 + Windows 11 要求 + 图片占位
+- **日期**：2026-06-06
+- **类型**：feat
+- **摘要**：
+  1. **指南页完全重写**：5 步改为"获取 DeepSeek API Key → 安装 Codex 桌面版 → 安装 Claude 桌面版 → 安装 Codex Switch → 常见问题"。每步都包含动态下载按钮（JS 从 `/latest` 和 `/packages` API 拉取）。
+  2. **Claude 桌面版安装指南**：详细 Windows 11 安装步骤，包括重命名为 `Claude.msix`、管理员 PowerShell 执行 `Add-AppxProvisionedPackage` 和 `dism` 命令、安装后打开 `Claude-3p\claude-code` 目录解压 `2.1.138.zip`。
+  3. **Windows 系统要求**：下载页和指南页统一改为 Windows 11。
+  4. **图片占位**：17 处 `guide__placeholder` 虚线框，标记 `[图：...]` 说明，方便后续填入截图。
+  5. **CSS**：新增 `.guide__placeholder` 和 `.guide__download` 样式。
+- **变更文件**：src/portal/templates/guide.html（重写）、src/portal/templates/download.html、src/static/css/apple.css、tests/integration/test_portal.py
+- **验证**：ruff ✅, pytest 81/81 ✅, 指南页 5 步骤 ✅, 下载按钮 3 处 ✅, 图片占位 17 处 ✅
+
+---
+
+### [TASK-016] 使用指南改为二选一结构 + ai-coding-ok 触发修复
+- **日期**：2026-06-06
+- **类型**：refactor
+- **摘要**：
+  1. **指南二选一结构**：将"安装 Codex 桌面版"和"安装 Claude 桌面版"从顺序步骤改为同级的二选一选项。侧边栏加入二级子菜单（选项 A / 选项 B），内容区顶部加入两个选择卡片（`guide__choice-card`），视觉上明确用户只需选一个安装。
+  2. **CLAUDE.md 强化**：改为极简 ALL-CAPS 直接指令，无法跳过。
+  3. **sessionStart hook 修复**：settings.json 与 settings.local.json 冲突导致 hook 不生效，合并到 settings.local.json 并删除 settings.json。
+  4. **CSS**：新增 `.guide__choice`、`.guide__choice-card`、`.guide__divider`、`.guide__subnav` 样式。
+- **变更文件**：src/portal/templates/guide.html, src/static/css/apple.css, CLAUDE.md, .claude/settings.local.json, tests/integration/test_portal.py
+- **验证**：ruff ✅, pytest 81/81 ✅, 二选一卡片 2 个 ✅, 侧边栏子菜单 ✅
+
+---
+
+### [TASK-017] 使用指南图片占位 → 具体命名 img 标签
+- **日期**：2026-06-06
+- **类型**：feat
+- **摘要**：17 处 `guide__placeholder` 虚线框全部替换为具体命名的 `<img>` 标签（如 `step1-deepseek-home.png`）。新增 `guide__img` CSS 样式（`max-width:100%; border-radius; box-shadow`）。图片目录：`src/static/images/guide/`。
+- **变更文件**：src/portal/templates/guide.html, src/static/css/apple.css
+- **验证**：ruff ✅, pytest 81/81 ✅, 占位符 0 残留 ✅, img 标签 17 个 ✅
+
+---
+
+### [TASK-018] 使用指南 macOS/Windows 安装分区 + Claude 新增 macOS
+- **日期**：2026-06-06
+- **类型**：feat
+- **摘要**：
+  1. Codex 桌面版和 Claude 桌面版均分为 macOS 安装和 Windows 安装独立章节（`h4` + `guide__divider` 分隔）。
+  2. Claude 桌面版新增 macOS 安装步骤（dmg → Applications），新增截图占位 `step2b-macos-install.png`。
+  3. Claude 选择卡片描述从 "Windows 11" 改为 "macOS / Windows 11"。
+- **变更文件**：src/portal/templates/guide.html
+- **验证**：ruff ✅, pytest 81/81 ✅, macOS/Windows 标题各 2 个 ✅
+
+---
+
+### [TASK-019] 使用指南交互优化：渐进式选择（工具 → 平台 → 指南）
+- **日期**：2026-06-06
+- **类型**：feat
+- **摘要**：第二步改为三步渐进式交互：
+  1. 两个工具选择卡片（Codex / Claude），点击高亮选中
+  2. 选择工具后出现 macOS / Windows 平台选择按钮
+  3. 选择平台后显示对应安装指南面板（带淡入动画）
+  支持随时切换。JS 函数 `selectTool()` / `selectPlatform()` 控制显示隐藏，4 个 `guide__step-content` 面板。
+  新增 CSS：`.guide__choice-card--active`、`.guide__platform-picker`、`.guide__platform-btn`、`@keyframes guideFadeIn`。
+- **变更文件**：src/portal/templates/guide.html, src/static/css/apple.css, tests/integration/test_portal.py
+- **验证**：ruff ✅, pytest 81/81 ✅
+
+
+---
+
+### [TASK-020] admin/packages 极简化 + 指南下载动态匹配平台
+- **日期**：2026-06-06
+- **类型**：refactor
+- **摘要**：
+  1. **admin/packages 极简化**：移除复杂表单和表格，改为 4 张固定卡片（Codex/Claude × macOS/Windows），隐藏固定字段，只需选文件上传即可覆盖更新。修复 Jinja2 HTML 实体转义（`|safe`）。
+  2. **指南下载匹配平台**：安装包下载从 `pkg.platforms[0]` 改为按 `selPlat` 精确匹配。
+- **变更文件**：src/admin/templates/packages.html（重写）、src/portal/templates/guide.html
+- **验证**：ruff ✅, pytest 81/81 ✅
+
+---
+
+### [TASK-021] xattr 文案修正 + 2.1.138.zip 下载 + 截图清单
+- **日期**：2026-06-06
+- **类型**：fix
+- **摘要**：
+  1. macOS 警告文案改为"安装后需要在终端执行以下命令，否则会报错"
+  2. Claude Windows 安装步骤新增 `2.1.138.zip` 下载按钮（`/static/files/2.1.138.zip`）
+  3. 整理 10 张截图清单，按场景分组（通用/Codex/Claude/macOS 错误）
+- **变更文件**：src/portal/templates/guide.html, src/static/files/2.1.138.zip（新增）
+- **验证**：本地渲染 ✅, zip 下载 200 ✅

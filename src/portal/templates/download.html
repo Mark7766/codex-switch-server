@@ -44,6 +44,10 @@ document.addEventListener('DOMContentLoaded', function() {
         var dlUrl = '/api/v1/update/download/' + latest.version + '/' + p.id + '-' + file.arch;
         var cachedTag = file.cached ? '' : ' <span style="font-size:12px;color:#86868b;">（首次下载需从 GitHub 获取，请耐心等待）</span>';
 
+        var osVer = p.id === 'windows' ? 'Windows 11' :
+                    p.id === 'macos' ? 'macOS 11.0 及以上' :
+                    p.id === 'linux' ? 'Ubuntu 20.04+ / Debian 11+' : p.label + ' 最新版本';
+
         panel.innerHTML =
           '<div class="version-card">' +
             '<div class="version-card__version">' + v + '</div>' +
@@ -56,7 +60,7 @@ document.addEventListener('DOMContentLoaded', function() {
           '<div class="requirements">' +
             '<div class="requirements__title">系统要求</div>' +
             '<ul class="requirements__list">' +
-              '<li>' + p.label + ' 最新版本</li>' +
+              '<li>' + osVer + '</li>' +
               '<li>4 GB RAM 及以上</li>' +
               '<li>100 MB 可用磁盘空间</li>' +
               '<li>需要网络连接（用于代理 DeepSeek API）</li>' +
@@ -121,7 +125,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="requirements">
       <div class="requirements__title">系统要求</div>
       <ul class="requirements__list">
-        <li>Windows 10 及以上</li>
+        <li>Windows 11</li>
         <li>4 GB RAM 及以上</li>
         <li>100 MB 可用磁盘空间</li>
         <li>需要网络连接（用于代理 DeepSeek API）</li>

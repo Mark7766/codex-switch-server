@@ -68,19 +68,23 @@ async def test_guide_returns_200(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_guide_contains_all_steps(client: AsyncClient):
     response = await client.get("/guide")
-    assert "下载安装" in response.text
-    assert "获取 API Key" in response.text
-    assert "启动代理" in response.text
-    assert "配置 Codex" in response.text
-    assert "配置 Claude" in response.text
+    assert "获取 DeepSeek API Key" in response.text
+    assert "Codex 桌面版" in response.text
+    assert "Claude 桌面版" in response.text
+    assert "下载 Codex Switch" in response.text
+    assert "配置 Codex Switch" in response.text
     assert "常见问题" in response.text
+    assert "pickTool" in response.text
+    assert "pickPlatform" in response.text
 
 
 @pytest.mark.asyncio
 async def test_guide_contains_nav_links(client: AsyncClient):
     response = await client.get("/guide")
-    assert 'href="#step1"' in response.text
-    assert 'href="#step6"' in response.text
+    assert "你要安装哪个工具" in response.text
+    assert "screen-tool" in response.text
+    assert "screen-platform" in response.text
+    assert "screen-guide" in response.text
 
 
 @pytest.mark.asyncio

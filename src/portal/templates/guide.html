@@ -1,100 +1,338 @@
 {% extends "base.html" %}
 {% block title %}使用指南{% endblock %}
 
+{% block head %}
+<style>
+.wizard { max-width:720px; margin:0 auto; padding:80px 24px 64px; min-height:70vh; }
+.wizard h1 { font-size:40px; font-weight:600; letter-spacing:-0.01em; text-align:center; margin-bottom:8px; }
+.wizard h2 { font-size:28px; font-weight:600; text-align:center; margin-bottom:4px; }
+.wizard-sub { text-align:center; color:var(--color-text-secondary); font-size:17px; margin-bottom:48px; }
+
+/* Choice cards */
+.choice-row { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+.choice-card { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:48px 24px; background:#fff; border:2px solid #e5e5ea; border-radius:20px; cursor:pointer; transition:all .2s; text-decoration:none; min-height:200px; }
+.choice-card:hover { border-color:var(--color-accent); box-shadow:0 8px 30px rgba(0,113,227,.12); transform:translateY(-2px); }
+.choice-card__icon { font-size:56px; margin-bottom:16px; }
+.choice-card__name { font-size:21px; font-weight:600; color:var(--color-text-primary); margin-bottom:4px; }
+.choice-card__desc { font-size:14px; color:var(--color-text-secondary); }
+
+/* Guide steps */
+.guide-steps { display:none; }
+.guide-steps--show { display:block; }
+.guide-step { display:flex; gap:20px; align-items:flex-start; padding:28px 0; border-bottom:1px solid #f0f0f5; }
+.guide-step:last-child { border-bottom:none; }
+.guide-step__num { width:32px; height:32px; border-radius:50%; background:var(--color-accent); color:#fff; font-size:15px; font-weight:600; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.guide-step__body { flex:1; padding-top:4px; }
+.guide-step__body h3 { font-size:17px; font-weight:600; margin-bottom:4px; }
+.guide-step__body p { font-size:15px; color:var(--color-text-secondary); margin-bottom:8px; line-height:1.5; }
+.guide-step__body code { background:#f0f0f5; padding:1px 6px; border-radius:4px; font-size:13px; }
+.guide-step__body pre { background:#1d1d1f; color:#f5f5f7; border-radius:8px; padding:16px; font-size:13px; overflow-x:auto; margin-top:8px; line-height:1.6; }
+.guide-step__body pre code { background:none; padding:0; color:inherit; }
+.guide-step__img { margin-top:12px; max-width:100%; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,.08); display:none; }
+.guide-step__img--loaded { display:block; }
+.guide-step__body .btn { font-size:14px; padding:8px 20px; border-radius:24px; }
+
+/* Back link */
+.back-row { text-align:center; margin-bottom:40px; display:none; }
+.back-row--show { display:block; }
+.back-link { color:var(--color-accent); font-size:14px; cursor:pointer; text-decoration:none; }
+.back-link:hover { text-decoration:underline; }
+
+/* FAQ */
+.faq-section { margin-top:64px; padding-top:48px; border-top:1px solid #f0f0f5; }
+.faq-section h2 { margin-bottom:32px; }
+.faq-section dt { font-weight:600; margin-top:20px; }
+.faq-section dd { color:var(--color-text-secondary); margin-left:0; margin-top:4px; font-size:15px; }
+
+@media (max-width:640px) {
+  .choice-row { grid-template-columns:1fr; }
+  .wizard h1 { font-size:28px; }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 
-<section class="page-header">
-  <h1 class="page-header__title">使用指南</h1>
-  <p class="page-header__subtitle">从下载到配置，一步步带你完成</p>
-</section>
+<div class="wizard">
 
-<div class="guide">
-  <aside class="guide__sidebar">
-    <ul class="guide__nav" id="guideNav">
-      <li class="guide__nav-item"><a href="#step1" class="guide__nav-link guide__nav-link--active">1. 下载安装</a></li>
-      <li class="guide__nav-item"><a href="#step2" class="guide__nav-link">2. 获取 API Key</a></li>
-      <li class="guide__nav-item"><a href="#step3" class="guide__nav-link">3. 启动代理</a></li>
-      <li class="guide__nav-item"><a href="#step4" class="guide__nav-link">4. 配置 Codex</a></li>
-      <li class="guide__nav-item"><a href="#step5" class="guide__nav-link">5. 配置 Claude</a></li>
-      <li class="guide__nav-item"><a href="#step6" class="guide__nav-link">6. 常见问题</a></li>
-    </ul>
-  </aside>
-
-  <div class="guide__content">
-
-    <section class="guide__section" id="step1">
-      <h2>&#128229; 第一步：下载安装</h2>
-      <ol>
-        <li>前往 <a href="/download">下载页面</a> 选择你的操作系统平台。</li>
-        <li>下载对应版本的安装包。</li>
-        <li>macOS：打开 <code>.dmg</code> 文件，将 Codex Switch 拖入 Applications 文件夹。</li>
-        <li>Windows：运行 <code>.exe</code> 安装向导，按提示完成安装。</li>
-        <li>首次启动 Codex Switch 会弹出配置向导，跟随指引完成初始设置。</li>
-      </ol>
-      <div class="guide__note">
-        <strong>提示：</strong> 如果 macOS 提示"无法验证开发者"，请在系统偏好设置 → 安全性与隐私中点击"仍要打开"。
+  <!-- ===== Screen: Pick Tool ===== -->
+  <div id="screen-tool">
+    <h1>你要安装哪个工具？</h1>
+    <p class="wizard-sub">选择一个 AI 编程工具，开始安装</p>
+    <div class="choice-row">
+      <div class="choice-card" onclick="pickTool('codex')">
+        <div class="choice-card__icon">&#128421;</div>
+        <div class="choice-card__name">Codex 桌面版</div>
+        <div class="choice-card__desc">OpenAI 官方桌面应用</div>
       </div>
-    </section>
-
-    <section class="guide__section" id="step2">
-      <h2>&#128273; 第二步：获取 DeepSeek API Key</h2>
-      <ol>
-        <li>访问 <a href="https://platform.deepseek.com" target="_blank" rel="noopener">platform.deepseek.com</a> 注册账号。</li>
-        <li>登录后进入 "API Keys" 页面，点击"创建 API Key"。</li>
-        <li>复制生成的 API Key（格式为 <code>sk-xxx</code>）。</li>
-        <li>回到 Codex Switch，在配置页面填入 API Key。</li>
-      </ol>
-      <div class="guide__note">
-        <strong>提示：</strong> DeepSeek 新用户注册即送额度，可以免费试用。API Key 仅保存在你的本机，不会上传到任何服务器。
+      <div class="choice-card" onclick="pickTool('claude')">
+        <div class="choice-card__icon">&#129504;</div>
+        <div class="choice-card__name">Claude 桌面版</div>
+        <div class="choice-card__desc">Anthropic 官方桌面应用</div>
       </div>
-    </section>
+    </div>
+  </div>
 
-    <section class="guide__section" id="step3">
-      <h2>&#128640; 第三步：启动代理</h2>
-      <ol>
-        <li>在 Codex Switch 主界面，确认默认模型已选择（推荐 DeepSeek V4 Flash）。</li>
-        <li>点击"启动代理"按钮，等待状态变为"运行中"。</li>
-        <li>默认代理地址为 <code>http://127.0.0.1:11435</code>，可在设置中修改端口。</li>
-      </ol>
-    </section>
+  <!-- ===== Screen: Pick Platform ===== -->
+  <div id="screen-platform" style="display:none;">
+    <div class="back-row back-row--show">
+      <a class="back-link" onclick="goBack('tool')">&larr; 重新选择工具</a>
+    </div>
+    <h2 id="platform-question"></h2>
+    <p class="wizard-sub">选择你的操作系统，获取对应的安装指南</p>
+    <div class="choice-row">
+      <div class="choice-card" onclick="pickPlatform('macos')">
+        <div class="choice-card__icon">&#63737;</div>
+        <div class="choice-card__name">macOS</div>
+        <div class="choice-card__desc">Apple 芯片 / Intel 芯片</div>
+      </div>
+      <div class="choice-card" onclick="pickPlatform('windows')">
+        <div class="choice-card__icon">&#128193;</div>
+        <div class="choice-card__name">Windows</div>
+        <div class="choice-card__desc">Windows 11</div>
+      </div>
+    </div>
+  </div>
 
-    <section class="guide__section" id="step4">
-      <h2>&#128187; 第四步：配置 Codex CLI / Desktop</h2>
-      <p>Codex Switch 可以自动配置以下工具的代理设置：</p>
-      <ul>
-        <li><strong>Codex CLI</strong> — 自动写入 <code>~/.codex/config.toml</code> 和 <code>auth.json</code></li>
-        <li><strong>Codex Desktop</strong> — 自动配置代理地址和 API Key</li>
-      </ul>
-      <p>在 Codex Switch 设置中找到对应工具的配置项，点击"自动配置"即可。</p>
-    </section>
+  <!-- ===== Screen: Guide Steps ===== -->
+  <div id="screen-guide" style="display:none;">
+    <div class="back-row back-row--show">
+      <a class="back-link" onclick="goBack('platform')">&larr; 重新选择操作系统</a>
+      &nbsp;&nbsp;
+      <a class="back-link" onclick="goBack('tool')">重新选择工具</a>
+    </div>
+    <h2 id="guide-title"></h2>
+    <p class="wizard-sub" id="guide-subtitle"></p>
 
-    <section class="guide__section" id="step5">
-      <h2>&#129504; 第五步：配置 Claude CLI / Desktop</h2>
-      <p>Codex Switch 同样支持 Claude 系列工具的配置：</p>
-      <ul>
-        <li><strong>Claude Code CLI</strong> — 自动写入 <code>~/.claude/settings.json</code> 和 shell 环境变量</li>
-        <li><strong>Claude Desktop</strong> — 自动配置第三方推理网关配置文件</li>
-      </ul>
-      <p>在设置中开启 "Claude CLI 管理" 或 "Claude Desktop 管理"，Codex Switch 会自动检测已安装的工具并完成配置。</p>
-    </section>
+    <div class="guide-steps" id="steps-all">
 
-    <section class="guide__section" id="step6">
-      <h2>&#10067; 第六步：常见问题</h2>
+      <!-- Step 1: API Key -->
+      <div class="guide-step">
+        <div class="guide-step__num">1</div>
+        <div class="guide-step__body">
+          <h3>获取 DeepSeek API Key</h3>
+          <p>这是使用 AI 工具的前提，注册即送免费额度。</p>
+          <a href="https://platform.deepseek.com" target="_blank" rel="noopener" class="btn btn--primary">创建 API Key</a>
+          <img src="/static/images/guide/step-apikey.png" alt="DeepSeek API Keys 页面" class="guide-step__img" onload="this.classList.add('guide-step__img--loaded')" onerror="this.style.display='none'">
+        </div>
+      </div>
 
-      <p><strong>代理无法启动？</strong></p>
-      <p>检查端口 11435 是否被其他程序占用。可以在设置中更换端口号。</p>
+      <!-- Step 2: Download Tool -->
+      <div class="guide-step">
+        <div class="guide-step__num">2</div>
+        <div class="guide-step__body">
+          <h3 id="step2-title"></h3>
+          <p id="step2-desc"></p>
+          <div id="step2-dl"></div>
+          <img id="step2-img" src="" alt="" class="guide-step__img" onload="this.classList.add('guide-step__img--loaded')" onerror="this.style.display='none'">
+        </div>
+      </div>
 
-      <p><strong>模型调用报错？</strong></p>
-      <p>确认 API Key 是否正确填入，确认 DeepSeek 账户是否有余额。可以查看 Codex Switch 的日志定位具体错误。</p>
+      <!-- Step 3: Install Tool -->
+      <div class="guide-step">
+        <div class="guide-step__num">3</div>
+        <div class="guide-step__body">
+          <h3 id="step3-title"></h3>
+          <div id="step3-content"></div>
+          <img id="step3-img" src="" alt="" class="guide-step__img" onload="this.classList.add('guide-step__img--loaded')" onerror="this.style.display='none'">
+        </div>
+      </div>
 
-      <p><strong>Claude Desktop 无法连接？</strong></p>
-      <p>确保 Codex Switch 代理已启动，然后在 Claude Desktop 设置中将 API 地址改为 <code>http://127.0.0.1:11435/anthropic</code>。</p>
+      <!-- Step 4: Download + Install Codex Switch -->
+      <div class="guide-step">
+        <div class="guide-step__num">4</div>
+        <div class="guide-step__body">
+          <h3>下载 Codex Switch</h3>
+          <p>本地代理管理工具，让 Codex / Claude 通过 DeepSeek API 工作。</p>
+          <div id="step4-dl"></div>
+          <div id="step4-install"></div>
+          <img id="step4-img" src="" alt="" class="guide-step__img" onload="this.classList.add('guide-step__img--loaded')" onerror="this.style.display='none'">
+        </div>
+      </div>
 
-      <p><strong>下载速度慢？</strong></p>
-      <p>codex-switch-server 提供了国内镜像，在 Codex Switch 设置中将更新镜像切换为"官方镜像"。</p>
-    </section>
+      <!-- Step 5: Configure Codex Switch -->
+      <div class="guide-step">
+        <div class="guide-step__num">5</div>
+        <div class="guide-step__body">
+          <h3>配置 Codex Switch</h3>
+          <ol style="margin:0;padding-left:20px;font-size:15px;color:var(--color-text-secondary);line-height:1.6;">
+            <li>启动 Codex Switch，进入<strong>设置</strong></li>
+            <li>填入第一步获取的 <strong>DeepSeek API Key</strong>（<code>sk-xxx</code>）</li>
+            <li>选择模型（推荐 <strong>DeepSeek V4 Flash</strong>）</li>
+            <li>点击<strong>"启动代理"</strong>，等待绿色"运行中"状态</li>
+          </ol>
+          <p style="margin-top:8px;color:var(--color-text-tertiary);">代理地址：<code>http://127.0.0.1:11435</code></p>
+          <img src="/static/images/guide/step-config-switch.png" alt="Codex Switch 配置界面" class="guide-step__img" onload="this.classList.add('guide-step__img--loaded')" onerror="this.style.display='none'">
+        </div>
+      </div>
 
+      <!-- Step 6: Verify -->
+      <div class="guide-step">
+        <div class="guide-step__num">6</div>
+        <div class="guide-step__body">
+          <h3 id="step6-title"></h3>
+          <p id="step6-desc"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FAQ ===== -->
+  <div class="faq-section">
+    <h2>常见问题</h2>
+    <dl>
+      <dt>代理无法启动？</dt><dd>检查端口 11435 是否被占用，可在设置中更换。</dd>
+      <dt>模型调用报错？</dt><dd>检查 API Key 是否正确、DeepSeek 账户是否有余额。</dd>
+      <dt>Claude Desktop 安装失败？</dt><dd>确保已启用 Windows 虚拟机平台（VirtualMachinePlatform），在"Windows 功能"中勾选并重启。</dd>
+      <dt>PowerShell 命令报错？</dt><dd>确认以<strong>管理员身份</strong>运行 PowerShell，且已 cd 到 <code>Claude.msix</code> 所在目录。</dd>
+    </dl>
   </div>
 </div>
+
+<script>
+var selTool = '', selPlat = '';
+
+function pickTool(t) {
+  selTool = t;
+  document.getElementById('screen-tool').style.display = 'none';
+  document.getElementById('platform-question').textContent = '你的操作系统是？';
+  document.getElementById('screen-platform').style.display = 'block';
+  document.getElementById('screen-guide').style.display = 'none';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function pickPlatform(p) {
+  selPlat = p;
+  document.getElementById('screen-platform').style.display = 'none';
+  renderGuide();
+  document.getElementById('screen-guide').style.display = 'block';
+  document.getElementById('steps-all').classList.add('guide-steps--show');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function goBack(to) {
+  if (to === 'tool') {
+    selTool = ''; selPlat = '';
+    document.getElementById('screen-tool').style.display = 'block';
+    document.getElementById('screen-platform').style.display = 'none';
+    document.getElementById('screen-guide').style.display = 'none';
+  } else {
+    selPlat = '';
+    document.getElementById('screen-platform').style.display = 'block';
+    document.getElementById('screen-guide').style.display = 'none';
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function img(name) { return '/static/images/guide/' + name; }
+
+function renderGuide() {
+  var toolName = selTool === 'codex' ? 'Codex 桌面版' : 'Claude 桌面版';
+  var osName = selPlat === 'macos' ? 'macOS' : 'Windows';
+  document.getElementById('guide-title').textContent = '在 ' + osName + ' 上安装 ' + toolName;
+  document.getElementById('guide-subtitle').textContent = '按照以下步骤，完成安装和配置';
+
+  // Step 2: Download tool
+  document.getElementById('step2-title').textContent = '下载 ' + toolName;
+  document.getElementById('step2-desc').textContent = '从 Codex Switch 国内镜像高速下载。';
+  document.getElementById('step2-dl').innerHTML = '<span style="color:#86868b;">加载中...</span>';
+  document.getElementById('step2-img').src = img('step-dl-' + selTool + '.png');
+
+  // Step 3: Install tool
+  document.getElementById('step3-title').textContent = '安装 ' + toolName;
+  document.getElementById('step3-img').src = img('step-install-' + selTool + '-' + selPlat + '.png');
+  if (selTool === 'codex' && selPlat === 'macos') {
+    document.getElementById('step3-content').innerHTML =
+      '<p>打开 <code>.dmg</code> 文件，将 <strong>' + toolName + '</strong> 拖入 <strong>Applications</strong> 文件夹。</p>' +
+      '<p>如提示"无法验证开发者"，到<strong>系统设置 → 安全性与隐私</strong>中点击"仍要打开"。</p>';
+  } else if (selTool === 'codex' && selPlat === 'windows') {
+    document.getElementById('step3-content').innerHTML =
+      '<p>运行 <code>.exe</code> 安装程序，按照向导提示完成安装。</p>';
+  } else if (selTool === 'claude' && selPlat === 'macos') {
+    document.getElementById('step3-content').innerHTML =
+      '<p>打开 <code>.dmg</code> 文件，将 <strong>' + toolName + '</strong> 拖入 <strong>Applications</strong> 文件夹。</p>' +
+      '<p>如提示"无法验证开发者"，到<strong>系统设置 → 安全性与隐私</strong>中点击"仍要打开"。</p>';
+  } else {
+    document.getElementById('step3-content').innerHTML =
+      '<ol style="margin:0;padding-left:20px;font-size:15px;color:var(--color-text-secondary);line-height:1.6;">' +
+        '<li>将下载的文件<strong>重命名为 <code>Claude.msix</code></strong></li>' +
+        '<li>右键开始菜单 → <strong>Windows PowerShell (管理员)</strong></li>' +
+        '<li>cd 到文件所在目录，依次执行：<pre>Add-AppxProvisionedPackage -Online -PackagePath "Claude.msix" -SkipLicense -Regions "all"\ndism /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart</pre></li>' +
+        '<li>双击 <code>Claude.msix</code> 完成安装</li>' +
+        '<li>打开 <code>C:\\Users\\你的用户名\\AppData\\Local\\Claude-3p\\claude-code</code></li>' +
+        '<li><a href="/static/files/2.1.138.zip" class="btn btn--primary" style="font-size:13px;padding:4px 14px;">下载 2.1.138.zip</a> 解压到该目录</li>' +
+      '</ol>';
+  }
+
+  // Step 4: Codex Switch install instructions
+  if (selPlat === 'macos') {
+    document.getElementById('step4-install').innerHTML =
+      '<div style="margin-top:12px;padding:12px;background:#fff8f0;border-radius:8px;">' +
+        '<p style="color:#cc6600;font-size:14px;font-weight:600;margin-bottom:4px;">&#9888; 安装后需要在终端执行以下命令，否则会报错：</p>' +
+        '<pre style="margin:0;"><code>xattr -cr /Applications/Codex\\ Switch.app</code></pre>' +
+        '<p style="color:var(--color-text-secondary);font-size:13px;margin-top:4px;">在<strong>终端</strong>中粘贴执行即可。</p>' +
+      '</div>';
+    document.getElementById('step4-img').src = img('codex-switch-mac-error.jpg');
+  } else {
+    document.getElementById('step4-install').innerHTML =
+      '<p style="margin-top:8px;">运行下载的 <code>.exe</code> 安装程序，按照向导提示完成安装。</p>';
+    document.getElementById('step4-img').src = img('step-dl-switch-windows.png');
+  }
+
+  // Step 6: Verify
+  document.getElementById('step6-title').textContent = '启动验证';
+  document.getElementById('step6-desc').textContent =
+    '启动 ' + toolName + '，如果 Codex Switch 代理已运行，' + toolName + ' 将自动通过代理连接 DeepSeek API。';
+
+  loadDownloads();
+}
+
+function loadDownloads() {
+  var preferArch = selPlat === 'macos' ? 'arm64' : 'x64';
+  // Codex Switch
+  fetch('/api/v1/update/latest')
+    .then(function(r) { return r.json(); })
+    .then(function(latest) {
+      if (!latest || !latest.version) return;
+      var f = null;
+      for (var i = 0; i < (latest.files || []).length; i++) {
+        if (latest.files[i].platform === selPlat && latest.files[i].arch === preferArch) { f = latest.files[i]; break; }
+      }
+      if (!f) {
+        for (var i = 0; i < (latest.files || []).length; i++) {
+          if (latest.files[i].platform === selPlat) { f = latest.files[i]; break; }
+        }
+      }
+      if (f) {
+        var mb = f.file_size ? (f.file_size / 1048576).toFixed(0) : '?';
+        var html = '<a href="/api/v1/update/download/' + latest.version + '/' + f.platform + '-' + f.arch +
+                   '" class="btn btn--primary">下载 Codex Switch ' + mb + ' MB</a>';
+        document.getElementById('step4-dl').innerHTML = html;
+      }
+    });
+
+  // Tool package — match by selected platform
+  fetch('/api/v1/packages')
+    .then(function(r) { return r.json(); })
+    .then(function(resp) {
+      var packages = resp.data && resp.data.packages ? resp.data.packages : [];
+      packages.forEach(function(pkg) {
+        var target = pkg.name === 'codex-desktop' ? 'codex' : 'claude';
+        if (target !== selTool) return;
+        // Find the platform matching user's selection
+        var plat = null;
+        for (var i = 0; i < (pkg.platforms || []).length; i++) {
+          if (pkg.platforms[i].platform === selPlat) { plat = pkg.platforms[i]; break; }
+        }
+        if (!plat) return;
+        var mb = (plat.file_size / 1048576).toFixed(0);
+        var url = '/api/v1/packages/' + encodeURIComponent(pkg.name) + '/' +
+                  encodeURIComponent(plat.version) + '/' + plat.platform + '-' + plat.arch;
+        document.getElementById('step2-dl').innerHTML =
+          '<a href="' + url + '" class="btn btn--primary">下载 ' + (selTool==='codex'?'Codex':'Claude') + ' Desktop ' + mb + ' MB</a>';
+      });
+    });
+}
+</script>
 
 {% endblock %}

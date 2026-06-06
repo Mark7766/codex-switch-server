@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from urllib.parse import quote
+
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -34,14 +36,21 @@ async def download_release(
 ) -> StreamingResponse:
     svc = ReleaseSyncService(db)
 
+    # Determine filename: prefer GitHub's original asset name, fallback to constructed name
+    asset = await svc.get_github_asset_info(version, platform, arch)
+    filename = asset.get("original_name") if asset else None
+    if not filename:
+        # Fallback: look up from cached file
+        ftype = asset.get("file_type", "") if asset else ""
+        filename = f"Codex-Switch-{version}-{platform}-{arch}.{ftype}" if ftype else None
+
     # 1. Check local cache
     file_path = await svc.get_download_path(version, platform, arch)
     if file_path is not None:
         await svc.record_download(version, platform, arch, ip_hash=request.client.host if request.client else "")
-        return _stream_file(file_path)
+        return _stream_file(file_path, filename)
 
     # 2. Fetch from GitHub, cache, and serve
-    asset = await svc.get_github_asset_info(version, platform, arch)
     if not asset:
         raise HTTPException(status_code=404, detail="No asset found for this platform")
 
@@ -56,13 +65,17 @@ async def download_release(
         raise HTTPException(status_code=502, detail="Failed to download from GitHub")
 
     await svc.record_download(version, platform, arch, ip_hash=request.client.host if request.client else "")
-    return _stream_file(file_path)
+    return _stream_file(file_path, filename)
 
 
-def _stream_file(file_path: str) -> StreamingResponse:
+def _stream_file(file_path: str, filename: str | None = None) -> StreamingResponse:
     def _iter():
         with open(file_path, "rb") as f:
             while chunk := f.read(8192):
                 yield chunk
 
-    return StreamingResponse(_iter(), media_type="application/octet-stream")
+    headers = {}
+    if filename:
+        headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(filename)}"
+
+    return StreamingResponse(_iter(), media_type="application/octet-stream", headers=headers)

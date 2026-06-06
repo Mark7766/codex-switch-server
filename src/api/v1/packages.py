@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from urllib.parse import quote
+
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
@@ -35,7 +37,7 @@ async def download_package(
     request: Request,
 ) -> StreamingResponse:
     mgr = PackageManager()
-    file_path = await mgr.get_download_path(package_name, platform, arch)
+    file_path, filename = await mgr.get_download_path_with_name(package_name, platform, arch)
     if file_path is None:
         raise HTTPException(status_code=404, detail="Package not found")
 
@@ -44,4 +46,8 @@ async def download_package(
             while chunk := f.read(8192):
                 yield chunk
 
-    return StreamingResponse(_iter(), media_type="application/octet-stream")
+    headers = {}
+    if filename:
+        headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(filename)}"
+
+    return StreamingResponse(_iter(), media_type="application/octet-stream", headers=headers)

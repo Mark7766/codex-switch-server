@@ -80,6 +80,7 @@ class ReleaseSyncService:
                         "file_size": asset.get("size", 0),
                         "download_url": asset.get("browser_download_url", ""),
                         "path": cache_key,
+                        "original_name": name,
                         "cached": await self._storage.exists(cache_key),
                     }
                 )

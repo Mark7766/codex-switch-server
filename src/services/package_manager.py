@@ -112,13 +112,18 @@ class PackageManager:
         return False
 
     async def get_download_path(self, name: str, platform: str, arch: str) -> Path | None:
+        path, _ = await self.get_download_path_with_name(name, platform, arch)
+        return path
+
+    async def get_download_path_with_name(self, name: str, platform: str, arch: str) -> tuple[Path | None, str | None]:
         registry = await self._load_registry()
         for pkg in registry.get("packages", []):
             if pkg["name"] == name:
                 for plat in pkg.get("platforms", []):
                     if plat["platform"] == platform and plat["arch"] == arch:
-                        return await self._storage.get_path(plat["path"])
-        return None
+                        path = await self._storage.get_path(plat["path"])
+                        return path, plat.get("original_filename")
+        return None, None
 
     async def get_package_info(self, name: str, platform: str, arch: str) -> dict | None:
         registry = await self._load_registry()
