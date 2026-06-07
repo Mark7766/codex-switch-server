@@ -442,3 +442,12 @@
 - **摘要**：SSH 部署到 43.134.110.192，commit range `218fdc2`→`bacdebd`（22 files, +1682/-127）。部署内容：Admin 运营后台 v2（三 Tab + 埋点 + 下载精细化）、门户全站 29 点位埋点、桌面应用下载记录、NULL package_name 自动回填。生产验证 8/8 下载 COS 302 + 5/5 门户/API 200。
 - **部署记录**：`.deploy/deployments.md` 部署 2026-06-07-002
 - **验证**：8/8 COS 302 ✅, 5/5 门户/API 200 ✅
+
+---
+
+### [TASK-040] 修复微信分享卡片显示灰卡（缺少 OG 元标签）
+- **日期**：2026-06-07
+- **类型**：fix
+- **摘要**：微信分享到朋友圈显示灰色空白卡片——根因是 base.html 完全缺少 Open Graph 元标签。新增 6 个 OG 标签（og:type/site_name/title/description/url/image + 尺寸），分享图使用 logo.png（1024×1024）。CSS 版本号更新为 20260607c。
+- **变更文件**：src/portal/templates/base.html
+- **验证**：ruff ✅, pytest 113/113 ✅, OG 标签渲染正确 ✅
