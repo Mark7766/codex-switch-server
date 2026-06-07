@@ -115,7 +115,9 @@
 用户下载 AI 工具安装包:
   访问首页 / → 首页"下载 AI 编程工具"区块
   → JS fetch /api/v1/packages → 为已上传的包生成下载按钮
-  → 点击下载 → 直接从 data/packages/ 流式返回
+  → 点击下载 → 检查 COS packages/{name}/latest/{platform}-{arch}.{ext} → 302 跳转广州（2MB/s）
+  → COS 未命中 → 检查本地缓存 → nginx sendfile（降级）
+  → COS 对象设置 ContentDisposition 元数据，保证浏览器下载文件名正确
 
 遥测上报:
   codex-switch 定时 POST /api/v1/telemetry/events

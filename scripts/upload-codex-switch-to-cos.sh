@@ -51,10 +51,17 @@ for filename in "${!FILES[@]}"; do
   # Upload to COS using Python SDK
   uv run python3 -c "
 import os
+from urllib.parse import quote
 from qcloud_cos import CosConfig, CosS3Client
 config = CosConfig(Region='${COS_REGION}', SecretId='${COS_SECRET_ID}', SecretKey='${COS_SECRET_KEY}')
 client = CosS3Client(config)
-client.put_object_from_local_file(Bucket='${COS_BUCKET}', LocalFilePath='${tmpfile}', Key='${cos_key}')
+disposition = f\"attachment; filename*=UTF-8''{quote('${filename}')}\"
+client.put_object_from_local_file(
+    Bucket='${COS_BUCKET}',
+    LocalFilePath='${tmpfile}',
+    Key='${cos_key}',
+    ContentDisposition=disposition,
+)
 print(f'  Upload OK → ${COS_BASE}/${cos_key}')
 "
   rm -f "$tmpfile"

@@ -330,9 +330,14 @@
 
 ---
 
-### [TASK-028] COS 302 跳转 Content-Disposition 文件名修复
+### [TASK-029] COS 下载链路修复：桌面包 COS miss + 文件名错误
 - **日期**：2026-06-07
 - **类型**：fix
-- **摘要**：COS 302 跳转时未带 Content-Disposition 头，wget 用 URL 路径末段作为文件名（如 `macos-arm64` 而非 `Codex-Switch-1.4.0-mac-arm64.dmg`）。RedirectResponse 加 headers 参数。
-- **变更文件**：src/api/v1/update.py, src/api/v1/packages.py
-- **验证**：pytest 81/81 ✅, Content-Disposition ✅
+- **摘要**：修复两个 COS 下载缺陷：①桌面应用安装包已上传 COS 但不走 COS（走本地降级），根因是 `packages.py` COS key 依赖 `original_filename` 字段（旧 registry 无此字段则跳过 COS）；②COS 下载文件名来自 URL 路径末段而非原始文件名，根因是 302 重定向的 Content-Disposition 不传递到 COS。
+  - 修复 1：COS key 改为确定性格式 `packages/{name}/latest/{platform}-{arch}.{ext}`，不再依赖 `original_filename`
+  - 修复 2：上传 COS 时设置 `ContentDisposition` 元数据（`cos_storage.py` put() 加 content_disposition 参数）
+  - 修复 3：`exists()` 加 debug 日志，便于排查 COS miss
+  - 修复 4：`upload-codex-switch-to-cos.sh` 同步加 Content-Disposition
+- **变更文件**：src/utils/cos_storage.py, src/api/v1/packages.py, src/admin/router.py, src/api/v1/update.py, scripts/upload-codex-switch-to-cos.sh
+- **验证**：ruff ✅, pytest 81/81 ✅
+- **注意事项**：COS key 格式变更后，旧 COS 对象（`packages/{name}/latest/{原始文件名}`）变成孤儿。需在 admin/packages 页面重新上传一次桌面包即可。Codex Switch 的 COS key 不受影响。

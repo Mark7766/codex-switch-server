@@ -43,22 +43,25 @@ async def download_package(
     if file_path is None:
         raise HTTPException(status_code=404, detail="Package not found")
 
-    # 1. COS → fast download via Guangzhou CDN (use original filename as COS key)
+    # Build deterministic COS key: packages/{name}/latest/{platform}-{arch}.{ext}
+    plat_info = await mgr.get_package_info(package_name, platform, arch)
+    file_type = plat_info.get("file_type", "bin") if plat_info else "bin"
+    cos_key = f"packages/{package_name}/latest/{platform}-{arch}.{file_type}"
+
+    # 1. COS → fast download via Guangzhou CDN
     cos = CosStorage()
-    if original_filename:
-        cos_key = f"packages/{package_name}/latest/{original_filename}"
-        if cos.exists(cos_key):
-            headers = {}
-            if original_filename:
-                headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(original_filename)}"
-            return RedirectResponse(url=cos.public_url(cos_key), status_code=302, headers=headers)
+    if cos.exists(cos_key):
+        headers = {}
+        if original_filename:
+            headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(original_filename)}"
+        return RedirectResponse(url=cos.public_url(cos_key), status_code=302, headers=headers)
 
     # 2. Fallback: nginx X-Accel-Redirect from local disk
     p = Path(file_path)
     parts = list(p.parts)
     try:
         idx = parts.index("data")
-        cache_path = "/".join(parts[idx + 1:])
+        cache_path = "/".join(parts[idx + 1 :])
     except ValueError:
         cache_path = f"packages/{p.parent.parent.name}/{p.parent.name}/{p.name}"
 

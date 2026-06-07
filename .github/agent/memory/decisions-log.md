@@ -346,3 +346,38 @@
 > - `admin/router.py` 上传端点加 COS 同步上传
 > - `scripts/upload-codex-switch-to-cos.sh` 部署脚本
 > - `.env` 新增 `COS_SECRET_ID/COS_SECRET_KEY/COS_BUCKET/COS_REGION`
+
+---
+
+### ADR-010: COS 包下载 key 采用确定性格式
+
+- **日期**：2026-06-07
+- **状态**：✅ 已采纳
+- **决策者**：wangliang
+
+#### 背景
+> 桌面应用安装包的 COS key 原格式为 `packages/{name}/latest/{original_filename}`，依赖 registry 中的 `original_filename` 字段。旧 registry 条目无此字段会导致 COS 整段跳过（走本地降级）。同时 302 重定向的 `Content-Disposition` 无法传递到 COS 实际下载，文件名来自 URL 路径。
+
+#### 方案对比
+
+| 方案 | 优点 | 缺点 |
+|------|------|------|
+| 保持 original_filename 作为 key | COS URL 自带友好文件名 | 依赖 registry 字段；旧条目无此字段则 COS 失效 |
+| 确定性格式 `{name}/latest/{platform}-{arch}.{ext}` | 不依赖 registry 字段；上传和下载 key 天然一致 | COS URL 文件名不友好（如 `macos-arm64.dmg`） |
+| 确定性格式 + COS Content-Disposition 元数据 | key 确定；文件名通过 COS 对象元数据保留友好名 | 上传时需额外设置元数据 |
+
+#### 决策
+> 选择 **确定性格式 + COS Content-Disposition 元数据**。COS key = `packages/{name}/latest/{platform}-{arch}.{ext}`，上传时设置 `ContentDisposition` 为原始文件名。
+
+#### 理由
+> 1) COS key 完全由程序可控的字段构成，不再依赖 registry 中可能缺失的 `original_filename`
+> 2) `file_type`（扩展名）在 registry 中总是存在，保证 key 始终可构造
+> 3) 友好文件名通过 COS 对象元数据 `ContentDisposition` 保留，浏览器下载时仍显示正确文件名
+> 4) Codex Switch 的 COS key（`codex-switch/{ver}/{filename}`）不受影响——其文件名来自 GitHub asset，总是存在
+
+#### 影响
+> - `cos_storage.py`: `put()` 加 `content_disposition` 参数
+> - `packages.py`: COS key 格式变更，移除 `original_filename` 门控
+> - `admin/router.py`: COS 上传 key 与下载对齐
+> - `upload-codex-switch-to-cos.sh`: 同步加 Content-Disposition
+> - 旧 COS 对象（`packages/{name}/latest/{原始文件名}`）变成孤儿，需重新上传

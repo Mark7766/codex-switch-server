@@ -86,7 +86,7 @@ def _send_file(full_path: str, filename: str | None = None) -> Response:
     parts = p.parts
     try:
         idx = list(parts).index(data_dir)
-        cache_path = "/".join(parts[idx + 1:])
+        cache_path = "/".join(parts[idx + 1 :])
     except ValueError:
         cache_path = f"codex-switch/{p.parent.name}/{p.name}"
 

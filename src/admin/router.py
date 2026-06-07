@@ -4,6 +4,7 @@ import json
 import shutil
 import tempfile
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -97,10 +98,14 @@ async def upload_package(
         )
 
         # Upload to COS for fast China downloads
-        if filename_clean := file.filename.strip() if file.filename else "":
+        # COS key: packages/{name}/latest/{platform}-{arch}.{ext} (deterministic, matches download)
+        filename_clean = file.filename.strip() if file.filename else ""
+        if filename_clean:
             cos = CosStorage()
-            cos_key = f"packages/{name.strip()}/latest/{filename_clean}"
-            await cos.put(tmp_path, cos_key)
+            ext = filename_clean.rsplit(".", 1)[-1] if "." in filename_clean else "bin"
+            cos_key = f"packages/{name.strip()}/latest/{platform.strip()}-{arch.strip()}.{ext}"
+            content_disp = f"attachment; filename*=UTF-8''{quote(filename_clean)}"
+            await cos.put(tmp_path, cos_key, content_disposition=content_disp)
     finally:
         tmp_path.unlink(missing_ok=True)
 
