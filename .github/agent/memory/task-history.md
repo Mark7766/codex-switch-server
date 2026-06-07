@@ -366,3 +366,13 @@
 - **摘要**：将"获取 DeepSeek API Key"步骤的描述从"注册即送免费额度"改为"注册后需要充值几块钱才能使用 API"，反映 DeepSeek 实际付费政策。
 - **变更文件**：src/portal/templates/guide.html
 - **验证**：本地渲染 ✅
+
+---
+
+### [TASK-032] 生产部署：COS 修复 + DeepSeek 文案上线
+- **日期**：2026-06-07
+- **类型**：deploy
+- **摘要**：SSH 部署到 43.134.110.192，commit range `74dae31`→`218fdc2`（17 files, +1350/-21）。部署内容：COS 下载链路修复（确定性 key + Content-Disposition）、新增 cos_storage.py/COS 设计文档/上传脚本、DeepSeek 文案修正。验证全部 6 个端点 200。生成部署记录 `.deploy/deployments.md`。
+- **变更文件**：17 个（详见 .deploy/deployments.md）
+- **验证**：全端点 200 ✅
+- **注意事项**：COS 8 个对象已提前上传。回滚方案见 .deploy/deployments.md
