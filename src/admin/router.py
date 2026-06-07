@@ -16,6 +16,7 @@ from src.config import settings
 from src.services.package_manager import PackageManager
 from src.services.release_sync import ReleaseSyncService
 from src.services.telemetry import TelemetryService
+from src.utils.cos_storage import CosStorage
 
 router = APIRouter(prefix="/admin")
 _tpl_dir = __file__.rsplit("/", 1)[0] + "/templates"
@@ -94,6 +95,12 @@ async def upload_package(
             local_file=tmp_path,
             original_filename=file.filename.strip() if file.filename else "",
         )
+
+        # Upload to COS for fast China downloads
+        if filename_clean := file.filename.strip() if file.filename else "":
+            cos = CosStorage()
+            cos_key = f"packages/{name.strip()}/latest/{filename_clean}"
+            await cos.put(tmp_path, cos_key)
     finally:
         tmp_path.unlink(missing_ok=True)
 

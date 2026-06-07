@@ -4,12 +4,13 @@ from pathlib import Path
 from urllib.parse import quote
 
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import Response
+from fastapi.responses import RedirectResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.deps import _db_dep
 from src.schemas.release import UpdateCheckRequest, UpdateCheckResponse
 from src.services.release_sync import ReleaseSyncService
+from src.utils.cos_storage import CosStorage
 
 router = APIRouter(prefix="/update", tags=["update"])
 
@@ -36,21 +37,27 @@ async def download_release(
     db: AsyncSession = _db_dep,
 ) -> Response:
     svc = ReleaseSyncService(db)
+    cos = CosStorage()
 
-    # Determine filename: prefer GitHub's original asset name
     asset = await svc.get_github_asset_info(version, platform, arch)
     filename = asset.get("original_name") if asset else None
     ftype = asset.get("file_type", "exe") if asset else "exe"
     if not filename:
         filename = f"Codex-Switch-{version}-{platform}-{arch}.{ftype}"
 
-    # 1. Check local cache → serve directly via nginx X-Accel-Redirect
+    # 1. COS → fast download via Guangzhou CDN
+    cos_key = f"codex-switch/{version}/{filename}"
+    if cos.exists(cos_key):
+        await svc.record_download(version, platform, arch, ip_hash=request.client.host if request.client else "")
+        return RedirectResponse(url=cos.public_url(cos_key), status_code=302)
+
+    # 2. Local cache → nginx X-Accel-Redirect
     file_path = await svc.get_download_path(version, platform, arch)
     if file_path is not None:
         await svc.record_download(version, platform, arch, ip_hash=request.client.host if request.client else "")
         return _send_file(file_path, filename)
 
-    # 2. Not cached — fetch from GitHub, cache, then serve
+    # 3. Fetch from GitHub → cache locally
     if not asset:
         raise HTTPException(status_code=404, detail="No asset found for this platform")
 

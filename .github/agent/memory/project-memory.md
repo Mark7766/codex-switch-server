@@ -64,9 +64,10 @@
 └──────────────────────────────────────────────────┘
       │
       ▼
-本地 data/ 目录 ← 安装包文件缓存
+腾讯云 COS 广州 codex-switch-1259344349 ← 主下载链路（302 跳转，2MB/s）
+       ↑ 部署脚本 or admin 上传同步
+本地 data/ 目录 ← 安装包文件缓存（COS 不可用时降级兜底）
        ↑ Docker volume: ./data → /app/data
-（部署到腾讯云后：COS 对象存储作为主存储，本地作为回源缓存）
 ```
 
 ### 生产环境
@@ -88,7 +89,7 @@
 ### 核心特征
 - Docker 单容器部署：Nginx（SSL 终止）+ uvicorn（应用），Supervisor 管理双进程
 - 门户和后台均为服务器渲染，无需前端构建工具链
-- 安装包文件本地缓存 + 可选腾讯云 COS 对象存储
+- 安装包文件本地缓存 + 腾讯云 COS 广州对象存储（2MB/s 主链路，本地降级兜底）
 - Apple 极简设计风格门户，强调内容、留白和清晰层级
 - 分层架构：路由层 → 服务层 → 数据层，职责边界清晰
 
@@ -103,9 +104,9 @@
 
 用户下载 codex-switch:
   访问 /download → JS fetch /api/v1/update/latest → 显示最新版本
-  → 点击下载 → 检查本地缓存 data/codex-switch/{ver}/{plat}-{arch}.{ext}
-  → 命中缓存 → 直接流式返回（秒下）
-  → 未命中 → 服务端从 GitHub 下载 → 缓存 → 流式返回（首次较慢，后续秒下）
+  → 点击下载 → 检查 COS codex-switch/{ver}/{filename} → 302 跳转广州（2MB/s）
+  → COS 未命中 → 检查本地缓存 → nginx sendfile（降级）
+  → 均未命中 → 服务端从 GitHub 下载 → 缓存本地（兜底）
 
 客户端检查更新:
   codex-switch 启动 → POST /api/v1/update/check

@@ -32,3 +32,8 @@ codexswtich.cloud_nginx.zip
 # Deployment info (local only, contains credentials)
 .deploy/
 .claude/settings.local.json
+
+# Large binary files (user content, not code)
+2.1.138.zip
+*.pdf
+src/static/files/

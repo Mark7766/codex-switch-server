@@ -308,3 +308,41 @@
 #### 影响
 > - `.claude/settings.local.json` Stop hook 配置修改
 > - 每次回复结束前都会强制检查记忆更新状态
+
+---
+
+### ADR-009: 使用腾讯云 COS 广州地域加速国内下载
+
+- **日期**：2026-06-07
+- **状态**：✅ 已采纳
+- **决策者**：wangliang
+
+#### 背景
+> 生产服务器位于腾讯云新加坡，国内用户下载速度仅 29KB/s（74MB 需 43 分钟）。经实测，腾讯云 COS 广州地域公网下载达 2MB/s（70 倍提速）。需要在不影响新加坡服务器正常功能的前提下，将下载流量分流到 COS。
+
+#### 方案对比
+
+| 方案 | 优点 | 缺点 |
+|------|------|------|
+| 腾讯云 CDN | 自动就近加速 | 需要备案域名，当前域名未备案 |
+| 腾讯云 COS 广州 | 2MB/s，无需备案，`cos-python-sdk-v5` SDK 简单 | 文件需手动/自动上传 |
+| GitHub Fastly CDN 302 | 免费，零配置 | 国内 GitHub 访问不稳定 |
+| ghproxy 代理 | 免费 | 服务器在法国，同样慢 |
+
+#### 决策
+> 选择 **COS 广州 + 新加坡本地双链路降级**。COS 存储桶 `codex-switch-1259344349`（ap-guangzhou，公有读私有写）。
+
+#### 理由
+> 1) COS 广州国内下载 2MB/s（实测），无需备案
+> 2) 两级下载路由：COS 302 优先 → 本地 nginx sendfile 降级 → GitHub 兜底
+> 3) Codex Switch 安装包由部署脚本 `upload-codex-switch-to-cos.sh` 每次发布时一次性上传
+> 4) 桌面应用安装包在 admin 上传时同步上传 COS（保留原始文件名）
+> 5) COS 不可用时自动降级到新加坡本地文件，不影响服务可用性
+> 6) 成本极低：存储 0.118 元/GB/月 + 下载流量 0.5 元/GB
+
+#### 影响
+> - 新增 `src/utils/cos_storage.py`（COS 客户端封装，未配自动降级）
+> - `update.py` / `packages.py` 下载端点加 COS 检查 → 302 跳转
+> - `admin/router.py` 上传端点加 COS 同步上传
+> - `scripts/upload-codex-switch-to-cos.sh` 部署脚本
+> - `.env` 新增 `COS_SECRET_ID/COS_SECRET_KEY/COS_BUCKET/COS_REGION`

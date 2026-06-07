@@ -13,6 +13,12 @@ class LocalStorage:
         dest = self._base / remote_key
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(local_path, dest)
+        dest.chmod(0o644)  # Ensure nginx can read the file
+        # Ensure all parent dirs have execute permission so nginx can traverse
+        for parent in dest.parents:
+            if parent == self._base:
+                break
+            parent.chmod(0o755)
         return str(dest)
 
     async def get_path(self, remote_key: str) -> Path | None:

@@ -291,3 +291,39 @@
   4. **修复 copilot-instructions.md**："从 GitHub 同步" → "实时获取 GitHub 最新版本"。
 - **变更文件**：AGENTS.md, .github/agent/system-prompt.md, .github/copilot-instructions.md
 - **注意事项**：agent 文档（system-prompt/workflows/coding-standards）内容需持续维护，AGENTS.md 的 Plan 阶段清单已覆盖
+
+---
+
+### [TASK-025] Phase 3 + Phase 4：截图补充 + 联动调试 + 部署上线
+- **日期**：2026-06-07
+- **类型**：deploy
+- **摘要**：
+  1. **截图审计**：22 张截图全部就位（16 CLI + 6 通用/桌面），`onerror` 兜底缺失图片自动隐藏
+  2. **端到端验证**：`?tool=xxx` 4 个 URL 参数全部正确传递，renderGuide 9 个关键函数正常
+  3. **部署上线**：git push → docker compose up -d --build → 生产全端点 200
+- **变更文件**：22 张截图（src/static/images/guide/）
+- **验证**：ruff ✅, pytest 81/81 ✅, 生产 200 ✅
+
+---
+
+### [TASK-026] COS 对象存储集成开发
+- **日期**：2026-06-07
+- **类型**：feat
+- **摘要**：
+  1. **新增 `src/utils/cos_storage.py`**：COS 客户端封装（put/exists/public_url/delete），COS 未配自动降级
+  2. **修改 `update.py`**：Codex Switch 下载 COS 优先 → 302 跳转广州；COS 不存在 → 本地缓存 → GitHub 下载兜底
+  3. **修改 `packages.py`**：桌面应用下载 COS 优先（用 original_filename 作为 COS key）
+  4. **修改 `admin/router.py`**：上传安装包时同步上传 COS（用原始文件名）
+  5. **新增 `scripts/upload-codex-switch-to-cos.sh`**：部署时执行，从 GitHub Release 下载 4 平台文件并上传 COS
+  6. **依赖**：`cos-python-sdk-v5` 加入 pyproject.toml
+- **变更文件**：src/utils/cos_storage.py（新）、src/api/v1/update.py、src/api/v1/packages.py、src/admin/router.py、scripts/upload-codex-switch-to-cos.sh（新）、pyproject.toml、.env.example
+- **验证**：ruff ✅, pytest 81/81 ✅, COS 302 ✅, 降级 nginx ✅
+
+---
+
+### [TASK-027] COS 集成 Act 阶段补漏
+- **日期**：2026-06-07
+- **类型**：fix
+- **摘要**：TASK-026 只更新了 task-history，漏了 ADR 和 project-memory。补上 ADR-009（COS 广州架构决策）+ project-memory.md（下载流程、架构图更新）+ system-prompt.md（业务流更新）。
+- **变更文件**：decisions-log.md（ADR-009）、project-memory.md、system-prompt.md
+- **注意事项**：根因是 Act 阶段习惯只更新 task-history，不检查是否需要更新其他文件。需要在 Stop hook 的提醒中强化"检查是否架构变更/事实变更"

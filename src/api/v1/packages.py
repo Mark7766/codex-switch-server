@@ -4,10 +4,11 @@ from pathlib import Path
 from urllib.parse import quote
 
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import Response
+from fastapi.responses import RedirectResponse, Response
 
 from src.schemas.release import APIResponse, PackageInfo, PackageListData
 from src.services.package_manager import PackageManager
+from src.utils.cos_storage import CosStorage
 
 router = APIRouter(prefix="/packages", tags=["packages"])
 
@@ -38,11 +39,18 @@ async def download_package(
     request: Request,
 ) -> Response:
     mgr = PackageManager()
-    file_path, filename = await mgr.get_download_path_with_name(package_name, platform, arch)
+    file_path, original_filename = await mgr.get_download_path_with_name(package_name, platform, arch)
     if file_path is None:
         raise HTTPException(status_code=404, detail="Package not found")
 
-    # nginx X-Accel-Redirect for zero-copy sendfile
+    # 1. COS → fast download via Guangzhou CDN (use original filename as COS key)
+    cos = CosStorage()
+    if original_filename:
+        cos_key = f"packages/{package_name}/latest/{original_filename}"
+        if cos.exists(cos_key):
+            return RedirectResponse(url=cos.public_url(cos_key), status_code=302)
+
+    # 2. Fallback: nginx X-Accel-Redirect from local disk
     p = Path(file_path)
     parts = list(p.parts)
     try:
@@ -52,7 +60,7 @@ async def download_package(
         cache_path = f"packages/{p.parent.parent.name}/{p.parent.name}/{p.name}"
 
     headers = {"X-Accel-Redirect": f"/_cache/{cache_path}"}
-    if filename:
-        headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(filename)}"
+    if original_filename:
+        headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(original_filename)}"
 
     return Response(headers=headers)

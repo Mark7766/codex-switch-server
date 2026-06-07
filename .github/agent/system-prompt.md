@@ -28,7 +28,7 @@ codex-switch-server 是一个 **Codex Switch 配套服务端。提供版本更�
 ```
 1. 用户访问 /guide → 三步向导选择工具+平台 → 获取对应安装指南
 2. 用户访问 /download → JS fetch /api/v1/update/latest → 实时从 GitHub 获取最新版本信息
-3. 用户点击下载 → 检查本地缓存 data/codex-switch/ → 命中直接返回 → 未命中从 GitHub 代理下载并缓存
+3. 用户点击下载 → COS 广州优先（302 跳转，2MB/s）→ 本地缓存降级（nginx sendfile）→ GitHub 兜底
 4. 用户下载 Codex Desktop/Claude Desktop → 首页 /api/v1/packages 动态展示已上传安装包
 5. 管理员 /admin/packages → 4 个固定槽位上载安装包（Codex/Claude × macOS/Windows）
 6. 客户端 POST /api/v1/update/check → 实时对比版本 → 返回更新信息
