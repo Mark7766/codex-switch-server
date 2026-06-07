@@ -5,9 +5,12 @@ from urllib.parse import quote
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.api.deps import _db_dep
 from src.schemas.release import APIResponse, PackageInfo, PackageListData
 from src.services.package_manager import PackageManager
+from src.services.release_sync import ReleaseSyncService
 from src.utils.cos_storage import CosStorage
 
 router = APIRouter(prefix="/packages", tags=["packages"])
@@ -37,11 +40,20 @@ async def download_package(
     platform: str,
     arch: str,
     request: Request,
+    db: AsyncSession = _db_dep,
 ) -> Response:
     mgr = PackageManager()
     file_path, original_filename = await mgr.get_download_path_with_name(package_name, platform, arch)
     if file_path is None:
         raise HTTPException(status_code=404, detail="Package not found")
+
+    # Record download for analytics
+    dl_svc = ReleaseSyncService(db)
+    await dl_svc.record_download(
+        version="latest", platform=platform, arch=arch,
+        package_name=package_name,
+        ip_hash=request.client.host if request.client else "",
+    )
 
     # Build deterministic COS key: packages/{name}/latest/{platform}-{arch}.{ext}
     plat_info = await mgr.get_package_info(package_name, platform, arch)

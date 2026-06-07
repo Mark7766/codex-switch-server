@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 from src.admin.router import router as admin_router
 from src.api.router import router as api_router
-from src.database import engine
+from src.database import backfill_null_package_names, engine
 from src.models.base import Base
 from src.portal.router import router as portal_router
 
@@ -20,6 +20,7 @@ async def init_db() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    await backfill_null_package_names()
     yield
 
 

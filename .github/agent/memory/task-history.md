@@ -424,3 +424,12 @@
 - **摘要**：按 ADMIN-REDESIGN-V2.md 执行 Phase E——为 Phase A~D 全部新功能补充测试。单元测试：中文映射 10 个 + PageviewRequest 2 个 + PageEvent 模型 3 个 + AnalyticsService 5 个。集成测试：pageview 端点 3 个 + admin API 5 个 + dashboard Tab 布局 3 个。conftest.py 注册 PageEvent 模型。总计 113 tests（新增 32 个）。
 - **变更文件**：tests/unit/test_analytics.py（新）、tests/integration/test_admin_api.py（新）、tests/conftest.py（改）
 - **验证**：ruff ✅, pytest 113/113 ✅
+
+---
+
+### [TASK-038] 修复 admin 面板 "unknown" 显示 + 桌面应用下载记录
+- **日期**：2026-06-07
+- **类型**：fix
+- **摘要**：Admin 面板下载统计显示 "unknown"——根因是旧 download_records 的 package_name 字段为 NULL。修复：① update.py 3 处 record_download 加 package_name="codex-switch" ② packages.py 新增 record_download 调用（桌面包下载之前未记录）③ database.py 启动时自动回填 NULL → 'codex-switch' ④ analytics.py 查询用 coalesce 兜底。
+- **变更文件**：src/api/v1/update.py, src/api/v1/packages.py, src/database.py, src/main.py, src/services/analytics.py
+- **验证**：ruff ✅, pytest 113/113 ✅, admin API 返回 Codex Switch 中文名 ✅

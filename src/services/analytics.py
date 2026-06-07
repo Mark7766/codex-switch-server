@@ -137,14 +137,16 @@ class AnalyticsService:
         today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         today = await self._db.scalar(select(func.count()).where(DownloadRecord.downloaded_at >= today_start)) or 0
 
-        # By product (package_name)
+        # By product (package_name) — coalesce NULL to 'codex-switch' for old records
+        pkg_col = func.coalesce(DownloadRecord.package_name, "codex-switch")
+
         prod_result = await self._db.execute(
             select(
-                DownloadRecord.package_name,
+                pkg_col.label("product"),
                 func.count(),
             )
             .where(DownloadRecord.downloaded_at >= cutoff)
-            .group_by(DownloadRecord.package_name)
+            .group_by(pkg_col)
             .order_by(func.count().desc())
         )
         by_product = [
@@ -159,13 +161,13 @@ class AnalyticsService:
         # By package (product + platform + arch) — 8 download slots
         pkg_result = await self._db.execute(
             select(
-                DownloadRecord.package_name,
+                pkg_col.label("product"),
                 DownloadRecord.platform,
                 DownloadRecord.arch,
                 func.count(),
             )
             .where(DownloadRecord.downloaded_at >= cutoff)
-            .group_by(DownloadRecord.package_name, DownloadRecord.platform, DownloadRecord.arch)
+            .group_by(pkg_col, DownloadRecord.platform, DownloadRecord.arch)
             .order_by(func.count().desc())
         )
         by_package = [
@@ -199,13 +201,13 @@ class AnalyticsService:
 
             day_rows = await self._db.execute(
                 select(
-                    DownloadRecord.package_name,
+                    pkg_col.label("product"),
                     DownloadRecord.platform,
                     DownloadRecord.arch,
                     func.count(),
                 )
                 .where(DownloadRecord.downloaded_at >= day_start, DownloadRecord.downloaded_at < day_end)
-                .group_by(DownloadRecord.package_name, DownloadRecord.platform, DownloadRecord.arch)
+                .group_by(pkg_col, DownloadRecord.platform, DownloadRecord.arch)
             )
             breakdown = {}
             for row in day_rows.all():
