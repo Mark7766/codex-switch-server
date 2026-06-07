@@ -9,8 +9,8 @@
     Codex Switch 帮你突破网络限制，在国内流畅使用 Codex 和 Claude，接入 DeepSeek 模型，免费、快速、本地安全。
   </p>
   <div class="hero__actions">
-    <a href="/guide" class="btn btn--primary btn--large">查看安装指南 &rarr;</a>
-    <a href="/download" class="btn btn--outline btn--large">直接下载 &rarr;</a>
+    <a href="/guide" class="btn btn--primary btn--large" data-track="hero-guide-cta">查看安装指南 &rarr;</a>
+    <a href="/download" class="btn btn--outline btn--large" data-track="hero-download-cta">直接下载 &rarr;</a>
   </div>
   <p class="hero__note">支持 macOS 11+ · Windows 11 · Linux · 完全免费开源</p>
 </section>
@@ -20,22 +20,22 @@
   <h2 class="section-title">安装指南</h2>
   <p class="section-subtitle">选择你要安装的工具，4 步完成配置</p>
   <div class="guide-entry__grid">
-    <a href="/guide?tool=codex" class="guide-entry__card">
+    <a href="/guide?tool=codex" class="guide-entry__card" data-track="guide-entry-codex">
       <span class="guide-entry__icon">&#128421;</span>
       <span class="guide-entry__name">Codex Desktop</span>
       <span class="guide-entry__tag">桌面应用</span>
     </a>
-    <a href="/guide?tool=claude" class="guide-entry__card">
+    <a href="/guide?tool=claude" class="guide-entry__card" data-track="guide-entry-claude">
       <span class="guide-entry__icon">&#129504;</span>
       <span class="guide-entry__name">Claude Desktop</span>
       <span class="guide-entry__tag">桌面应用</span>
     </a>
-    <a href="/guide?tool=codex-cli" class="guide-entry__card">
+    <a href="/guide?tool=codex-cli" class="guide-entry__card" data-track="guide-entry-codex-cli">
       <span class="guide-entry__icon">&#9000;</span>
       <span class="guide-entry__name">Codex CLI</span>
       <span class="guide-entry__tag">命令行工具</span>
     </a>
-    <a href="/guide?tool=claude-cli" class="guide-entry__card">
+    <a href="/guide?tool=claude-cli" class="guide-entry__card" data-track="guide-entry-claude-cli">
       <span class="guide-entry__icon">&#128187;</span>
       <span class="guide-entry__name">Claude Code CLI</span>
       <span class="guide-entry__tag">命令行工具</span>
@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', function() {
           if (plat.arch === 'arm64') label += ' ARM';
           var dlUrl = '/api/v1/packages/' + encodeURIComponent(pkg.name.trim()) + '/' +
                       encodeURIComponent(plat.version) + '/' + plat.platform + '-' + plat.arch;
-          html += '<a href="' + dlUrl + '" class="btn btn--primary btn--small" style="margin:2px;">' +
+          html += '<a href="' + dlUrl + '" class="btn btn--primary btn--small" style="margin:2px;" data-track="tool-card-' + pkgName + '">' +
                   label + ' ' + sizeMB + ' MB</a>';
         }
         hint.innerHTML = html;

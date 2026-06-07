@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function() {
             '<div class="version-card__version">' + v + '</div>' +
             '<div class="version-card__date">发布于 ' + (latest.release_date || '') + cachedTag + '</div>' +
             '<div class="version-card__download">' +
-              '<a href="' + dlUrl + '" class="btn btn--primary btn--large">下载 .' + file.file_type + '</a>' +
+              '<a href="' + dlUrl + '" class="btn btn--primary btn--large" data-track="dl-btn-' + p.id + '-' + file.arch + '">下载 .' + file.file_type + '</a>' +
             '</div>' +
             '<div class="version-card__info">' + sizeMB + ' MB</div>' +
           '</div>' +
@@ -95,9 +95,9 @@ document.addEventListener('DOMContentLoaded', function() {
 <section class="download-section">
   <div style="text-align:center;">
     <div class="segment-control" id="platformSelector">
-      <button class="segment-control__btn segment-control__btn--active" data-platform="macos">macOS</button>
-      <button class="segment-control__btn" data-platform="windows">Windows</button>
-      <button class="segment-control__btn" data-platform="linux">Linux</button>
+      <button class="segment-control__btn segment-control__btn--active" data-platform="macos" data-track="dl-tab-macos">macOS</button>
+      <button class="segment-control__btn" data-platform="windows" data-track="dl-tab-windows">Windows</button>
+      <button class="segment-control__btn" data-platform="linux" data-track="dl-tab-linux">Linux</button>
     </div>
   </div>
 

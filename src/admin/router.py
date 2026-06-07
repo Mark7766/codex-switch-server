@@ -51,9 +51,13 @@ async def dashboard(request: Request, db: AsyncSession = _db_dep) -> HTMLRespons
     telem_svc = TelemetryService(db)
     telem_stats = await telem_svc.get_stats(range_days=30)
 
+    mgr = PackageManager()
+    pkgs = await mgr.list_packages()
+
     ctx = {
         "download_stats": dl_stats,
         "telemetry": telem_stats,
+        "packages": pkgs,
         "type_counts_json": json.dumps([t.model_dump() for t in telem_stats.event_type_counts]),
         "trend_json": json.dumps([t.model_dump() for t in telem_stats.daily_trend]),
     }

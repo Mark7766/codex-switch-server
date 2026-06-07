@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from src.database import get_db
 from src.main import create_app
 from src.models import download as _m_download  # noqa: F401  register models
+from src.models import page_event as _m_page_event  # noqa: F401
 from src.models import release as _m_release  # noqa: F401
 from src.models import telemetry as _m_telemetry  # noqa: F401
 from src.models.base import Base

@@ -376,3 +376,51 @@
 - **变更文件**：17 个（详见 .deploy/deployments.md）
 - **验证**：全端点 200 ✅
 - **注意事项**：COS 8 个对象已提前上传。回滚方案见 .deploy/deployments.md
+
+---
+
+### [TASK-033] Phase A：Admin 优化数据层开发
+- **日期**：2026-06-07
+- **类型**：feat
+- **摘要**：按 ADMIN-REDESIGN-V2.md 执行 Phase A——数据层新增埋点表和下载趋势查询。新建 PageEvent ORM 模型（event_type/page/element_id/ip_hash/user_agent）、AnalyticsService（埋点写入/页面统计/下载趋势/下载包明细 8 粒度）、Pydantic DTOs + 中文映射表（3 页面 + 29 按钮 + 3 产品 + 4 平台）。download_records 已有 package_name 字段可直接区分类别，无需新增 product 字段。
+- **变更文件**：src/models/page_event.py（新）、src/schemas/analytics.py（新）、src/services/analytics.py（新）、src/database.py（改）
+- **验证**：ruff ✅, pytest 81/81 ✅
+- **注意事项**：中文映射硬编码在 schemas/analytics.py 中。Phase B 将开发 API 层端点。
+
+---
+
+### [TASK-034] Phase B：API 层开发（埋点上报 + 统计查询端点）
+- **日期**：2026-06-07
+- **类型**：feat
+- **摘要**：按 ADMIN-REDESIGN-V2.md 执行 Phase B——3 个 API 端点。`POST /api/v1/analytics/pageview` 公开埋点上报（fire-and-forget）、`GET /api/v1/admin/analytics/page-stats` 页面/点击统计（中文映射 + 趋势）、`GET /api/v1/admin/analytics/download-trends` 下载趋势（8 包粒度 + 产品/版本/平台拆分）。admin 端点 Bearer Token 保护。
+- **变更文件**：src/api/v1/analytics.py（新）、src/api/v1/admin_api.py（新）、src/api/router.py（改）
+- **验证**：ruff ✅, pytest 81/81 ✅, pageview 200 ✅, page-stats 200(中文) ✅, download-trends 200(49总) ✅
+- **注意事项**：admin API 需要先 POST /admin/login 获取 cookie 后才能访问。
+
+---
+
+### [TASK-035] Phase C：前端埋点开发（portal JS + data-track）
+- **日期**：2026-06-07
+- **类型**：feat
+- **摘要**：按 ADMIN-REDESIGN-V2.md 执行 Phase C——门户全站埋点。portal.js 新增 sendBeacon 页面浏览上报 + data-track 点击监听。3 个模板（index/download/guide）+ base.html 导航栏/页脚共埋 29 个点位。CSS/JS 版本号更新为 20260607b。
+- **变更文件**：src/static/js/portal.js、src/portal/templates/base.html、index.html、download.html、guide.html
+- **验证**：ruff ✅, pytest 81/81 ✅, pageview 上报 → admin 中文显示"使用指南" ✅
+- **注意事项**：所有点位 ID 与 schemas/analytics.py 中文映射表对应，新增点位需同步更新映射表。
+
+---
+
+### [TASK-036] Phase D：Admin 面板三 Tab 重设计
+- **日期**：2026-06-07
+- **类型**：feat
+- **摘要**：按 ADMIN-REDESIGN-V2.md 执行 Phase D——Admin dashboard 重写为三 Tab 布局（Server运营/App遥测/安装包管理）。Server Tab：4 指标卡片 + 下载趋势折线图（7/30/90天切换）+ 包明细表格 + 产品占比环形图 + 页面访问柱状图 + 热门点击 Top 10 表格；App Tab：保留原有遥测图表；Packages Tab：嵌入 4 固定卡位上传表单。数据由 JS fetch admin API 渲染，Chart.js 按 Tab 切换懒加载。
+- **变更文件**：src/admin/templates/dashboard.html（重写）、src/admin/router.py（加 packages 数据）
+- **验证**：ruff ✅, pytest 81/81 ✅, 24KB HTML/3 Tabs/4 packages ✅
+
+---
+
+### [TASK-037] Phase E：Admin 优化测试 + 完成全部 5 阶段
+- **日期**：2026-06-07
+- **类型**：test
+- **摘要**：按 ADMIN-REDESIGN-V2.md 执行 Phase E——为 Phase A~D 全部新功能补充测试。单元测试：中文映射 10 个 + PageviewRequest 2 个 + PageEvent 模型 3 个 + AnalyticsService 5 个。集成测试：pageview 端点 3 个 + admin API 5 个 + dashboard Tab 布局 3 个。conftest.py 注册 PageEvent 模型。总计 113 tests（新增 32 个）。
+- **变更文件**：tests/unit/test_analytics.py（新）、tests/integration/test_admin_api.py（新）、tests/conftest.py（改）
+- **验证**：ruff ✅, pytest 113/113 ✅

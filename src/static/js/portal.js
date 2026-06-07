@@ -23,3 +23,27 @@
     });
   }
 })();
+
+// ── Analytics: page view tracking ────────────────────────
+(function () {
+  var ANALYTICS_URL = '/api/v1/analytics/pageview';
+  try {
+    navigator.sendBeacon(ANALYTICS_URL, JSON.stringify({
+      event_type: 'pageview',
+      page: window.location.pathname
+    }));
+  } catch (e) { /* silently ignore */ }
+})();
+
+// ── Analytics: click tracking (elements with data-track) ──
+document.addEventListener('click', function (e) {
+  var el = e.target.closest('[data-track]');
+  if (!el) return;
+  try {
+    navigator.sendBeacon('/api/v1/analytics/pageview', JSON.stringify({
+      event_type: 'click',
+      page: window.location.pathname,
+      element_id: el.getAttribute('data-track')
+    }));
+  } catch (e) { /* silently ignore */ }
+});
