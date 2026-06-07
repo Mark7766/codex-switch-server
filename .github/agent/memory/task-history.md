@@ -341,3 +341,19 @@
 - **变更文件**：src/utils/cos_storage.py, src/api/v1/packages.py, src/admin/router.py, src/api/v1/update.py, scripts/upload-codex-switch-to-cos.sh
 - **验证**：ruff ✅, pytest 81/81 ✅
 - **注意事项**：COS key 格式变更后，旧 COS 对象（`packages/{name}/latest/{原始文件名}`）变成孤儿。需在 admin/packages 页面重新上传一次桌面包即可。Codex Switch 的 COS key 不受影响。
+
+---
+
+### [TASK-030] COS 全量上传 + 8 端点链路验证
+- **日期**：2026-06-07
+- **类型**：ops
+- **摘要**：
+  1. 从 GitHub 下载 Codex Switch v1.4.0 缺失的 2 个平台文件（macos-x64, windows-arm64）并缓存本地
+  2. 上传全部 4 个 Codex Switch 文件到 COS 广州（带 Content-Disposition 元数据）
+  3. 上传 4 个桌面应用安装包到 COS（新建确定性 key 格式）
+  4. 修复 GitHub push 被 secret scanning 拦截（`docs/COS-STORAGE-DESIGN.md` 泄露腾讯云 Secret ID/Key，改为占位符，force push 重写历史）
+  5. 本地验证全部 8 个下载端点 → COS 302 ✅，文件名正确 ✅
+  6. 更新 hooks：新增 git push / SSH 生产 / docker compose 三个 PreToolUse 阻断钩子
+- **变更文件**：docs/COS-STORAGE-DESIGN.md, .claude/settings.local.json, data/codex-switch/1.4.0/*, COS 对象 8 个
+- **验证**：8/8 COS 302 ✅, ruff ✅, pytest 81/81 ✅
+- **注意事项**：生产环境尚未部署新代码（COS key 格式变更）。部署后需在 admin/packages 重新上传 4 个桌面包，新 key 格式才能命中 COS。Codex Switch 的 COS key 不受影响。
