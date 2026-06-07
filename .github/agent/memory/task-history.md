@@ -356,4 +356,13 @@
   6. 更新 hooks：新增 git push / SSH 生产 / docker compose 三个 PreToolUse 阻断钩子
 - **变更文件**：docs/COS-STORAGE-DESIGN.md, .claude/settings.local.json, data/codex-switch/1.4.0/*, COS 对象 8 个
 - **验证**：8/8 COS 302 ✅, ruff ✅, pytest 81/81 ✅
-- **注意事项**：生产环境尚未部署新代码（COS key 格式变更）。部署后需在 admin/packages 重新上传 4 个桌面包，新 key 格式才能命中 COS。Codex Switch 的 COS key 不受影响。
+- **注意事项**：生产环境尚未部署新代码（COS key 格式变更）。Codex Switch 的 COS key 不受影响。
+
+---
+
+### [TASK-031] 使用指南：DeepSeek API Key 文案修正
+- **日期**：2026-06-07
+- **类型**：fix
+- **摘要**：将"获取 DeepSeek API Key"步骤的描述从"注册即送免费额度"改为"注册后需要充值几块钱才能使用 API"，反映 DeepSeek 实际付费政策。
+- **变更文件**：src/portal/templates/guide.html
+- **验证**：本地渲染 ✅
