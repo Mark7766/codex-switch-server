@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from pathlib import Path
 from urllib.parse import quote
 
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response
 
 from src.schemas.release import APIResponse, PackageInfo, PackageListData
 from src.services.package_manager import PackageManager
@@ -35,19 +36,23 @@ async def download_package(
     platform: str,
     arch: str,
     request: Request,
-) -> StreamingResponse:
+) -> Response:
     mgr = PackageManager()
     file_path, filename = await mgr.get_download_path_with_name(package_name, platform, arch)
     if file_path is None:
         raise HTTPException(status_code=404, detail="Package not found")
 
-    def _iter():
-        with open(file_path, "rb") as f:
-            while chunk := f.read(8192):
-                yield chunk
+    # nginx X-Accel-Redirect for zero-copy sendfile
+    p = Path(file_path)
+    parts = list(p.parts)
+    try:
+        idx = parts.index("data")
+        cache_path = "/".join(parts[idx + 1:])
+    except ValueError:
+        cache_path = f"packages/{p.parent.parent.name}/{p.parent.name}/{p.name}"
 
-    headers = {}
+    headers = {"X-Accel-Redirect": f"/_cache/{cache_path}"}
     if filename:
         headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(filename)}"
 
-    return StreamingResponse(_iter(), media_type="application/octet-stream", headers=headers)
+    return Response(headers=headers)

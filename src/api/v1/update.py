@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from pathlib import Path
 from urllib.parse import quote
 
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.deps import _db_dep
@@ -33,29 +34,27 @@ async def download_release(
     arch: str,
     request: Request,
     db: AsyncSession = _db_dep,
-) -> StreamingResponse:
+) -> Response:
     svc = ReleaseSyncService(db)
 
-    # Determine filename: prefer GitHub's original asset name, fallback to constructed name
+    # Determine filename: prefer GitHub's original asset name
     asset = await svc.get_github_asset_info(version, platform, arch)
     filename = asset.get("original_name") if asset else None
+    ftype = asset.get("file_type", "exe") if asset else "exe"
     if not filename:
-        # Fallback: look up from cached file
-        ftype = asset.get("file_type", "") if asset else ""
-        filename = f"Codex-Switch-{version}-{platform}-{arch}.{ftype}" if ftype else None
+        filename = f"Codex-Switch-{version}-{platform}-{arch}.{ftype}"
 
-    # 1. Check local cache
+    # 1. Check local cache → serve directly via nginx X-Accel-Redirect
     file_path = await svc.get_download_path(version, platform, arch)
     if file_path is not None:
         await svc.record_download(version, platform, arch, ip_hash=request.client.host if request.client else "")
-        return _stream_file(file_path, filename)
+        return _send_file(file_path, filename)
 
-    # 2. Fetch from GitHub, cache, and serve
+    # 2. Not cached — fetch from GitHub, cache, then serve
     if not asset:
         raise HTTPException(status_code=404, detail="No asset found for this platform")
 
     download_url = asset.get("download_url", "")
-    ftype = asset.get("file_type", "")
     if not download_url:
         raise HTTPException(status_code=404, detail="No download URL available")
 
@@ -65,17 +64,24 @@ async def download_release(
         raise HTTPException(status_code=502, detail="Failed to download from GitHub")
 
     await svc.record_download(version, platform, arch, ip_hash=request.client.host if request.client else "")
-    return _stream_file(file_path, filename)
+    return _send_file(file_path, filename)
 
 
-def _stream_file(file_path: str, filename: str | None = None) -> StreamingResponse:
-    def _iter():
-        with open(file_path, "rb") as f:
-            while chunk := f.read(8192):
-                yield chunk
+def _send_file(full_path: str, filename: str | None = None) -> Response:
+    """Serve cached files via nginx X-Accel-Redirect for zero-copy sendfile."""
+    p = Path(full_path)
+    # Path is like /app/data/codex-switch/1.4.0/win-x64.exe
+    # Nginx /_cache/ aliases to /app/data/, so redirect = /_cache/codex-switch/...
+    data_dir = "data"
+    parts = p.parts
+    try:
+        idx = list(parts).index(data_dir)
+        cache_path = "/".join(parts[idx + 1:])
+    except ValueError:
+        cache_path = f"codex-switch/{p.parent.name}/{p.name}"
 
-    headers = {}
+    headers = {"X-Accel-Redirect": f"/_cache/{cache_path}"}
     if filename:
         headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(filename)}"
 
-    return StreamingResponse(_iter(), media_type="application/octet-stream", headers=headers)
+    return Response(headers=headers)
