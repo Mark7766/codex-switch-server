@@ -48,7 +48,10 @@ async def download_package(
     if original_filename:
         cos_key = f"packages/{package_name}/latest/{original_filename}"
         if cos.exists(cos_key):
-            return RedirectResponse(url=cos.public_url(cos_key), status_code=302)
+            headers = {}
+            if original_filename:
+                headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(original_filename)}"
+            return RedirectResponse(url=cos.public_url(cos_key), status_code=302, headers=headers)
 
     # 2. Fallback: nginx X-Accel-Redirect from local disk
     p = Path(file_path)

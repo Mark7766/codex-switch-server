@@ -49,7 +49,10 @@ async def download_release(
     cos_key = f"codex-switch/{version}/{filename}"
     if cos.exists(cos_key):
         await svc.record_download(version, platform, arch, ip_hash=request.client.host if request.client else "")
-        return RedirectResponse(url=cos.public_url(cos_key), status_code=302)
+        headers = {}
+        if filename:
+            headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(filename)}"
+        return RedirectResponse(url=cos.public_url(cos_key), status_code=302, headers=headers)
 
     # 2. Local cache → nginx X-Accel-Redirect
     file_path = await svc.get_download_path(version, platform, arch)

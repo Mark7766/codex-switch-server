@@ -327,3 +327,12 @@
 - **摘要**：TASK-026 只更新了 task-history，漏了 ADR 和 project-memory。补上 ADR-009（COS 广州架构决策）+ project-memory.md（下载流程、架构图更新）+ system-prompt.md（业务流更新）。
 - **变更文件**：decisions-log.md（ADR-009）、project-memory.md、system-prompt.md
 - **注意事项**：根因是 Act 阶段习惯只更新 task-history，不检查是否需要更新其他文件。需要在 Stop hook 的提醒中强化"检查是否架构变更/事实变更"
+
+---
+
+### [TASK-028] COS 302 跳转 Content-Disposition 文件名修复
+- **日期**：2026-06-07
+- **类型**：fix
+- **摘要**：COS 302 跳转时未带 Content-Disposition 头，wget 用 URL 路径末段作为文件名（如 `macos-arm64` 而非 `Codex-Switch-1.4.0-mac-arm64.dmg`）。RedirectResponse 加 headers 参数。
+- **变更文件**：src/api/v1/update.py, src/api/v1/packages.py
+- **验证**：pytest 81/81 ✅, Content-Disposition ✅
