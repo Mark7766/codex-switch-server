@@ -250,3 +250,44 @@
   3. 整理 10 张截图清单，按场景分组（通用/Codex/Claude/macOS 错误）
 - **变更文件**：src/portal/templates/guide.html, src/static/files/2.1.138.zip（新增）
 - **验证**：本地渲染 ✅, zip 下载 200 ✅
+
+---
+
+### [TASK-022] Phase 1：门户首页调整
+- **日期**：2026-06-07
+- **类型**：feat
+- **摘要**：
+  1. **Hero 双按钮**："下载 macOS 版 / Windows 版" → "查看安装指南 → / 直接下载 →"，指南为主按钮
+  2. **新增"安装指南"快捷入口**：4 张卡片（Codex Desktop / Claude Desktop / Codex CLI / Claude Code CLI），点击跳转 `/guide?tool=xxx` 预选工具
+  3. **下载区精简**：从 4 张卡片（含 CLI 占位）缩减为 2 张（Codex Desktop / Claude Desktop），纯下载用途
+  4. **CSS**：新增 `.guide-entry`、`.guide-entry__grid`、`.guide-entry__card` 样式，4 列桌面 / 2 列移动端
+  5. **缓存版本**：CSS/JS URL 版本号更新为 `20260607`
+- **变更文件**：src/portal/templates/index.html, src/static/css/apple.css, src/portal/templates/base.html
+- **验证**：ruff ✅, pytest 81/81 ✅, 首页 200 ✅, 4 卡片链接正确 ✅
+
+---
+
+### [TASK-023] Phase 2：CLI 指南开发 + Stop hook asyncRewake 修复
+- **日期**：2026-06-07
+- **类型**：feat
+- **摘要**：
+  1. **guide.html 扩展 4 工具卡片**：2×2 网格（桌面应用 + 命令行工具），新增 Codex CLI 和 Claude Code CLI
+  2. **CLI 安装指南**：8 步动态渲染（macOS 检查 git/python，Windows 安装 git/node/python，统一 Git Bash 执行，npm install CLI，Codex Switch CLI 管理配置）
+  3. **URL 参数预选**：`?tool=codex-cli` 自动跳过工具选择步骤
+  4. **步骤动态生成**：renderGuide() 完全重构为数组驱动，桌面版 6 步 / CLI 8 步
+  5. **Stop hook 改为 asyncRewake**：退出码 2 强制唤醒，不更新记忆文件就无法结束回复
+- **变更文件**：src/portal/templates/guide.html（重写 JS 渲染逻辑）、.claude/settings.local.json、tests/integration/test_portal.py
+- **验证**：ruff ✅, pytest 81/81 ✅, 4 卡片 ✅, URL param ✅, CLI 8 步 ✅
+
+---
+
+### [TASK-024] ai-coding-ok 文档链路修复
+- **日期**：2026-06-07
+- **类型**：fix
+- **摘要**：
+  1. **定位根因**：AGENTS.md Plan 阶段只要求读 3 个记忆文件，从未要求读 system-prompt.md / workflows.md / coding-standards.md / copilot-instructions.md。导致这些文件内容过时无人发现。
+  2. **修复 AGENTS.md**：Plan 阶段扩展为 7 个文件（新增 AGENTS.md / system-prompt.md / workflows.md / coding-standards），Act 阶段新增第 4 条"同步更新过时的 agent 文档"。
+  3. **修复 system-prompt.md**：关键业务概念 3 条重复 copy-paste → 重写为 4 条独立概念；核心业务流程从旧同步架构更新为实时 GitHub 模式。
+  4. **修复 copilot-instructions.md**："从 GitHub 同步" → "实时获取 GitHub 最新版本"。
+- **变更文件**：AGENTS.md, .github/agent/system-prompt.md, .github/copilot-instructions.md
+- **注意事项**：agent 文档（system-prompt/workflows/coding-standards）内容需持续维护，AGENTS.md 的 Plan 阶段清单已覆盖

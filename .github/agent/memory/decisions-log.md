@@ -277,3 +277,34 @@
 #### 影响
 > - `admin/templates/packages.html` 重写为 2×2 卡片布局
 > - 首页和指南下载按钮按 `selPlat` 动态匹配对应平台的包
+
+---
+
+### ADR-008: Stop hook 使用 asyncRewake 强制 PDCA Act 阶段执行
+
+- **日期**：2026-06-07
+- **状态**：✅ 已采纳
+- **决策者**：wangliang + Claude
+
+#### 背景
+> ai-coding-ok 的 Act 阶段（更新 task-history / decisions-log / project-memory）频繁被遗漏。尽管配置了 SessionStart、UserPromptSubmit、PreToolUse、Stop 四层 hook，均为 `echo` 文本提醒，无强制力。AI Agent 在完成任务后直接报告结果，忽略了记忆文件更新。
+
+#### 方案对比
+
+| 方案 | 优点 | 缺点 |
+|------|------|------|
+| 继续依赖文本提醒 | 简单 | 已被证明无效 |
+| PreToolUse 阻断所有 Edit/Write | 强制 Plan | 过于激进，每次编辑都打断 |
+| Stop hook 使用 asyncRewake + exit 2 | 只在回复结束时阻断，精确有力 | 每次回复都触发，略微增加延迟 |
+
+#### 决策
+> **Stop hook 使用 `asyncRewake: true` + `exit 2`**。每次 Agent 准备结束回复时，hook 强制唤醒并打印 PDCA ACT CHECK 提醒。Agent 必须确认记忆文件已更新才能最终结束。
+
+#### 理由
+> 1) `asyncRewake` 是 Claude Code hooks 框架中唯一能强制阻断 Agent 回复流程的机制
+> 2) Stop 事件恰好在回复结束前触发，不影响正常编码流程
+> 3) exit code 2 触发"blocking error"语义，hook 输出作为 system-reminder 注入上下文
+
+#### 影响
+> - `.claude/settings.local.json` Stop hook 配置修改
+> - 每次回复结束前都会强制检查记忆更新状态

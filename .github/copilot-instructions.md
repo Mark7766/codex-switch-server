@@ -31,7 +31,7 @@
 codex-switch-server 是一个 **Web 服务 + 后台管理**。
 
 系统核心功能：
-- 版本更新镜像服务 — 从 GitHub 同步 codex-switch 新版本，提供国内可访问的高速下载
+- 版本更新镜像服务 — 实时获取 GitHub 最新版本，首次代理下载缓存，提供国内可访问的高速下载
 - 桌面应用 + CLI 工具下载 — 托管 Claude Desktop、Codex Desktop、Node.js、Git 等安装包，解决国内用户下载困难
 - 运营后台 — 仅管理员可访问的数据面板，查看下载统计和用户行为数据
 

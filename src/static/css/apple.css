@@ -382,6 +382,60 @@ img {
   line-height: 1.5;
 }
 
+/* ── Guide Entry ─────────────────────────────────────── */
+
+.guide-entry {
+  max-width: var(--content-max-width);
+  margin: 0 auto var(--space-6);
+  padding: 0 var(--space-3);
+}
+
+.guide-entry__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3);
+}
+
+.guide-entry__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-2);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  text-decoration: none;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.guide-entry__card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  text-decoration: none;
+}
+
+.guide-entry__icon {
+  font-size: 2rem;
+}
+
+.guide-entry__name {
+  font-size: var(--text-caption);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.guide-entry__tag {
+  font-size: var(--text-label);
+  color: var(--color-text-tertiary);
+}
+
+@media (max-width: 767px) {
+  .guide-entry__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 /* ── Tool Icons Grid ──────────────────────────────────── */
 
 .tools {

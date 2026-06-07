@@ -26,20 +26,21 @@ codex-switch-server 是一个 **Codex Switch 配套服务端。提供版本更�
 
 ### 核心业务流程
 ```
-1. 管理员触发 /admin/sync → 从 GitHub Releases API 拉取最新版本信息
-2. 服务端下载 .dmg/.exe/.zip 到本地 data/ 目录（或上传到 COS）
-3. codex-switch 客户端配置 custom mirror = codex-switch-server 地址
-4. 客户端调用 /api/v1/update/check → 获取最新版本号和下载地址
-5. 用户点击更新 → 从 codex-switch-server 下载安装包
-6. 用户下载 Claude Desktop/Codex Desktop/Node.js/Git → 从 /api/v1/packages/ 下载
-7. 客户端定时上报使用数据到 /api/v1/telemetry → 存入 SQLite
-8. 管理员访问 /admin → 查看运营数据面板
+1. 用户访问 /guide → 三步向导选择工具+平台 → 获取对应安装指南
+2. 用户访问 /download → JS fetch /api/v1/update/latest → 实时从 GitHub 获取最新版本信息
+3. 用户点击下载 → 检查本地缓存 data/codex-switch/ → 命中直接返回 → 未命中从 GitHub 代理下载并缓存
+4. 用户下载 Codex Desktop/Claude Desktop → 首页 /api/v1/packages 动态展示已上传安装包
+5. 管理员 /admin/packages → 4 个固定槽位上载安装包（Codex/Claude × macOS/Windows）
+6. 客户端 POST /api/v1/update/check → 实时对比版本 → 返回更新信息
+7. 客户端 POST /api/v1/telemetry → 事件验证+去重 → 存入 SQLite
+8. 管理员 /admin → 下载量/用户数/遥测数据面板（Chart.js）
 ```
 
 ### 关键业务概念
-- **版本镜像**：从 GitHub Releases 拉取 codex-switch 安装包，缓存到本地/腾讯云，供国内用户高速下载
-- **体验提升计划**：从 GitHub Releases 拉取 codex-switch 安装包，缓存到本地/腾讯云，供国内用户高速下载
-- **运营后台**：从 GitHub Releases 拉取 codex-switch 安装包，缓存到本地/腾讯云，供国内用户高速下载
+- **版本镜像**：实时读取 GitHub Releases API（5min 内存缓存），首次下载代理缓存到 data/codex-switch/，后续秒下
+- **工具包分发**：管理员上传 Codex Desktop / Claude Desktop 安装包到 4 个固定槽位，首页和指南动态匹配平台下载
+- **使用指南**：三步向导（工具→平台→6/8步指南），支持 Codex/Claude Desktop + Codex/Claude CLI，含截图引导
+- **运营后台**：下载统计+遥测面板，Bearer Token 认证
 
 ---
 
