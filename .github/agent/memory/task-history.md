@@ -433,3 +433,12 @@
 - **摘要**：Admin 面板下载统计显示 "unknown"——根因是旧 download_records 的 package_name 字段为 NULL。修复：① update.py 3 处 record_download 加 package_name="codex-switch" ② packages.py 新增 record_download 调用（桌面包下载之前未记录）③ database.py 启动时自动回填 NULL → 'codex-switch' ④ analytics.py 查询用 coalesce 兜底。
 - **变更文件**：src/api/v1/update.py, src/api/v1/packages.py, src/database.py, src/main.py, src/services/analytics.py
 - **验证**：ruff ✅, pytest 113/113 ✅, admin API 返回 Codex Switch 中文名 ✅
+
+---
+
+### [TASK-039] 生产部署：Admin v2 + 全站埋点上线
+- **日期**：2026-06-07
+- **类型**：deploy
+- **摘要**：SSH 部署到 43.134.110.192，commit range `218fdc2`→`bacdebd`（22 files, +1682/-127）。部署内容：Admin 运营后台 v2（三 Tab + 埋点 + 下载精细化）、门户全站 29 点位埋点、桌面应用下载记录、NULL package_name 自动回填。生产验证 8/8 下载 COS 302 + 5/5 门户/API 200。
+- **部署记录**：`.deploy/deployments.md` 部署 2026-06-07-002
+- **验证**：8/8 COS 302 ✅, 5/5 门户/API 200 ✅
