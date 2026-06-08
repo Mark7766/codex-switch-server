@@ -17,6 +17,8 @@ COPY pyproject.toml uv.lock* ./
 RUN uv sync --frozen --no-dev
 
 COPY src/ ./src/
+COPY alembic.ini ./alembic.ini
+COPY alembic/ ./alembic/
 
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
