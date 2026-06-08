@@ -142,3 +142,37 @@ async def test_download_package_http_local_cache(client: AsyncClient, monkeypatc
         assert "HttpTest.dmg" in resp.headers.get("content-disposition", "")
     finally:
         await mgr.delete_package("http-test", "macos", "arm64")
+
+
+@pytest.mark.asyncio
+async def test_download_package_cos_302_redirect(client: AsyncClient, monkeypatch, tmp_path):
+    """When COS is available and file exists → 302 redirect to COS URL."""
+    from unittest.mock import MagicMock
+
+    # Mock CosStorage to simulate COS hit
+    mock_cos = MagicMock()
+    mock_cos.exists.return_value = True
+    mock_cos.public_url.return_value = "https://cos.example.com/bucket/key/test.dmg"
+
+    # Make CosStorage() return our mock
+    monkeypatch.setattr("src.api.v1.packages.CosStorage", lambda: mock_cos)
+
+    # Seed package
+    from src.services.package_manager import PackageManager
+
+    src_file = tmp_path / "cos-test-source.dmg"
+    src_file.write_bytes(b"cos-test-content")
+    mgr = PackageManager()
+    try:
+        await mgr.add_package(
+            name="cos-test", display_name="COS Test", version="1.0",
+            platform="macos", arch="arm64", description="test",
+            local_file=src_file, original_filename="CosTest.dmg",
+        )
+
+        resp = await client.get("/api/v1/packages/cos-test/1.0/macos-arm64", follow_redirects=False)
+        assert resp.status_code == 302
+        assert resp.headers["location"] == "https://cos.example.com/bucket/key/test.dmg"
+        assert "CosTest.dmg" in resp.headers.get("content-disposition", "")
+    finally:
+        await mgr.delete_package("cos-test", "macos", "arm64")
