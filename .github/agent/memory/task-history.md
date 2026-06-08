@@ -460,3 +460,11 @@
 - **摘要**：生产环境 admin 面板页面访问/点击数据始终为空。根因：portal.js 使用 navigator.sendBeacon() 发送 JSON 数据时，浏览器自动设置 Content-Type 为 text/plain，FastAPI 的 Pydantic 解析器要求 application/json，返回 422 静默失败（sendBeacon 无法读响应）。修复：analytics.py 端点改为手动 request.json() 解析 JSON，兼容任意 Content-Type。无效 payload 静默返回 200。
 - **变更文件**：src/api/v1/analytics.py, tests/integration/test_admin_api.py
 - **验证**：ruff ✅, pytest 113/113 ✅, text/plain 200 ✅, application/json 200 ✅
+
+---
+
+### [TASK-042] 生产部署：sendBeacon 埋点修复上线
+- **日期**：2026-06-08
+- **类型**：deploy
+- **摘要**：SSH 部署到 43.134.110.192，commit `52e3540`→`6f906d2`（3 files）。sendBeacon Content-Type 修复上线——浏览器访问门户即自动上报埋点。部署记录：`.deploy/deployments.md` 部署 2026-06-08-003。
+- **验证**：sendBeacon 模拟 200 ✅, 门户 200 ✅, OG 标签 ✅
