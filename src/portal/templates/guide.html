@@ -236,6 +236,32 @@ function renderGuide() {
     // ── Desktop scenarios (existing) ────────────────────────
     steps.push({title:'下载 ' + toolLabel(), body:'<p>从 Codex Switch 国内镜像高速下载。</p><div id="step-dl-tool"></div>' + imgTag('step-dl-' + selTool + '.png')});
     steps.push({title:'安装 ' + toolLabel(), body:desktopInstall() + imgTag('step-install-' + selTool + '-' + selPlat + '.png')});
+    // Codex Desktop Windows 汉化（感谢伙伴 风影 提供方法）
+    if (selTool === 'codex' && !isMac) {
+      steps.push({title:'汉化 Codex Desktop（感谢风影提供）', body:
+        '<p style="color:var(--color-text-secondary);">Codex Desktop 默认英文界面，以下步骤可切换为中文。此方法由伙伴 <strong>风影</strong> 提供，两位伙伴已验证通过。</p>' +
+        '<ol style="margin:0;padding-left:20px;font-size:15px;color:var(--color-text-secondary);line-height:1.8;">' +
+        '<li><strong>查找安装路径：</strong>右键开始菜单 → <strong>Windows PowerShell (管理员)</strong>，执行：<br>' +
+        '<pre><code>Get-AppxPackage | Select-String "Codex"</code></pre>' +
+        '记下 <code>InstallLocation</code> 路径（例如 <code>C:\\Program Files\\WindowsApps\\...x64__...</code>）。</li>' +
+        '<li><strong>复制 app 目录：</strong>因为安装目录有写保护，需要将 <code>app/</code> 文件夹复制到其他位置，例如：<br>' +
+        '<pre><code>copy "C:\\...\\app" E:\\codex-app\\ -Recurse</code></pre></li>' +
+        '<li><strong>解包 ASAR：</strong>在终端中进入复制后的目录，执行：<br>' +
+        '<pre><code>npx @electron/asar extract app.asar app-extracted</code></pre></li>' +
+        '<li><strong>修改语言默认值：</strong>在 <code>app-extracted</code> 中搜索 <code>enable_i18n</code>，将其默认值从 <code>!1</code>（false）改为 <code>!0</code>（true）。<br>' +
+        '<p style="color:#86868b;">具体文件：<code>webview/assets/app-main-*.js</code>，搜索 <code>enable_i18n</code> 定位后单字节修改。</p></li>' +
+        '<li><strong>重新打包 ASAR：</strong>执行：<br>' +
+        '<pre><code>npx @electron/asar pack app-extracted app.asar</code></pre></li>' +
+        '<li><strong>修补 Codex.exe 哈希：</strong>ASAR 内容变更后，<code>Codex.exe</code> 内嵌的 SHA256 校验值需要更新。' +
+        '用 Python 计算新哈希并替换：<br>' +
+        '<pre><code>python -c "import hashlib; print(hashlib.sha256(open(\'Codex.exe\',\'rb\').read()).hexdigest())"</code></pre>' +
+        '用十六进制编辑器将新哈希写入 <code>Codex.exe</code> 对应位置。</li>' +
+        '<li><strong>创建桌面快捷方式：</strong>右键 <code>Codex.exe</code> → 发送到桌面快捷方式，重命名为 <strong>Codex CN</strong>。</li>' +
+        '</ol>' +
+        '<p style="margin-top:12px;color:var(--color-text-secondary);">完成！启动 <strong>Codex CN</strong> 即可看到中文界面。</p>' +
+        '<p style="color:var(--color-text-tertiary);font-size:13px;">💡 提示：如果觉得步骤较多，可以先用英文版，汉化不影响核心功能。感谢伙伴 <strong>风影</strong> 提供此方法！</p>'
+      });
+    }
     steps.push({title:'下载 Codex Switch', body:'<p>本地代理管理工具，让 Codex / Claude 通过 DeepSeek API 工作。</p><div id="step-dl-switch"></div><div id="step-dl-switch-install"></div>' + imgTag(isMac ? 'codex-switch-mac-error.jpg' : 'step-dl-switch-windows.png')});
     steps.push({title:'配置 Codex Switch', body:'<ol style="margin:0;padding-left:20px;font-size:15px;color:var(--color-text-secondary);line-height:1.6;"><li>启动 Codex Switch，进入<strong>设置</strong></li><li>填入第一步获取的 <strong>DeepSeek API Key</strong>（<code>sk-xxx</code>）</li><li>选择模型（推荐 <strong>DeepSeek V4 Flash</strong>）</li><li>点击<strong>"启动代理"</strong>，等待绿色"运行中"状态</li></ol><p style="margin-top:8px;color:var(--color-text-tertiary);">代理地址：<code>http://127.0.0.1:11435</code></p>' + '<img src="' + img('step-config-switch.png') + '" alt="Codex Switch 配置" class="guide-step__img" onload="this.classList.add(\'guide-step__img--loaded\')" onerror="this.style.display=\'none\'">'});
     steps.push({title:'启动验证', body:'<p>启动 ' + toolLabel() + '，如果 Codex Switch 代理已运行，' + toolLabel() + ' 将自动通过代理连接 DeepSeek API。</p>'});
