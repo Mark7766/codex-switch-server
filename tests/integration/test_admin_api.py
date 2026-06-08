@@ -35,7 +35,7 @@ class TestAnalyticsPageviewEndpoint:
     async def test_invalid_events(self, client: AsyncClient, bad_body: dict):
         """Various bad payloads — should not 500."""
         resp = await client.post("/api/v1/analytics/pageview", json=bad_body)
-        assert resp.status_code in (200, 422)
+        assert resp.status_code == 200  # silently ignored, always returns ok
 
 
 class TestAdminAnalyticsEndpoints:

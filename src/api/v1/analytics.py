@@ -11,8 +11,18 @@ router = APIRouter(prefix="/analytics", tags=["analytics"])
 
 
 @router.post("/pageview")
-async def record_pageview(body: PageviewRequest, request: Request, db: AsyncSession = _db_dep) -> dict:
-    """Record a pageview or click event. Public endpoint, fire-and-forget."""
+async def record_pageview(request: Request, db: AsyncSession = _db_dep) -> dict:
+    """Record a pageview or click event. Public endpoint, fire-and-forget.
+
+    Parses JSON body manually to accept any Content-Type, because
+    ``navigator.sendBeacon()`` sends ``text/plain`` rather than
+    ``application/json`` and Pydantic would reject it.
+    """
+    try:
+        data = await request.json()
+        body = PageviewRequest(**data)
+    except Exception:
+        return {"status": "ok"}  # silently ignore malformed payloads
     ip = request.client.host if request.client else ""
     ua = request.headers.get("User-Agent", "")
     svc = AnalyticsService(db)

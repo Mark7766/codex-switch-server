@@ -451,3 +451,12 @@
 - **摘要**：微信分享到朋友圈显示灰色空白卡片——根因是 base.html 完全缺少 Open Graph 元标签。新增 6 个 OG 标签（og:type/site_name/title/description/url/image + 尺寸），分享图使用 logo.png（1024×1024）。CSS 版本号更新为 20260607c。
 - **变更文件**：src/portal/templates/base.html
 - **验证**：ruff ✅, pytest 113/113 ✅, OG 标签渲染正确 ✅
+
+---
+
+### [TASK-041] 修复埋点数据为空——sendBeacon Content-Type 不兼容
+- **日期**：2026-06-08
+- **类型**：fix
+- **摘要**：生产环境 admin 面板页面访问/点击数据始终为空。根因：portal.js 使用 navigator.sendBeacon() 发送 JSON 数据时，浏览器自动设置 Content-Type 为 text/plain，FastAPI 的 Pydantic 解析器要求 application/json，返回 422 静默失败（sendBeacon 无法读响应）。修复：analytics.py 端点改为手动 request.json() 解析 JSON，兼容任意 Content-Type。无效 payload 静默返回 200。
+- **变更文件**：src/api/v1/analytics.py, tests/integration/test_admin_api.py
+- **验证**：ruff ✅, pytest 113/113 ✅, text/plain 200 ✅, application/json 200 ✅
