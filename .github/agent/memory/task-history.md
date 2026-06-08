@@ -504,3 +504,13 @@
 - **摘要**：Claude Desktop Windows 安装所需的 `2.1.138.zip` 原来直接走 `/static/files/` nginx 静态文件（新加坡服务器，国内 29KB/s），改为 COS 广州优先 302 跳转。新增 `/api/v1/files/{filename}` 端点（COS 命中→302 广州；COS 未命中→302 降级到 `/static/files/` nginx sendfile）。上传 COS key=`files/2.1.138.zip` 含 Content-Disposition 元数据。guide.html 下载链接更新。
 - **变更文件**：src/api/v1/files.py（新）, src/api/router.py, src/portal/templates/guide.html
 - **验证**：ruff ✅, pytest 145/145 ✅, COS 302 ✅, 不安全文件名 404 ✅, COS miss 降级 ✅
+
+---
+
+### [TASK-047] 生产部署：2.1.138.zip COS 优先下载 + Stop hook 修复
+- **日期**：2026-06-08
+- **类型**：deploy
+- **摘要**：SSH 部署到 43.134.110.192，commit `24af2eb`→`e41b611`（4 files, +59/-1）。部署内容：①新增 `/api/v1/files/{filename}` COS 302 优先下载端点 ② guide.html zip 下载链接更新 ③ Stop hook `task-history.md` 已更新检查防死循环。验证全部 5 端点 200。
+- **变更文件**：src/api/v1/files.py（新）, src/api/router.py, src/portal/templates/guide.html
+- **验证**：files 302 COS → 200 ✅, 门户/指南/下载/版本API 200 ✅
+- **部署记录**：`.deploy/deployments.md` 部署 2026-06-08-004
