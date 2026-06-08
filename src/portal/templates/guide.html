@@ -246,23 +246,8 @@ function renderGuide() {
         '<p style="color:var(--color-text-secondary);">此方法由伙伴 <strong>风影</strong> 提供，两位伙伴已验证通过。</p>' +
         '<div style="background:#1d1d1f;border-radius:12px;padding:16px;margin:12px 0;overflow-x:auto;">' +
         '<pre style="margin:0;color:#34c759;font-size:13px;white-space:pre-wrap;word-break:break-all;">' +
-        '请帮我把 Codex Desktop 切换为中文界面。步骤如下：\n\n' +
-        '1. 用 PowerShell 找到 Codex 的安装路径：\n' +
-        'Get-AppxPackage | Select-String "Codex"\n' +
-        '记下 InstallLocation 的完整路径。\n\n' +
-        '2. 把安装目录里的 app 文件夹复制到 E:\\codex-app\\（避开写保护）：\n' +
-        'copy "找到的路径\\app" E:\\codex-app\\ -Recurse\n\n' +
-        '3. 进入 E:\\codex-app\\，解包 app.asar：\n' +
-        'npx @electron/asar extract app.asar app-extracted\n\n' +
-        '4. 在 app-extracted 里搜索 enable_i18n，把默认值从 !1 改为 !0\n' +
-        '   （文件路径：webview/assets/app-main-*.js）\n\n' +
-        '5. 重新打包：\n' +
-        'npx @electron/asar pack app-extracted app.asar\n\n' +
-        '6. 用 Python 计算新的 SHA256 哈希并替换 Codex.exe 里的旧哈希：\n' +
-        'python -c "import hashlib; print(hashlib.sha256(open(\'Codex.exe\',\'rb\').read()).hexdigest())"\n' +
-        '   旧哈希：38f405a249ee7972\n' +
-        '   新哈希：f5fb43107c3437cc\n\n' +
-        '7. 创建桌面快捷方式，命名为 Codex CN。</pre></div>' +
+        '请帮我把 Codex Desktop 切换为中文界面，你自己搞定，不用问我。\n' +
+        '大致思路：找到安装路径 → 复制 app 目录避开写保护 → 解包 app.asar → 修改 enable_i18n 默认值从 !1(false) 改为 !0(true) → 重新打包 asar → 更新 Codex.exe 的 SHA256 哈希 → 创建桌面快捷方式。</pre></div>' +
         '<p style="color:var(--color-text-secondary);">然后按 Codex Desktop 的指引一步步操作即可。完成后启动桌面上的 <strong>Codex CN</strong> 就是中文界面了。</p>' +
         '<p style="color:var(--color-text-tertiary);font-size:13px;">💡 如果不想折腾汉化，英文版完全不影响正常使用。感谢伙伴 <strong>风影</strong> 提供此方法！</p>'
       });
