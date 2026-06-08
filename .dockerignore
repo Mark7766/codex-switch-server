@@ -22,3 +22,4 @@ docs/
 
 *.zip
 !codexswtich.cloud_nginx.zip
+!src/static/files/*.zip

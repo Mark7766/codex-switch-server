@@ -37,3 +37,4 @@ codexswtich.cloud_nginx.zip
 2.1.138.zip
 *.pdf
 src/static/files/
+!src/static/files/2.1.138.zip
