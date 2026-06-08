@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.models.base import Base
@@ -10,6 +10,9 @@ from src.models.base import Base
 
 class DownloadRecord(Base):
     __tablename__ = "download_records"
+    __table_args__ = (
+        Index("ix_downloads_time_pkg", "downloaded_at", "package_name"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     release_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("releases.id"), nullable=True)

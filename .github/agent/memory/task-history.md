@@ -468,3 +468,12 @@
 - **类型**：deploy
 - **摘要**：SSH 部署到 43.134.110.192，commit `52e3540`→`6f906d2`（3 files）。sendBeacon Content-Type 修复上线——浏览器访问门户即自动上报埋点。部署记录：`.deploy/deployments.md` 部署 2026-06-08-003。
 - **验证**：sendBeacon 模拟 200 ✅, 门户 200 ✅, OG 标签 ✅
+
+---
+
+### [TASK-043] 修复 3 个高优先级质量问题（质量报告 H1-H3）
+- **日期**：2026-06-08
+- **类型**：fix
+- **摘要**：按 QUALITY-REPORT.md 修复 3 个高优问题。H1：download_records 加 `(downloaded_at, package_name)` 联合索引，加速 admin 下载趋势查询。H2：cos_storage.py 补充 14 个单元测试（禁用态 4 + 启用态 8 + Content-Disposition 1 + 异常 1），覆盖率 46%→100%。H3：http.py 补充 7 个单元测试（get_json 3 含重试 + download 4 含重试），覆盖率 49%→95%。
+- **变更文件**：src/models/download.py（+索引）、tests/unit/test_cos_storage.py（新）、tests/unit/test_utils_http.py（新）
+- **验证**：ruff ✅, pytest 133/133 ✅, cos_storage 100% ✅, http 95% ✅, 总覆盖率 83%→87%
