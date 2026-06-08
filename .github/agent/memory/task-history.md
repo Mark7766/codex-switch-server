@@ -486,3 +486,21 @@
 - **摘要**：按 QUALITY-REPORT.md M3 补充 packages.py 和 update.py 的测试覆盖。packages：新增 5 个集成测试（PackageManager add/list/delete/get_download_path/update roundtrip + HTTP 下载端点）。update：新增 3 个 HTTP 下载测试（macOS ARM 本地缓存 / Windows x64 本地缓存 / COS 302 路径），用 monkeypatch 模拟 COS 禁用覆盖降级路径。
 - **变更文件**：tests/integration/test_api_packages.py, tests/integration/test_api_update.py
 - **验证**：ruff ✅, pytest 141/141 ✅, packages 52%→57%, update 56%→75%, 总覆盖率 89%→90%
+
+---
+
+### [TASK-045] admin/router + packages COS 302 路径测试覆盖
+- **日期**：2026-06-08
+- **类型**：test
+- **摘要**：补 admin/router 上传/删除测试（3 个）+ packages COS 302 mock 测试（1 个）。admin/router 覆盖率 64%→90%（+26pp）。packages COS 302 路径用 mock CosStorage 覆盖。总覆盖率 90%→92%，测试 141→145。
+- **变更文件**：tests/integration/test_admin_packages.py, tests/integration/test_api_packages.py
+- **验证**：ruff ✅, pytest 145/145 ✅, admin/router 90% ✅, 总覆盖率 92% ✅
+
+---
+
+### [TASK-046] 2.1.138.zip 改为 COS 优先下载
+- **日期**：2026-06-08
+- **类型**：feat
+- **摘要**：Claude Desktop Windows 安装所需的 `2.1.138.zip` 原来直接走 `/static/files/` nginx 静态文件（新加坡服务器，国内 29KB/s），改为 COS 广州优先 302 跳转。新增 `/api/v1/files/{filename}` 端点（COS 命中→302 广州；COS 未命中→302 降级到 `/static/files/` nginx sendfile）。上传 COS key=`files/2.1.138.zip` 含 Content-Disposition 元数据。guide.html 下载链接更新。
+- **变更文件**：src/api/v1/files.py（新）, src/api/router.py, src/portal/templates/guide.html
+- **验证**：ruff ✅, pytest 145/145 ✅, COS 302 ✅, 不安全文件名 404 ✅, COS miss 降级 ✅
