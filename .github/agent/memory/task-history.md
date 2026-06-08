@@ -477,3 +477,12 @@
 - **摘要**：按 QUALITY-REPORT.md 修复 3 个高优问题。H1：download_records 加 `(downloaded_at, package_name)` 联合索引，加速 admin 下载趋势查询。H2：cos_storage.py 补充 14 个单元测试（禁用态 4 + 启用态 8 + Content-Disposition 1 + 异常 1），覆盖率 46%→100%。H3：http.py 补充 7 个单元测试（get_json 3 含重试 + download 4 含重试），覆盖率 49%→95%。
 - **变更文件**：src/models/download.py（+索引）、tests/unit/test_cos_storage.py（新）、tests/unit/test_utils_http.py（新）
 - **验证**：ruff ✅, pytest 133/133 ✅, cos_storage 100% ✅, http 95% ✅, 总覆盖率 83%→87%
+
+---
+
+### [TASK-044] 修复 M3：packages.py 和 update.py 覆盖率提升
+- **日期**：2026-06-08
+- **类型**：test
+- **摘要**：按 QUALITY-REPORT.md M3 补充 packages.py 和 update.py 的测试覆盖。packages：新增 5 个集成测试（PackageManager add/list/delete/get_download_path/update roundtrip + HTTP 下载端点）。update：新增 3 个 HTTP 下载测试（macOS ARM 本地缓存 / Windows x64 本地缓存 / COS 302 路径），用 monkeypatch 模拟 COS 禁用覆盖降级路径。
+- **变更文件**：tests/integration/test_api_packages.py, tests/integration/test_api_update.py
+- **验证**：ruff ✅, pytest 141/141 ✅, packages 52%→57%, update 56%→75%, 总覆盖率 89%→90%
