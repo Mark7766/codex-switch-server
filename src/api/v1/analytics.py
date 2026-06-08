@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from fastapi import APIRouter, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -7,6 +9,7 @@ from src.api.deps import _db_dep
 from src.schemas.analytics import PageviewRequest
 from src.services.analytics import AnalyticsService
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
 
@@ -22,7 +25,8 @@ async def record_pageview(request: Request, db: AsyncSession = _db_dep) -> dict:
         data = await request.json()
         body = PageviewRequest(**data)
     except Exception:
-        return {"status": "ok"}  # silently ignore malformed payloads
+        logger.warning("Analytics pageview: failed to parse JSON body")
+        return {"status": "ok"}
     ip = request.client.host if request.client else ""
     ua = request.headers.get("User-Agent", "")
     svc = AnalyticsService(db)

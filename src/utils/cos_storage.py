@@ -72,7 +72,7 @@ class CosStorage:
             self._client.head_object(Bucket=self._bucket, Key=cos_key)
             return True
         except Exception:
-            logger.debug("COS key not found (or error): %s", cos_key)
+            logger.warning("COS key not found (or error): %s", cos_key)
             return False
 
     def public_url(self, cos_key: str) -> str:
