@@ -24,7 +24,8 @@ _YML_CACHE_TTL = 300  # 5 minutes
 
 # Regex for parsing GitHub asset filenames
 # Codex-Switch-1.5.0-mac-arm64.zip / Codex-Switch-Setup-1.5.0-win-x64.exe
-_FILENAME_RE = re.compile(r"^Codex-Switch-(?:Setup-)?(\d+\.\d+\.\d+)-(\w+)-(\w+)\.(.+)$")
+# Also handles win without arch: Codex-Switch-Setup-1.6.0-win.exe
+_FILENAME_RE = re.compile(r"^Codex-Switch-(?:Setup-)?(\d+\.\d+\.\d+)-(\w+)(?:-(\w+))?\.(.+)$")
 
 _PLATFORM_MAP = {"mac": "macos", "win": "windows", "linux": "linux"}
 _ARCH_MAP = {"arm64": "arm64", "aarch64": "arm64", "x64": "x64", "amd64": "x64"}
@@ -49,14 +50,14 @@ def _parse_filename_to_cache_key(filename: str) -> tuple[str, str, str, str] | N
 
     version = m.group(1)
     platform_raw = m.group(2)
-    arch_raw = m.group(3)
+    arch_raw = m.group(3)  # may be None for win-without-arch filenames
     file_type = m.group(4)
 
     platform = _PLATFORM_MAP.get(platform_raw)
     if not platform:
         return None
 
-    arch = _ARCH_MAP.get(arch_raw, arch_raw)
+    arch = _ARCH_MAP.get(arch_raw) if arch_raw else "x64"
 
     return (version, platform, arch, file_type)
 

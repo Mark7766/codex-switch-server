@@ -68,8 +68,10 @@ async def download_updates_file(
     cos = CosStorage()
 
     # 1. COS → fast download via Guangzhou
-    cos_key = f"codex-switch/{version}/{filename}"
-    if cos.exists(cos_key):
+    # Try the exact yml filename first, then fall back to COS-native filenames
+    # (yml uses .zip from electron-builder, COS stores .dmg/.exe for browser downloads)
+    cos_key = _find_cos_key(cos, version, platform, arch, filename)
+    if cos_key:
         await release_svc.record_download(
             version,
             platform,
@@ -117,6 +119,54 @@ async def download_updates_file(
         source="electron-updater",
     )
     return _send_file(str(file_path), filename)
+
+
+def _find_cos_key(cos: CosStorage, version: str, platform: str, arch: str, filename: str) -> str | None:
+    """Find the COS key for a file, trying the yml filename first then COS-native alternatives.
+
+    electron-builder generates .zip in yml files, but COS stores .dmg/.exe for browser downloads.
+    Also, electron-builder may omit the arch suffix for Windows (win.exe vs win-x64.exe).
+    """
+    # 1. Exact match: the filename from the yml
+    exact_key = f"codex-switch/{version}/{filename}"
+    if cos.exists(exact_key):
+        return exact_key
+
+    # 2. Fallback: try COS-native filenames
+    candidates = _generate_cos_candidates(version, platform, arch, filename)
+    for key in candidates:
+        if cos.exists(key):
+            return key
+
+    return None
+
+
+def _generate_cos_candidates(version: str, platform: str, arch: str, filename: str) -> list[str]:
+    """Generate alternative COS keys for known filename mismatches between yml and COS."""
+    candidates = []
+
+    if platform == "macos":
+        # yml: .zip → COS: .dmg
+        if filename.endswith(".zip"):
+            dmg_name = filename[:-4] + ".dmg"
+            candidates.append(f"codex-switch/{version}/{dmg_name}")
+        # yml: .zip.blockmap → COS: .dmg.blockmap
+        if filename.endswith(".zip.blockmap"):
+            dmg_bm = filename[: -len(".zip.blockmap")] + ".dmg.blockmap"
+            candidates.append(f"codex-switch/{version}/{dmg_bm}")
+
+    elif platform == "windows":
+        # yml: win.exe (no arch) → COS: win-x64.exe or win-arm64.exe
+        # Parse the original filename to check if arch is missing
+        parts = filename.rsplit(".", 1)
+        name_part = parts[0] if len(parts) > 1 else filename
+        ext = parts[1] if len(parts) > 1 else "exe"
+        # Check if the name already ends with -arm64 or -x64
+        if not re.match(r".*-(arm64|x64|aarch64|amd64)$", name_part):
+            for a in (arch, "x64", "arm64"):
+                candidates.append(f"codex-switch/{version}/{name_part}-{a}.{ext}")
+
+    return candidates
 
 
 def _send_file(full_path: str, filename: str | None = None) -> Response:
