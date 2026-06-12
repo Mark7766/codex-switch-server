@@ -563,3 +563,18 @@
 - **变更文件**：docs/superpowers/specs/2026-06-12-security-hardening-tier1.md（新）
 - **验证**：方案 Review 中
 - **注意事项**：明确排除 Redis/分布式限速、下载签名 URL、客户端密钥认证等重型方案。限速不应用于 yml 端点和门户页面访问。
+
+---
+
+### [TASK-052] 遥测优化：去重白名单 + 聚合计数 + 自动清理
+- **日期**：2026-06-12
+- **类型**：feat
+- **摘要**：按 `docs/superpowers/specs/2026-06-12-telemetry-optimization.md` 实施服务端三项优化：
+  1. **措施①（schema）**：`TelemetryEventIn` 新增 `count`/`period_start`/`period_end` 可选字段，向后兼容（默认 count=1）。count>1 时存入 properties，count=0 拒绝写入。
+  2. **措施②（去重白名单）**：`_DEDUP_TYPES = {"app_start", "proxy_start", "proxy_error", "update_check"}`，model_call/app_close/proxy_stop 跳过 exact dedup 查询。
+  3. **措施③（自动清理）**：lifespan 启动后台 asyncio task，每小时清理 telemetry_events/page_events 超 30 天、download_records 超 90 天的记录。
+  4. **测试**：+8 测试（5 单元：model_call 去重跳过/count 存储/零计数值拒绝/默认值/无去重；3 集成：聚合计数 API/去重跳过 API/向后兼容 API），190 total passed。
+  5. **部署**：生产冒烟全部通过（count 聚合 ✅、向后兼容 ✅、model_call 二次同事件均 accepted ✅）
+- **变更文件**：src/schemas/telemetry.py（改）、src/services/telemetry.py（改）、src/main.py（改）、tests/unit/test_telemetry_service.py（改）、tests/integration/test_api_telemetry.py（改）、docs/superpowers/specs/2026-06-12-telemetry-optimization.md（新）
+- **验证**：ruff ✅, ruff format ✅, pytest 190/190 ✅, 生产冒烟 4/4 ✅
+- **注意事项**：客户端改造（措施① client-side aggregation）待客户端配合实施。当前服务端已支持 count 字段，老客户端不传 count 走原逻辑不受影响。

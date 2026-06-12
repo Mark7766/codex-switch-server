@@ -138,7 +138,7 @@ class TelemetryService:
                     "event_type": evt.event_type,
                     "platform": evt.platform,
                     "app_version": evt.app_version,
-                    "timestamp": str(evt.timestamp),
+                    "timestamp": str(evt.timestamp + timedelta(hours=8)),  # UTC → Beijing time
                 }
             )
 
