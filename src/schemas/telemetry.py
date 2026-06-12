@@ -27,6 +27,10 @@ class TelemetryEventIn(BaseModel):
     event_type: str
     timestamp: datetime
     properties: dict[str, Any] = Field(default_factory=dict)
+    # model_call aggregation fields (optional, backward-compatible)
+    count: int = 1  # number of calls this event represents
+    period_start: int | None = None  # unix timestamp of aggregation window start
+    period_end: int | None = None  # unix timestamp of aggregation window end
 
 
 class TelemetryPayload(BaseModel):

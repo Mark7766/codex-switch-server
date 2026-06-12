@@ -18,6 +18,10 @@ from src.schemas.telemetry import (
 
 logger = logging.getLogger(__name__)
 
+# Event types that need deduplication (same client_id+event_type+timestamp).
+# High-frequency or one-shot events are excluded — dedup would be wasteful or incorrect.
+_DEDUP_TYPES = frozenset({"app_start", "proxy_start", "proxy_error", "update_check"})
+
 
 class TelemetryService:
     def __init__(self, db: AsyncSession):
@@ -32,16 +36,23 @@ class TelemetryService:
                 rejected += 1
                 continue
 
-            exists = await self._db.execute(
-                select(TelemetryEvent).where(
-                    TelemetryEvent.client_id == payload.client_id,
-                    TelemetryEvent.event_type == evt.event_type,
-                    TelemetryEvent.timestamp == evt.timestamp,
-                )
-            )
-            if exists.scalar_one_or_none():
+            # Skip events with zero count (client sent empty aggregation window)
+            if evt.count <= 0:
                 rejected += 1
                 continue
+
+            # Dedup: only for event types where duplicate submission is suspicious
+            if evt.event_type in _DEDUP_TYPES:
+                exists = await self._db.execute(
+                    select(TelemetryEvent).where(
+                        TelemetryEvent.client_id == payload.client_id,
+                        TelemetryEvent.event_type == evt.event_type,
+                        TelemetryEvent.timestamp == evt.timestamp,
+                    )
+                )
+                if exists.scalar_one_or_none():
+                    rejected += 1
+                    continue
 
             cutoff = datetime.now(UTC).replace(tzinfo=None) - timedelta(minutes=1)
             recent_count = await self._db.execute(
@@ -56,11 +67,20 @@ class TelemetryService:
                 rejected += 1
                 continue
 
+            # Merge aggregation fields into properties for storage
+            props = dict(evt.properties)
+            if evt.count > 1:
+                props["count"] = evt.count
+            if evt.period_start is not None:
+                props["period_start"] = evt.period_start
+            if evt.period_end is not None:
+                props["period_end"] = evt.period_end
+
             record = TelemetryEvent(
                 client_id=payload.client_id,
                 event_type=evt.event_type,
                 timestamp=evt.timestamp,
-                properties=evt.properties,
+                properties=props,
                 app_version=payload.app_version,
                 platform=payload.platform,
                 arch=payload.arch,

@@ -84,3 +84,100 @@ async def test_get_stats_with_data(db_session: AsyncSession):
     assert stats.event_type_counts[0].count == 1
     assert len(stats.recent_events) == 1
     assert stats.recent_events[0]["client_id"] == "u1***"
+
+
+@pytest.mark.asyncio
+async def test_ingest_model_call_skips_dedup(db_session: AsyncSession):
+    """model_call is not in the dedup whitelist — repeated events are accepted."""
+    svc = TelemetryService(db_session)
+    payload = TelemetryPayload(
+        client_id="d2",
+        events=[TelemetryEventIn(event_type="model_call", timestamp=datetime(2026, 6, 5, 10, 0, 0, tzinfo=UTC))],
+    )
+    r1 = await svc.ingest(payload)
+    r2 = await svc.ingest(payload)  # same payload, should still be accepted
+    assert r1.accepted == 1
+    assert r2.accepted == 1  # model_call is not deduped
+
+
+@pytest.mark.asyncio
+async def test_ingest_app_close_skips_dedup(db_session: AsyncSession):
+    """app_close is not in the dedup whitelist — repeated events are accepted."""
+    svc = TelemetryService(db_session)
+    payload = TelemetryPayload(
+        client_id="d3",
+        events=[TelemetryEventIn(event_type="app_close", timestamp=datetime(2026, 6, 5, 10, 0, 0, tzinfo=UTC))],
+    )
+    r1 = await svc.ingest(payload)
+    r2 = await svc.ingest(payload)
+    assert r1.accepted == 1
+    assert r2.accepted == 1
+
+
+@pytest.mark.asyncio
+async def test_ingest_model_call_with_count(db_session: AsyncSession):
+    """model_call with count>1 stores the count in properties."""
+    svc = TelemetryService(db_session)
+    payload = TelemetryPayload(
+        client_id="d4",
+        events=[
+            TelemetryEventIn(
+                event_type="model_call",
+                timestamp=datetime(2026, 6, 5, 10, 0, 0, tzinfo=UTC),
+                count=47,
+                period_start=1718163000,
+                period_end=1718163300,
+            )
+        ],
+    )
+    result = await svc.ingest(payload)
+    assert result.accepted == 1
+
+    # Verify count stored in DB
+    from sqlalchemy import select
+
+    from src.models.telemetry import TelemetryEvent
+
+    row = await db_session.scalar(select(TelemetryEvent).where(TelemetryEvent.client_id == "d4"))
+    assert row is not None
+    assert row.properties.get("count") == 47
+    assert row.properties.get("period_start") == 1718163000
+    assert row.properties.get("period_end") == 1718163300
+
+
+@pytest.mark.asyncio
+async def test_ingest_zero_count_rejected(db_session: AsyncSession):
+    """Events with count=0 (empty aggregation window) are rejected."""
+    svc = TelemetryService(db_session)
+    payload = TelemetryPayload(
+        client_id="d5",
+        events=[
+            TelemetryEventIn(
+                event_type="model_call",
+                timestamp=datetime(2026, 6, 5, 10, 0, 0, tzinfo=UTC),
+                count=0,
+            )
+        ],
+    )
+    result = await svc.ingest(payload)
+    assert result.accepted == 0
+    assert result.rejected == 1
+
+
+@pytest.mark.asyncio
+async def test_ingest_default_count_is_one(db_session: AsyncSession):
+    """Events without explicit count default to count=1 (backward compat)."""
+    svc = TelemetryService(db_session)
+    payload = TelemetryPayload(
+        client_id="d6",
+        events=[TelemetryEventIn(event_type="proxy_start", timestamp=datetime(2026, 6, 5, 10, 0, 0, tzinfo=UTC))],
+    )
+    result = await svc.ingest(payload)
+    assert result.accepted == 1
+
+    from sqlalchemy import select
+
+    from src.models.telemetry import TelemetryEvent
+
+    row = await db_session.scalar(select(TelemetryEvent).where(TelemetryEvent.client_id == "d6"))
+    assert row.properties.get("count") is None  # count=1 is not stored (it's the default)
