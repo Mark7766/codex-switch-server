@@ -45,9 +45,14 @@ async def test_package_manager_add_list_roundtrip(tmp_path: Path):
 
     mgr = PackageManager(storage=storage)
     await mgr.add_package(
-        name="roundtrip", display_name="Roundtrip", version="1.0",
-        platform="macos", arch="arm64", description="test",
-        local_file=src_file, original_filename="Roundtrip.dmg",
+        name="roundtrip",
+        display_name="Roundtrip",
+        version="1.0",
+        platform="macos",
+        arch="arm64",
+        description="test",
+        local_file=src_file,
+        original_filename="Roundtrip.dmg",
     )
 
     pkgs = await mgr.list_packages()
@@ -66,9 +71,14 @@ async def test_package_manager_delete_removes_entry(tmp_path: Path):
 
     mgr = PackageManager(storage=storage)
     await mgr.add_package(
-        name="temp", display_name="Temp", version="1.0",
-        platform="macos", arch="arm64", description="test",
-        local_file=src_file, original_filename="Temp.dmg",
+        name="temp",
+        display_name="Temp",
+        version="1.0",
+        platform="macos",
+        arch="arm64",
+        description="test",
+        local_file=src_file,
+        original_filename="Temp.dmg",
     )
     result = await mgr.delete_package("temp", "macos", "arm64")
     assert result is True
@@ -86,9 +96,14 @@ async def test_package_manager_get_download_path(tmp_path: Path):
 
     mgr = PackageManager(storage=storage)
     await mgr.add_package(
-        name="myapp", display_name="My App", version="1.0",
-        platform="macos", arch="arm64", description="test",
-        local_file=src_file, original_filename="MyApp-Installer.dmg",
+        name="myapp",
+        display_name="My App",
+        version="1.0",
+        platform="macos",
+        arch="arm64",
+        description="test",
+        local_file=src_file,
+        original_filename="MyApp-Installer.dmg",
     )
 
     path, fname = await mgr.get_download_path_with_name("myapp", "macos", "arm64")
@@ -105,9 +120,14 @@ async def test_package_manager_update_existing_package(tmp_path: Path):
         src_file.write_bytes(b"v" + ver.encode())
         mgr = PackageManager(storage=storage)
         await mgr.add_package(
-            name="myapp", display_name="My App", version=ver,
-            platform="macos", arch="arm64", description="test",
-            local_file=src_file, original_filename=f"MyApp-{ver}.dmg",
+            name="myapp",
+            display_name="My App",
+            version=ver,
+            platform="macos",
+            arch="arm64",
+            description="test",
+            local_file=src_file,
+            original_filename=f"MyApp-{ver}.dmg",
         )
 
     pkgs = await mgr.list_packages()
@@ -131,9 +151,14 @@ async def test_download_package_http_local_cache(client: AsyncClient, monkeypatc
     mgr = PackageManager()
     try:
         await mgr.add_package(
-            name="http-test", display_name="HTTP Test", version="1.0",
-            platform="macos", arch="arm64", description="test",
-            local_file=src_file, original_filename="HttpTest.dmg",
+            name="http-test",
+            display_name="HTTP Test",
+            version="1.0",
+            platform="macos",
+            arch="arm64",
+            description="test",
+            local_file=src_file,
+            original_filename="HttpTest.dmg",
         )
 
         resp = await client.get("/api/v1/packages/http-test/1.0/macos-arm64")
@@ -165,9 +190,14 @@ async def test_download_package_cos_302_redirect(client: AsyncClient, monkeypatc
     mgr = PackageManager()
     try:
         await mgr.add_package(
-            name="cos-test", display_name="COS Test", version="1.0",
-            platform="macos", arch="arm64", description="test",
-            local_file=src_file, original_filename="CosTest.dmg",
+            name="cos-test",
+            display_name="COS Test",
+            version="1.0",
+            platform="macos",
+            arch="arm64",
+            description="test",
+            local_file=src_file,
+            original_filename="CosTest.dmg",
         )
 
         resp = await client.get("/api/v1/packages/cos-test/1.0/macos-arm64", follow_redirects=False)

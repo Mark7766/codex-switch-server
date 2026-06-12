@@ -64,21 +64,25 @@ class TestGetJson:
         http = HttpClient(base_url="https://api.example.com", max_retries=3)
         resp = _make_resp({"ok": True})
 
-        with _patch_async_client(get_side_effect=[
-            httpx.HTTPError("fail1"),
-            httpx.HTTPError("fail2"),
-            resp,
-        ]):
+        with _patch_async_client(
+            get_side_effect=[
+                httpx.HTTPError("fail1"),
+                httpx.HTTPError("fail2"),
+                resp,
+            ]
+        ):
             result = await http.get_json("/test")
         assert result == {"ok": True}
 
     async def test_all_retries_exhausted_raises(self):
         http = HttpClient(base_url="https://api.example.com", max_retries=2)
 
-        with _patch_async_client(get_side_effect=[
-            httpx.HTTPError("fail1"),
-            httpx.HTTPError("fail2"),
-        ]):
+        with _patch_async_client(
+            get_side_effect=[
+                httpx.HTTPError("fail1"),
+                httpx.HTTPError("fail2"),
+            ]
+        ):
             with pytest.raises(httpx.HTTPError):
                 await http.get_json("/test")
 
@@ -110,11 +114,13 @@ class TestDownload:
         dest = tmp_path / "retry.bin"
         ctx = _make_stream_resp(b"ok after retry")
 
-        with _patch_async_client(stream_side_effect=[
-            httpx.HTTPError("fail1"),
-            httpx.HTTPError("fail2"),
-            ctx,
-        ]):
+        with _patch_async_client(
+            stream_side_effect=[
+                httpx.HTTPError("fail1"),
+                httpx.HTTPError("fail2"),
+                ctx,
+            ]
+        ):
             result = await http.download("https://example.com/f.bin", dest)
         assert result == dest
 
@@ -122,9 +128,11 @@ class TestDownload:
         http = HttpClient(max_retries=2)
         dest = tmp_path / "fail.bin"
 
-        with _patch_async_client(stream_side_effect=[
-            httpx.HTTPError("fail1"),
-            httpx.HTTPError("fail2"),
-        ]):
+        with _patch_async_client(
+            stream_side_effect=[
+                httpx.HTTPError("fail1"),
+                httpx.HTTPError("fail2"),
+            ]
+        ):
             with pytest.raises(httpx.HTTPError):
                 await http.download("https://example.com/f.bin", dest)

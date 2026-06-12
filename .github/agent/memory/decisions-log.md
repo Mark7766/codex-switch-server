@@ -381,3 +381,38 @@
 > - `admin/router.py`: COS 上传 key 与下载对齐
 > - `upload-codex-switch-to-cos.sh`: 同步加 Content-Disposition
 > - 旧 COS 对象（`packages/{name}/latest/{原始文件名}`）变成孤儿，需重新上传
+
+---
+
+### ADR-011: electron-updater 支持采用独立路由组 + 独立 service
+
+- **日期**：2026-06-12
+- **状态**：✅ 已采纳
+- **决策者**：wangliang
+
+#### 背景
+> codex-switch 客户端使用 `electron-updater` v6.8.3 generic provider 进行自动更新。当前客户端直接拉取 GitHub Releases，需要改为通过 server 代理，以利用 COS 广州加速和本地缓存。electron-updater 要求的 URL 格式（`latest-mac.yml`、`latest.yml`、`{原始 asset 名}`）与现有 `/api/v1/update/` 路径模式（`{plat}-{arch}.{ext}` 简化名）不兼容。
+
+#### 方案对比
+
+| 方案 | 优点 | 缺点 |
+|------|------|------|
+| 扩展现有 `update.py` | 改动文件少 | URL 语义混乱，路径模式不兼容，需大量条件分支，测试复杂度高 |
+| 新建独立 `/api/v1/updates/` + 独立 service | 完全隔离，互不干扰，各自独立演进 | 新增文件，少量代码重复（`_send_file`、`record_download`） |
+
+#### 决策
+> 选择 **新建独立路由组 + 独立 service**。
+
+#### 理由
+> 1) electron-updater 的 URL 语义与现有 API 完全不同（yml 原文 vs JSON、原始文件名 vs 简化名）
+> 2) 独立路由组 URL 清晰：`/api/v1/updates/latest-mac.yml`、`/api/v1/updates/{filename}`
+> 3) 独立 service 可单独测试、单独缓存，不影响现有 ReleaseSyncService
+> 4) 下载链路复用 COS 广州 + 本地缓存 + GitHub 兜底三级降级，与现有 update.py 保持一致
+> 5) `DownloadRecord.source` 字段区分来源（'' = 门户, 'electron-updater' = 自动更新），不破坏现有统计
+
+#### 影响
+> - 新增 `src/services/update_feed.py`（UpdateFeedService + `_parse_filename_to_cache_key()`）
+> - 新增 `src/api/v1/updates.py`（3 端点）
+> - `src/models/download.py` 新增 `source` 列
+> - `src/services/release_sync.py` 扩展：`get_download_path()` 加 zip/blockmap、`download_and_cache()` 加 `original_name` 参数、`record_download()` 加 `source` 参数
+> - `_detect_platform()` 过滤逻辑保持不变（服务于下载页展示，不影响 electron-updater 链路）

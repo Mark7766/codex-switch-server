@@ -104,16 +104,31 @@ class ReleaseSyncService:
         """Check if the file is cached locally. No DB lookup needed."""
         # Scan cache directory for matching file
         prefix = f"codex-switch/{version}/{platform}-{arch}"
-        for ext in ("dmg", "exe", "appimage"):
+        for ext in ("dmg", "exe", "appimage", "zip", "blockmap"):
             path = f"{prefix}.{ext}"
             if await self._storage.exists(path):
                 return await self._storage.get_path(path)
         return None
 
-    async def download_and_cache(self, download_url: str, version: str, platform: str, arch: str, ftype: str) -> Path:
-        """Download from GitHub and cache locally. Returns the local file path."""
-        cache_key = f"codex-switch/{version}/{platform}-{arch}.{ftype}"
-        tmp_dest = Path(f"/tmp/codex-switch-{version}-{platform}-{arch}.{ftype}")
+    async def download_and_cache(
+        self,
+        download_url: str,
+        version: str,
+        platform: str,
+        arch: str,
+        ftype: str,
+        original_name: str | None = None,
+    ) -> Path:
+        """Download from GitHub and cache locally. Returns the local file path.
+
+        When ``original_name`` is provided, the file is cached with the original GitHub
+        asset name (for electron-updater). Otherwise uses ``{plat}-{arch}.{ftype}`` format.
+        """
+        if original_name:
+            cache_key = f"codex-switch/{version}/{original_name}"
+        else:
+            cache_key = f"codex-switch/{version}/{platform}-{arch}.{ftype}"
+        tmp_dest = Path(f"/tmp/{original_name or f'codex-switch-{version}-{platform}-{arch}.{ftype}'}")
         await self._http.download(download_url, tmp_dest)
         local_path = await self._storage.put(tmp_dest, cache_key)
         tmp_dest.unlink(missing_ok=True)
@@ -179,6 +194,7 @@ class ReleaseSyncService:
         package_name: str | None = None,
         ip_hash: str = "",
         user_agent: str = "",
+        source: str = "",
     ) -> None:
         record = DownloadRecord(
             release_id=None,
@@ -188,6 +204,7 @@ class ReleaseSyncService:
             arch=arch,
             ip_hash=ip_hash,
             user_agent=user_agent,
+            source=source,
         )
         self._db.add(record)
         await self._db.commit()

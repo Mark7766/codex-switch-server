@@ -514,3 +514,52 @@
 - **变更文件**：src/api/v1/files.py（新）, src/api/router.py, src/portal/templates/guide.html
 - **验证**：files 302 COS → 200 ✅, 门户/指南/下载/版本API 200 ✅
 - **部署记录**：`.deploy/deployments.md` 部署 2026-06-08-004
+
+---
+
+### [TASK-048] 生产部署：指南新增 Codex 中文 FAQ
+- **日期**：2026-06-08
+- **类型**：deploy
+- **摘要**：SSH 部署到 43.134.110.192，commit `e41b611`→`40d7955`（2 files, +11）。指南页 FAQ 新增"Codex 说英文看不懂怎么办？"——教用户在项目根目录创建 AGENTS.md 让 Codex 默认用中文回复。
+- **变更文件**：src/portal/templates/guide.html
+- **验证**：生产 guide 页面 "Codex 说英文看不懂怎么办？" ✅
+- **部署记录**：`.deploy/deployments.md` 部署 2026-06-08-005
+
+---
+
+### [TASK-049] COS 下载/上传脚本拆分
+- **日期**：2026-06-11
+- **类型**：feat
+- **摘要**：将原来的 `upload-codex-switch-to-cos.sh`（下载+上传一体化）拆分为两个独立脚本：
+  1. **`scripts/download-latest-release.sh`**：从 GitHub Releases 自动检测最新版本（或指定版本），下载全部 4 个平台文件（macOS ARM64/x64、Windows ARM64/x64），以原始 GitHub 文件名保存到 `data/codex-switch/{version}/`，并自动创建简化名称副本供本地服务缓存使用。支持 `--dry-run` 预览、`--local-cache` 显式创建简化名副本。
+  2. **`scripts/upload-to-cos.sh`**：上传三类 COS 资源——①Codex Switch 发布文件（自动从 GitHub API 解析原始文件名→COS key `codex-switch/{ver}/{original_name}`）；②桌面应用安装包（从 `data/packages/registry.json` 读取，COS key 为确定性格式 `packages/{name}/latest/{plat}-{arch}.{ext}`）；③静态文件 `data/files/*`（如 `2.1.138.zip`，COS key=`files/{filename}`）。所有上传均设置 Content-Disposition 元数据，支持 `--dry-run`/`--force`/分类选择（`--codex-switch`/`--packages`/`--files`/`--all`），已存在的 COS 对象默认跳过。
+  3. 旧 `scripts/upload-codex-switch-to-cos.sh` 保留向后兼容，顶部添加指向新脚本的迁移提示。
+- **变更文件**：scripts/download-latest-release.sh（新）、scripts/upload-to-cos.sh（新）、scripts/upload-codex-switch-to-cos.sh（改）
+- **验证**：bash syntax check ✅, download --dry-run 检测 v1.5.4 4 文件 ✅, upload --dry-run 全部 8 文件（4 Codex Switch + 4 桌面包）COS key 正确 ✅
+- **注意事项**：下载脚本默认保存原始 GitHub 文件名，上传脚本通过 GitHub API 自动映射简化名→原始名。桌面包的 `original_filename` 来自 registry.json。静态文件目录 `data/files/` 需手动创建。
+
+---
+
+### [TASK-050] electron-updater generic provider 支持
+- **日期**：2026-06-12
+- **类型**：feat
+- **摘要**：按设计规格 `docs/superpowers/specs/2026-06-11-electron-updater-support-design.md` 实现 codex-switch-server 对 electron-updater generic provider 的完整支持。新建独立 `/api/v1/updates/` 路由组（3 端点）+ UpdateFeedService，与现有 `/api/v1/update/` 完全隔离。
+  1. **新建 `src/services/update_feed.py`**：`UpdateFeedService` 类 — `get_latest_yml()` 5 分钟内存缓存获取 latest-mac.yml/latest.yml 原文、`find_asset_by_filename()` 按原始 GitHub asset 名查找、`download_asset_to_cache()` 按原始文件名缓存、模块级 `_parse_filename_to_cache_key()` 解析 GitHub asset 名→(version, platform, arch, file_type)
+  2. **新建 `src/api/v1/updates.py`**：3 个端点 — `GET /latest-mac.yml`（返回 text/yaml）、`GET /latest.yml`（同上）、`GET /{filename}`（三级降级：COS 302 → 本地 X-Accel-Redirect → GitHub 兜底下载，安全校验拒绝 `..` 和非允许字符）
+  3. **修改 `src/models/download.py`**：`DownloadRecord` 新增 `source` 字段（String(32), default=""），区分门户下载 vs electron-updater 自动更新
+  4. **修改 `src/services/release_sync.py`**：`get_download_path()` 扩展名列表加 zip/blockmap；`download_and_cache()` 新增 `original_name` 可选参数；`record_download()` 新增 `source` 参数
+  5. **修改 `src/api/v1/router.py`**：注册 `updates_router`（prefix="/updates"）
+  6. **测试**：37 个新测试（17 单元 + 10 文件名解析 + 10 集成），覆盖率全端点 + 文件名解析 + 缓存/错误/安全路径
+- **变更文件**：src/services/update_feed.py（新）、src/api/v1/updates.py（新）、src/models/download.py（改）、src/services/release_sync.py（改）、src/api/v1/router.py（改）、tests/unit/test_update_feed.py（新）、tests/integration/test_api_updates.py（新）
+- **验证**：ruff ✅, ruff format ✅, pytest 182/182 ✅（145 旧 + 37 新）
+- **注意事项**：与现有 `/api/v1/update/` 完全隔离。首次部署后 yml 第一次请求需从 GitHub 下载（1-2s），后续 5 分钟内存缓存（毫秒级）。COS 需存在对应版本的 release 文件才能走快速链路。`_detect_platform()` 过滤逻辑保持不变（服务于下载页展示）。
+
+---
+
+### [TASK-051] Tier 1 安全加固方案设计
+- **日期**：2026-06-12
+- **类型**：design
+- **摘要**：编写 `docs/superpowers/specs/2026-06-12-security-hardening-tier1.md` 安全加固方案。针对下载端点完全公开的风险面，设计 4 项零成本措施：①IP 速率限制（滑动窗口内存计数器，per-IP + 全局）②SHA256 校验和透传（服务端下载时计算+DB 存储+API 返回）③GitHub 兜底下载文件大小上限（防磁盘耗尽）④User-Agent 分类标记（区分真实客户端 vs 脚本，不拒绝只标记）。每项措施含实现要点、配置项、测试清单、影响评估。总代码量 <100 行，0 新依赖。
+- **变更文件**：docs/superpowers/specs/2026-06-12-security-hardening-tier1.md（新）
+- **验证**：方案 Review 中
+- **注意事项**：明确排除 Redis/分布式限速、下载签名 URL、客户端密钥认证等重型方案。限速不应用于 yml 端点和门户页面访问。

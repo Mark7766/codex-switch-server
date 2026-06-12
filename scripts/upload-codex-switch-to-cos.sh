@@ -2,6 +2,13 @@
 # Upload Codex Switch release files to Tencent Cloud COS.
 # Run after each new version deployment.
 # Usage: ./scripts/upload-codex-switch-to-cos.sh v1.4.0
+#
+# NOTE: This script is kept for backward compatibility.
+# For new workflows, use the split two-script approach:
+#   ./scripts/download-latest-release.sh -v 1.5.4    # Step 1: download from GitHub
+#   ./scripts/upload-to-cos.sh --codex-switch 1.5.4  # Step 2: upload to COS
+# Or auto-detect latest + upload everything:
+#   ./scripts/upload-to-cos.sh --all
 
 set -euo pipefail
 

@@ -50,7 +50,9 @@ async def download_package(
     # Record download for analytics
     dl_svc = ReleaseSyncService(db)
     await dl_svc.record_download(
-        version="latest", platform=platform, arch=arch,
+        version="latest",
+        platform=platform,
+        arch=arch,
         package_name=package_name,
         ip_hash=request.client.host if request.client else "",
     )

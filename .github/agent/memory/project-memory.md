@@ -140,9 +140,11 @@
 | src/models/ | ORM 模型：release, download, telemetry | ✅ Phase 1 |
 | src/schemas/ | Pydantic DTO：请求/响应模型 | ⬜ 待开发 |
 | src/api/v1/update.py | 版本检查 + 客户端下载 API | ✅ Phase 3 |
+| src/api/v1/updates.py | electron-updater generic provider 端点（latest-mac.yml / latest.yml / {filename}） | ✅ Phase 5 |
 | src/api/v1/packages.py | 工具包（Node.js/Git/Desktop）下载 API | ✅ Phase 3 |
 | src/api/v1/telemetry.py | 遥测事件上报 API | ✅ Phase 4 |
 | src/services/release_sync.py | 实时 GitHub 最新版查询 + 首次代理下载缓存 + 下载统计 | ✅ Phase 3（v2: 2026-06-06 重构为实时模式） |
+| src/services/update_feed.py | electron-updater yml 缓存 + 文件查找 + 原始文件名缓存 | ✅ Phase 5 |
 | src/services/telemetry.py | 事件验证、去重、聚合统计 | ✅ Phase 4 |
 | src/services/package_manager.py | 包文件索引、上传、代理缓存 | 🚫 合并至 packages API |
 | src/portal/ | 门户路由 + 首页/下载/指南模板 | ✅ Phase 2 |

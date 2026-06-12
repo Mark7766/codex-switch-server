@@ -75,9 +75,14 @@ async def test_delete_package_with_auth(client: AsyncClient, tmp_path: Path):
     src_file.write_bytes(b"delete-me")
     mgr = PackageManager()
     await mgr.add_package(
-        name="to-delete", display_name="To Delete", version="1.0",
-        platform="macos", arch="arm64", description="test",
-        local_file=src_file, original_filename="ToDelete.dmg",
+        name="to-delete",
+        display_name="To Delete",
+        version="1.0",
+        platform="macos",
+        arch="arm64",
+        description="test",
+        local_file=src_file,
+        original_filename="ToDelete.dmg",
     )
 
     cookie = await _login(client)

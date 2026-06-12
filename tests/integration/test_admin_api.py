@@ -28,10 +28,13 @@ class TestAnalyticsPageviewEndpoint:
         )
         assert resp.status_code == 200
 
-    @pytest.mark.parametrize("bad_body", [
-        {},
-        {"event_type": "pageview"},
-    ])
+    @pytest.mark.parametrize(
+        "bad_body",
+        [
+            {},
+            {"event_type": "pageview"},
+        ],
+    )
     async def test_invalid_events(self, client: AsyncClient, bad_body: dict):
         """Various bad payloads — should not 500."""
         resp = await client.post("/api/v1/analytics/pageview", json=bad_body)

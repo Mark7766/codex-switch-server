@@ -72,7 +72,8 @@ class TestCosStorageEnabled:
         cos._client = mock_client
 
         result = await cos.put(
-            Path("/tmp/test.bin"), "key/test.bin",
+            Path("/tmp/test.bin"),
+            "key/test.bin",
             content_disposition="attachment; filename*=UTF-8''test.dmg",
         )
         assert result is not None
@@ -94,9 +95,7 @@ class TestCosStorageEnabled:
         cos._client = mock_client
 
         assert cos.exists("key/test.bin") is True
-        mock_client.head_object.assert_called_once_with(
-            Bucket="test-bucket-1250000000", Key="key/test.bin"
-        )
+        mock_client.head_object.assert_called_once_with(Bucket="test-bucket-1250000000", Key="key/test.bin")
 
     def test_exists_returns_false_when_key_not_found(self):
         cos = CosStorage()
@@ -112,9 +111,7 @@ class TestCosStorageEnabled:
         cos._client = mock_client
 
         assert cos.delete("key/test.bin") is True
-        mock_client.delete_object.assert_called_once_with(
-            Bucket="test-bucket-1250000000", Key="key/test.bin"
-        )
+        mock_client.delete_object.assert_called_once_with(Bucket="test-bucket-1250000000", Key="key/test.bin")
 
     def test_delete_returns_false_on_exception(self):
         cos = CosStorage()

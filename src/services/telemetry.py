@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -43,7 +43,7 @@ class TelemetryService:
                 rejected += 1
                 continue
 
-            cutoff = datetime.now(UTC) - timedelta(minutes=1)
+            cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(minutes=1)
             recent_count = await self._db.execute(
                 select(func.count())
                 .select_from(TelemetryEvent)
@@ -77,13 +77,13 @@ class TelemetryService:
         total = await self._db.scalar(select(func.count()).select_from(TelemetryEvent))
         total = total or 0
 
-        today_start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+        today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
         today = await self._db.scalar(
             select(func.count()).select_from(TelemetryEvent).where(TelemetryEvent.created_at >= today_start)
         )
         today = today or 0
 
-        cutoff = datetime.now(UTC) - timedelta(days=range_days)
+        cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=range_days)
         active = await self._db.scalar(
             select(func.count(func.distinct(TelemetryEvent.client_id))).where(
                 TelemetryEvent.created_at >= cutoff, TelemetryEvent.client_id != ""
