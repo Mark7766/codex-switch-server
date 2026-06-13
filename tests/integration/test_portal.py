@@ -41,7 +41,7 @@ async def test_download_returns_200(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_download_contains_platform_segments(client: AsyncClient):
     response = await client.get("/download")
-    assert "macOS" in response.text
+    assert "Mac" in response.text
     assert "Windows" in response.text
     assert "dl-cards" in response.text  # new side-by-side card layout
 

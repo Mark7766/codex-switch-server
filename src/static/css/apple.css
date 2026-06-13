@@ -347,6 +347,7 @@ img {
   gap: var(--space-3);
   max-width: var(--content-max-width);
   margin: var(--space-5) auto 0;
+  align-items: stretch;
   padding: 0 var(--space-3);
 }
 
@@ -358,6 +359,10 @@ img {
   box-shadow: var(--shadow-card);
   transition: transform var(--transition-normal),
               box-shadow var(--transition-normal);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
 }
 
 .feature-card:hover {
@@ -366,8 +371,16 @@ img {
 }
 
 .feature-card__icon {
-  font-size: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
   margin-bottom: var(--space-2);
+}
+
+.feature-card__icon img {
+  max-width: 36px;
+  max-height: 36px;
 }
 
 .feature-card__title {
@@ -379,7 +392,8 @@ img {
 .feature-card__desc {
   font-size: var(--text-caption);
   color: var(--color-text-secondary);
-  line-height: 1.5;
+  line-height: 1.55;
+  flex: 1;
 }
 
 /* ── Guide Entry ─────────────────────────────────────── */

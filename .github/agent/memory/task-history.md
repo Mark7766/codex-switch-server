@@ -617,3 +617,16 @@
   2. **措施⑤ install_source**：`TelemetryPayload` 新增字段，存入 properties 供后续安装成功率分析
 - **变更文件**：src/portal/templates/index.html（改）、src/portal/templates/base.html（版本号）、src/schemas/telemetry.py（改）、src/services/telemetry.py（改）
 - **验证**：ruff ✅, pytest 190/190 ✅, Hero 双按钮+SVG ✅, install_source accepted ✅
+
+---
+
+### [TASK-056] 品牌图标统一：emoji → Codex/Claude SVG logo
+- **日期**：2026-06-14
+- **类型**：design
+- **摘要**：将首页安装指南入口、下载安装包、功能卡片（多模型支持）、指南选择卡片的 emoji 图标全部替换为品牌 SVG：
+  - Codex（OpenAI）：六边形 SVG，色值 #10a37f
+  - Claude（Anthropic）：圆形+弧线 SVG，色值 #D97757
+  - 多模型支持 🧠 → Claude SVG
+  - 共替换 10 处图标
+- **变更文件**：src/portal/templates/index.html（改）、src/portal/templates/guide.html（改）、src/portal/templates/base.html（版本号）
+- **验证**：ruff ✅, pytest 190/190 ✅

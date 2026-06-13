@@ -15,10 +15,10 @@
     </a>
     <a href="/guide?platform=macos" class="btn btn--outline btn--large" data-track="hero-download-cta" style="display:inline-flex;align-items:center;gap:8px;font-size:15px;padding:12px 28px;">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-      macOS 安装指南 &rarr;
+      Mac 安装指南 &rarr;
     </a>
   </div>
-  <p class="hero__note">支持 Windows 11 · macOS 11+ · 完全免费开源</p>
+  <p class="hero__note">支持 Windows 11 · Mac 11+ · 完全免费开源</p>
 </section>
 
 <!-- 安装指南快捷入口 -->
@@ -27,22 +27,22 @@
   <p class="section-subtitle">选择你要安装的工具，4 步完成配置</p>
   <div class="guide-entry__grid">
     <a href="/guide?tool=codex" class="guide-entry__card" data-track="guide-entry-codex">
-      <span class="guide-entry__icon">&#128421;</span>
+      <span class="guide-entry__icon"><img src="/static/images/logo-codex.png" width="36" height="36" alt="Codex" style="vertical-align:middle;"></span>
       <span class="guide-entry__name">Codex Desktop</span>
       <span class="guide-entry__tag">桌面应用</span>
     </a>
     <a href="/guide?tool=claude" class="guide-entry__card" data-track="guide-entry-claude">
-      <span class="guide-entry__icon">&#129504;</span>
+      <span class="guide-entry__icon"><img src="/static/images/logo-claude.svg" width="28" height="28" alt="Claude" style="vertical-align:middle;"></span>
       <span class="guide-entry__name">Claude Desktop</span>
       <span class="guide-entry__tag">桌面应用</span>
     </a>
     <a href="/guide?tool=codex-cli" class="guide-entry__card" data-track="guide-entry-codex-cli">
-      <span class="guide-entry__icon">&#9000;</span>
+      <span class="guide-entry__icon"><img src="/static/images/logo-codex.png" width="36" height="36" alt="Codex" style="vertical-align:middle;"></span>
       <span class="guide-entry__name">Codex CLI</span>
       <span class="guide-entry__tag">命令行工具</span>
     </a>
     <a href="/guide?tool=claude-cli" class="guide-entry__card" data-track="guide-entry-claude-cli">
-      <span class="guide-entry__icon">&#128187;</span>
+      <span class="guide-entry__icon"><img src="/static/images/logo-claude.svg" width="28" height="28" alt="Claude" style="vertical-align:middle;"></span>
       <span class="guide-entry__name">Claude Code CLI</span>
       <span class="guide-entry__tag">命令行工具</span>
     </a>
@@ -55,12 +55,12 @@
 
   <div class="tools__grid" id="toolsGrid">
     <div class="tool-card" data-package="codex-desktop">
-      <div class="tool-card__icon">&#128421;</div>
+      <div class="tool-card__icon"><img src="/static/images/logo-codex.png" width="36" height="36" alt="Codex" style="vertical-align:middle;"></div>
       <span class="tool-card__name">Codex Desktop</span>
       <span class="tool-card__hint">加载中...</span>
     </div>
     <div class="tool-card" data-package="claude-desktop">
-      <div class="tool-card__icon">&#128187;</div>
+      <div class="tool-card__icon"><img src="/static/images/logo-claude.svg" width="28" height="28" alt="Claude" style="vertical-align:middle;"></div>
       <span class="tool-card__name">Claude Desktop</span>
       <span class="tool-card__hint">加载中...</span>
     </div>
@@ -78,7 +78,7 @@
       <p class="feature-card__desc">自动配置本地代理，无需手动设置任何网络参数，启动即用。</p>
     </div>
     <div class="feature-card">
-      <div class="feature-card__icon">&#129504;</div>
+      <div class="feature-card__icon"><img src="/static/images/logo-claude.svg" width="32" height="32" alt="Claude" style="vertical-align:middle;"></div>
       <h3 class="feature-card__title">多模型支持</h3>
       <p class="feature-card__desc">DeepSeek 全系列模型任意切换，同时兼容 OpenAI 和 Anthropic 协议。</p>
     </div>
@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', function() {
         for (var j = 0; j < pkg.platforms.length; j++) {
           var plat = pkg.platforms[j];
           var sizeMB = (plat.file_size / 1048576).toFixed(0);
-          var label = plat.platform === 'macos' ? 'macOS' :
+          var label = plat.platform === 'macos' ? 'Mac' :
                       plat.platform === 'windows' ? 'Windows' :
                       plat.platform === 'linux' ? 'Linux' : plat.platform;
           if (plat.arch === 'arm64') label += ' ARM';

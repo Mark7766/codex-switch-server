@@ -63,13 +63,13 @@
     <p class="wizard-sub">选择一个 AI 编程工具，开始安装</p>
     <div class="choice-row choice-row--tools" style="margin-bottom:20px;">
       <div class="choice-card" onclick="pickTool('codex')" data-track="guide-choice-codex">
-        <div class="choice-card__icon">&#128421;</div>
+        <div class="choice-card__icon"><img src="/static/images/logo-codex.png" width="36" height="36" alt="Codex" style="vertical-align:middle;"></div>
         <div class="choice-card__name">Codex Desktop</div>
         <div class="choice-card__desc">OpenAI 官方桌面应用</div>
         <div class="choice-card__tag">桌面应用</div>
       </div>
       <div class="choice-card" onclick="pickTool('claude')" data-track="guide-choice-claude">
-        <div class="choice-card__icon">&#129504;</div>
+        <div class="choice-card__icon"><img src="/static/images/logo-claude.svg" width="28" height="28" alt="Claude" style="vertical-align:middle;"></div>
         <div class="choice-card__name">Claude Desktop</div>
         <div class="choice-card__desc">Anthropic 官方桌面应用</div>
         <div class="choice-card__tag">桌面应用</div>
@@ -77,13 +77,13 @@
     </div>
     <div class="choice-row choice-row--tools">
       <div class="choice-card" onclick="pickTool('codex-cli')" data-track="guide-choice-codex-cli">
-        <div class="choice-card__icon">&#9000;</div>
+        <div class="choice-card__icon"><img src="/static/images/logo-codex.png" width="36" height="36" alt="Codex" style="vertical-align:middle;"></div>
         <div class="choice-card__name">Codex CLI</div>
         <div class="choice-card__desc">OpenAI 命令行工具</div>
         <div class="choice-card__tag">命令行工具</div>
       </div>
       <div class="choice-card" onclick="pickTool('claude-cli')" data-track="guide-choice-claude-cli">
-        <div class="choice-card__icon">&#128187;</div>
+        <div class="choice-card__icon"><img src="/static/images/logo-claude.svg" width="28" height="28" alt="Claude" style="vertical-align:middle;"></div>
         <div class="choice-card__name">Claude Code CLI</div>
         <div class="choice-card__desc">Anthropic 命令行工具</div>
         <div class="choice-card__tag">命令行工具</div>
@@ -100,12 +100,12 @@
     <p class="wizard-sub">选择你的操作系统，获取对应的安装指南</p>
     <div class="choice-row">
       <div class="choice-card" onclick="pickPlatform('macos')" data-track="guide-platform-macos">
-        <div class="choice-card__icon">&#63737;</div>
-        <div class="choice-card__name">macOS</div>
+        <div class="choice-card__icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="#000"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg></div>
+        <div class="choice-card__name">Mac</div>
         <div class="choice-card__desc">Apple 芯片 / Intel 芯片</div>
       </div>
       <div class="choice-card" onclick="pickPlatform('windows')" data-track="guide-platform-windows">
-        <div class="choice-card__icon">&#128193;</div>
+        <div class="choice-card__icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="#00ADEF"><path d="M0 3.449L9.75 2.1V11.45H0V3.449zm0 8.601h9.75v9.351L0 20.699v-8.649zm10.8-9.1L24 0v11.4H10.8V2.95zm13.2 8.5v11.4L10.8 21.9V11.45H24z"/></svg></div>
         <div class="choice-card__name">Windows</div>
         <div class="choice-card__desc">Windows 11</div>
       </div>
@@ -196,7 +196,7 @@ function toolLabel() {
 // ── Build guide steps ─────────────────────────────────────
 function renderGuide() {
   var steps = [];
-  var osName = isMac ? 'macOS' : 'Windows';
+  var osName = isMac ? 'Mac' : 'Windows';
   document.getElementById('guide-title').textContent = '在 ' + osName + ' 上安装 ' + toolLabel();
   document.getElementById('guide-subtitle').textContent = isCLI ? '命令行工具安装指南' : '按照以下步骤，完成安装和配置';
 
@@ -211,10 +211,10 @@ function renderGuide() {
   if (isCLI) {
     // ── CLI scenarios ──────────────────────────────────────
     if (isMac) {
-      // macOS CLI: check git, check python, install node, verify, install CLI
+      // Mac CLI: check git, check python, install node, verify, install CLI
       steps.push({title:'检查 / 安装 git', body:'<p>打开<strong>终端</strong>，执行 <code>git --version</code>。</p><p>如果显示版本号 → 已安装，跳过此步。<br>如果提示 "command not found" → 执行 <code>xcode-select --install</code> 安装 Command Line Tools。</p>' + imgTag('step-cli-git-check-mac.png')});
       steps.push({title:'检查 / 安装 Python', body:'<p>终端执行 <code>python3 --version</code>。</p><p>如果显示版本号 → 已安装。<br>如果提示 "command not found" → 访问 <a href="https://pythonlang.cn/downloads/" target="_blank">pythonlang.cn/downloads</a> 下载安装。</p>' + imgTag('step-cli-python-check-mac.png')});
-      steps.push({title:'安装 Node.js', body:'<p>访问 <a href="https://nodejs.org/zh-cn/download" target="_blank">nodejs.org</a> 下载 macOS 安装包（LTS 版本）。</p><p>打开 <code>.pkg</code> 文件，一直点"继续/下一步"即可。</p>' + imgTag('step-cli-node-mac.png')});
+      steps.push({title:'安装 Node.js', body:'<p>访问 <a href="https://nodejs.org/zh-cn/download" target="_blank">nodejs.org</a> 下载 Mac 安装包（LTS 版本）。</p><p>打开 <code>.pkg</code> 文件，一直点"继续/下一步"即可。</p>' + imgTag('step-cli-node-mac.png')});
       steps.push({title:'验证环境', body:'<p>终端执行以下三条命令，确认均显示版本号：</p><p><code>git --version</code><br><code>python3 --version</code><br><code>node --version</code></p>' + imgTag('step-cli-verify-mac.png')});
       steps.push({title:'安装 ' + toolLabel(), body:installCmd() + imgTag(selTool === 'codex-cli' ? 'step-cli-codex-install-mac.png' : 'step-cli-claude-install-mac.png')});
     } else {
@@ -269,7 +269,7 @@ function renderGuide() {
   // Load download buttons
   if (!isCLI) {
     loadDesktopDownloads();
-    // Desktop macOS xattr warning
+    // Desktop Mac xattr warning
     if (isMac) {
       setTimeout(function() {
         var el = document.getElementById('step-dl-switch-install');
