@@ -204,7 +204,7 @@ class TelemetryService:
             .order_by(TelemetryEvent.app_version.desc())
         )
         version_insight = [
-            VersionItem(version=row[0], user_count=row[1], event_count=row[2], last_seen=str(row[3]))
+            VersionItem(version=row[0], user_count=row[1], event_count=row[2], last_seen=str(row[3] + timedelta(hours=8)))
             for row in version_result.all()
         ]
 
