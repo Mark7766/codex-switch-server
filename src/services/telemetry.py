@@ -178,6 +178,7 @@ class TelemetryService:
             .where(
                 DownloadRecord.downloaded_at >= cutoff,
                 DownloadRecord.ip_hash != "",
+                DownloadRecord.package_name == "codex-switch",
             )
         )
         if download_ips and download_ips > 0:
