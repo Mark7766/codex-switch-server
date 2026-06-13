@@ -58,17 +58,19 @@ log_ok()    { echo "  ✅ $*"; }
 log_warn()  { echo "  ⚠️  $*"; }
 log_error() { echo "  ❌ $*"; }
 
+# ── Common headers for GitHub API ──────────────────────────
+
+API_HEADERS=(-H "Accept: application/vnd.github+json")
+if [ -n "${GITHUB_TOKEN:-}" ]; then
+  API_HEADERS+=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
+fi
+
 # ── Fetch latest version ────────────────────────────────
 
 if [ -z "$VERSION" ]; then
   echo "=== Detecting latest Codex Switch release ==="
   echo "Repo: ${GITHUB_REPO}"
   echo ""
-
-  API_HEADERS=(-H "Accept: application/vnd.github+json")
-  if [ -n "${GITHUB_TOKEN:-}" ]; then
-    API_HEADERS+=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
-  fi
 
   # Fetch latest release tag from GitHub API
   RELEASES_JSON=$(curl -fsSL "${API_HEADERS[@]}" "${GITHUB_API}?per_page=1" 2>&1) || {
@@ -95,11 +97,15 @@ fi
 
 # ── Fetch assets for the version ────────────────────────
 
-echo "=== Fetching asset list for ${VERSION} ==="
+# Normalize tag: GitHub uses v1.8.0 format, but user may pass 1.8.0
+TAG="${VERSION}"
+[[ "$TAG" != v* ]] && TAG="v${TAG}"
+
+echo "=== Fetching asset list for ${VERSION} (tag: ${TAG}) ==="
 echo ""
 
 # Get the specific release by tag
-RELEASE_JSON=$(curl -fsSL "${API_HEADERS[@]}" "${GITHUB_API}/tags/${VERSION}" 2>&1) || {
+RELEASE_JSON=$(curl -fsSL "${API_HEADERS[@]}" "${GITHUB_API}/tags/${TAG}" 2>&1) || {
   log_error "Failed to fetch release for tag ${VERSION}. Check that the tag exists."
   exit 1
 }

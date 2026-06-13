@@ -59,6 +59,89 @@ uv run pytest --cov=src --cov-report=term
 
 管理员通过 `/admin/packages` 上传 Codex Desktop / Claude Desktop 等安装包，用户从首页直接下载。
 
+## COS 文件管理脚本
+
+Codex Switch 安装包通过腾讯云 COS 广州分发（国内 2MB/s，比新加坡本地快 70 倍）。
+
+### 一键脚本：`scripts/release-to-cos.sh`（推荐）
+
+下载 GitHub Release → 上传 COS，一步完成：
+
+```bash
+# 指定版本
+./scripts/release-to-cos.sh -v 1.8.0
+
+# 自动检测最新版本
+./scripts/release-to-cos.sh --latest
+
+# 预览（不实际执行）
+./scripts/release-to-cos.sh -v 1.8.0 --dry-run
+```
+
+### 下载脚本：`scripts/download-latest-release.sh`
+
+从 GitHub Releases 下载最新（或指定版本）安装包到本地 `data/codex-switch/{version}/`。
+
+```bash
+# 自动检测最新版本并下载
+./scripts/download-latest-release.sh
+
+# 指定版本
+./scripts/download-latest-release.sh -v 1.8.0
+
+# 预览（不实际下载）
+./scripts/download-latest-release.sh --dry-run
+
+# 同时生成本地缓存用的简化名副本
+./scripts/download-latest-release.sh --local-cache
+```
+
+### 上传脚本：`scripts/upload-to-cos.sh`
+
+将本地文件上传到腾讯云 COS 广州，支持三类资源按需上传。
+
+```bash
+# 上传全部（Codex Switch + 桌面包 + 静态文件）
+./scripts/upload-to-cos.sh --all
+
+# 只上传 Codex Switch 指定版本
+./scripts/upload-to-cos.sh --codex-switch 1.8.0
+
+# 自动检测最新版本并上传
+./scripts/upload-to-cos.sh --codex-switch latest
+
+# 只上传桌面应用安装包（从 registry.json 读取）
+./scripts/upload-to-cos.sh --packages
+
+# 只上传静态文件（如 2.1.138.zip）
+./scripts/upload-to-cos.sh --files
+
+# 预览（不实际上传）
+./scripts/upload-to-cos.sh --all --dry-run
+
+# 强制覆盖已存在的 COS 对象
+./scripts/upload-to-cos.sh --all --force
+```
+
+### 典型发布流程
+
+```bash
+# 一键完成：下载 + 上传 COS
+./scripts/release-to-cos.sh -v 1.8.0
+```
+
+服务器上执行（SSH 进入后）：
+
+```bash
+cd /home/lighthouse/codex-switch-server
+# 先预览
+sudo docker exec codex-switch-server bash scripts/release-to-cos.sh -v 1.8.0 --dry-run
+# 正式执行
+sudo docker exec codex-switch-server bash scripts/release-to-cos.sh -v 1.8.0
+```
+
+> **注意**：需要配置 `.env` 中的 `COS_SECRET_ID`、`COS_SECRET_KEY`、`COS_BUCKET`、`COS_REGION`。
+
 ## 环境变量
 
 | 变量 | 必需 | 说明 |
