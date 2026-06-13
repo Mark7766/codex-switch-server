@@ -652,3 +652,12 @@
 - **摘要**：三个 service 的统计时间从 UTC 改为北京时间（UTC+8）。新增 `_beijing_now()` helper，替换所有 `datetime.now(UTC)` / `datetime.now()` 为北京时间。影响范围：TelemetryService.get_stats()、AnalyticsService 全部查询、ReleaseSyncService.get_download_stats()。"今日"统计现在北京时间 0 点重置而非凌晨 8 点。
 - **变更文件**：src/services/telemetry.py（改）、src/services/analytics.py（改）、src/services/release_sync.py（改）
 - **验证**：ruff ✅, pytest 190/190 ✅
+
+---
+
+### [TASK-060] 修复北京时间统计时区对齐 Bug
+- **日期**：2026-06-14
+- **类型**：fix
+- **摘要**：修复 TASK-059 引入的时区 Bug——`_beijing_now().replace(hour=0)` 得到北京午夜 naive datetime，直接和 DB UTC 时间比较，导致北京 0-8 点数据被排除。新增 `_beijing_today_start()` helper：北京午夜 -8h = 前日 UTC 16:00，正确对齐 DB 的 UTC 时间戳。影响 TelemetryService、AnalyticsService、ReleaseSyncService。
+- **变更文件**：src/services/telemetry.py（改）、src/services/analytics.py（改）、src/services/release_sync.py（改）
+- **验证**：ruff ✅, pytest 190/190 ✅

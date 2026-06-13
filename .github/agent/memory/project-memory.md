@@ -234,6 +234,7 @@
 1. 一个人维护，拒绝复杂架构 — 单文件部署、SQLite 内嵌、无外部依赖服务
 2. 禁止不必要的重量级依赖 — 不用 Redis、Celery、PostgreSQL
 3. 管理员认证用简单 Bearer Token，不引入 OAuth/SSO
+4. **时区规范**：数据库存储使用 UTC（naive datetime），所有业务逻辑（统计/查询/展示）统一使用北京时间（UTC+8）。`_beijing_now()` 辅助函数用于获取当前北京时间。
 4. 前端零框架 — 不用 React/Vue/Angular。服务器渲染 + 极简 vanilla JS
 5. Chart.js 仅限 admin 页面使用，从 CDN 按需加载，不计入前端构建
 6. 门户设计严格遵循 Apple HIG：清晰、遵从、深度。每一个视觉元素都要有存在的理由

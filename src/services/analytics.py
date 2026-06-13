@@ -30,8 +30,15 @@ logger = logging.getLogger(__name__)
 
 
 def _beijing_now() -> datetime:
-    """Return current Beijing time (UTC+8) as naive datetime for DB comparison."""
+    """Return current Beijing time (UTC+8) as naive datetime."""
     return (datetime.now(UTC) + timedelta(hours=8)).replace(tzinfo=None)
+
+
+def _beijing_today_start() -> datetime:
+    """Return Beijing midnight converted to UTC naive, for DB comparison.
+    DB stores UTC, so Beijing 00:00 = UTC 16:00 previous day.
+    """
+    return _beijing_now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(hours=8)
 
 
 class AnalyticsService:
@@ -100,7 +107,7 @@ class AnalyticsService:
             )
 
         # Daily trend
-        today = _beijing_now().replace(hour=0, minute=0, second=0, microsecond=0)
+        today = _beijing_today_start()
         daily_trend = []
         for i in range(range_days - 1, -1, -1):
             day_start = today - timedelta(days=i)
@@ -139,7 +146,7 @@ class AnalyticsService:
         total = await self._db.scalar(select(func.count()).select_from(DownloadRecord)) or 0
 
         # Today
-        today_start = _beijing_now().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_start = _beijing_today_start()
         today = await self._db.scalar(select(func.count()).where(DownloadRecord.downloaded_at >= today_start)) or 0
 
         # By product (package_name) — coalesce NULL to 'codex-switch' for old records
@@ -188,7 +195,7 @@ class AnalyticsService:
         ]
 
         # Daily trend with breakdown
-        today_date = _beijing_now().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_date = _beijing_today_start()
         daily = []
         for i in range(range_days - 1, -1, -1):
             day_start = today_date - timedelta(days=i)

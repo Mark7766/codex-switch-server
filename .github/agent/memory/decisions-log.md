@@ -416,3 +416,36 @@
 > - `src/models/download.py` 新增 `source` 列
 > - `src/services/release_sync.py` 扩展：`get_download_path()` 加 zip/blockmap、`download_and_cache()` 加 `original_name` 参数、`record_download()` 加 `source` 参数
 > - `_detect_platform()` 过滤逻辑保持不变（服务于下载页展示，不影响 electron-updater 链路）
+
+---
+
+### ADR-012: 数据库存 UTC，业务层统一用北京时间
+
+- **日期**：2026-06-14
+- **状态**：✅ 已采纳
+- **决策者**：wangliang
+
+#### 背景
+> 运营后台的"今日"统计一直使用 UTC 0 点作为日期分界，导致北京时间凌晨 0-8 点的数据被归入前一天。用户看到"今日事件 0"直到早上 8 点才更新，体验很差。
+
+#### 方案对比
+
+| 方案 | 优点 | 缺点 |
+|------|------|------|
+| DB 存北京时间 | 查询简单，直接比较 | 跨时区扩展困难；Python SQLite 的 aware datetime 处理复杂 |
+| DB 存 UTC，查询层转换 | 标准做法，DB 保持时区无关 | 每处查询都要转换 |
+| DB 存 UTC naive，业务层用北京时间 helper | 简单统一，一处定义到处使用 | 非标准做法，需要 discipline |
+
+#### 决策
+> **DB 存储使用 UTC naive datetime，所有业务统计/查询/展示统一使用北京时间（UTC+8）**。
+
+#### 理由
+> 1) SQLite 对 aware datetime 支持有限，naive datetime 是现有约定
+> 2) 用户全部在中国，没有多时区需求，北京时间是唯一需要的时区
+> 3) `_beijing_now()` helper 统一所有服务的时间获取，一处修改全局生效
+> 4) 展示层（timedelta +8h）与统计层（_beijing_now）一致，不矛盾
+
+#### 影响
+> - `src/services/telemetry.py`、`src/services/analytics.py`、`src/services/release_sync.py` 均使用 `_beijing_now()`
+> - 新增功能时必须遵循此规范，不允许直接使用 `datetime.now()`
+> - 入库时间（`created_at`）仍为 UTC naive datetime，不改变存储格式

@@ -18,8 +18,15 @@ logger = logging.getLogger(__name__)
 
 
 def _beijing_now() -> datetime:
-    """Return current Beijing time (UTC+8) as naive datetime for DB comparison."""
+    """Return current Beijing time (UTC+8) as naive datetime."""
     return (datetime.now(UTC) + timedelta(hours=8)).replace(tzinfo=None)
+
+
+def _beijing_today_start() -> datetime:
+    """Return Beijing midnight converted to UTC naive, for DB comparison.
+    DB stores UTC, so Beijing 00:00 = UTC 16:00 previous day.
+    """
+    return _beijing_now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(hours=8)
 
 
 GITHUB_RELEASES_API = "https://api.github.com/repos/Mark7766/codex-switch/releases"
@@ -231,7 +238,7 @@ class ReleaseSyncService:
         )
         active = active_result.scalar() or 0
 
-        today_cutoff = _beijing_now().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_cutoff = _beijing_today_start()
         today_result = await self._db.execute(
             select(func.count()).select_from(DownloadRecord).where(DownloadRecord.downloaded_at >= today_cutoff)
         )

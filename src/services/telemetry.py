@@ -21,8 +21,15 @@ from src.schemas.telemetry import (
 
 
 def _beijing_now() -> datetime:
-    """Return current Beijing time (UTC+8) as naive datetime for DB comparison."""
+    """Return current Beijing time (UTC+8) as naive datetime."""
     return (datetime.now(UTC) + timedelta(hours=8)).replace(tzinfo=None)
+
+
+def _beijing_today_start() -> datetime:
+    """Return Beijing midnight converted to UTC naive, for DB comparison.
+    DB stores UTC, so Beijing 00:00 = UTC 16:00 previous day.
+    """
+    return _beijing_now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(hours=8)
 
 
 logger = logging.getLogger(__name__)
@@ -108,7 +115,7 @@ class TelemetryService:
         total = await self._db.scalar(select(func.count()).select_from(TelemetryEvent))
         total = total or 0
 
-        today_start = _beijing_now().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_start = _beijing_today_start()
         today = await self._db.scalar(
             select(func.count()).select_from(TelemetryEvent).where(TelemetryEvent.created_at >= today_start)
         )
