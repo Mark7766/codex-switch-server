@@ -65,6 +65,20 @@ class VersionItem(BaseModel):
     last_seen: str
 
 
+class OsItem(BaseModel):
+    platform: str  # "darwin" / "win32"
+    platform_name: str  # "Mac" / "Windows"
+    user_count: int
+    event_count: int
+    percentage: str  # "60%"
+
+
+class VersionOsItem(BaseModel):
+    version: str
+    mac_users: int
+    win_users: int
+
+
 class TelemetryStats(BaseModel):
     total_events: int = 0
     today_events: int = 0
@@ -74,6 +88,8 @@ class TelemetryStats(BaseModel):
     latest_version: str = ""  # latest from GitHub, e.g. "1.8.0"
     version_coverage: str = "—"  # e.g. "67%"
     version_insight: list[VersionItem] = []
+    os_insight: list[OsItem] = []
+    version_os_cross: list[VersionOsItem] = []
     event_type_counts: list[EventTypeCount] = []
     daily_trend: list[DailyTrend] = []
     recent_events: list[dict[str, Any]] = []

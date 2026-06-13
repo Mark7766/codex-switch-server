@@ -630,3 +630,16 @@
   - 共替换 10 处图标
 - **变更文件**：src/portal/templates/index.html（改）、src/portal/templates/guide.html（改）、src/portal/templates/base.html（版本号）
 - **验证**：ruff ✅, pytest 190/190 ✅
+
+---
+
+### [TASK-058] 操作系统洞察
+- **日期**：2026-06-14
+- **类型**：feat
+- **摘要**：按 `docs/superpowers/specs/2026-06-14-os-insights.md` 实现操作系统洞察：
+  1. **OS 分布卡片**：Mac / Windows 各一张统计卡片，Apple/Microsoft SVG 图标，显示用户数+占比
+  2. **版本×OS 交叉表**：每个版本在 Mac/Windows 上的部署数
+  3. 数据源：`app_start` 事件的 `platform` 字段（darwin/win32），30 天窗口
+  4. 位置：Client 运营 Tab 版本洞察下方
+- **变更文件**：src/schemas/telemetry.py（改）、src/services/telemetry.py（改）、src/admin/templates/dashboard.html（改）
+- **验证**：ruff ✅, pytest 190/190 ✅

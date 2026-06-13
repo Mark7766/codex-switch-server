@@ -12,9 +12,11 @@ from src.schemas.telemetry import (
     DailyTrend,
     EventTypeCount,
     IngestResult,
+    OsItem,
     TelemetryPayload,
     TelemetryStats,
     VersionItem,
+    VersionOsItem,
 )
 
 logger = logging.getLogger(__name__)
@@ -204,7 +206,10 @@ class TelemetryService:
             .order_by(TelemetryEvent.app_version.desc())
         )
         version_insight = [
-            VersionItem(version=row[0], user_count=row[1], event_count=row[2], last_seen=str(row[3] + timedelta(hours=8)))
+            VersionItem(
+                version=row[0], user_count=row[1], event_count=row[2],
+                last_seen=str(row[3] + timedelta(hours=8)),
+            )
             for row in version_result.all()
         ]
 
@@ -227,6 +232,62 @@ class TelemetryService:
         else:
             version_coverage = "—"
 
+        # OS insight: app_start grouped by platform (30-day window)
+        os_result = await self._db.execute(
+            select(
+                TelemetryEvent.platform,
+                func.count(func.distinct(TelemetryEvent.client_id)),
+                func.count(),
+            )
+            .where(
+                TelemetryEvent.event_type == "app_start",
+                TelemetryEvent.created_at >= cutoff,
+                TelemetryEvent.platform != "",
+            )
+            .group_by(TelemetryEvent.platform)
+        )
+        platform_names = {"darwin": "Mac", "win32": "Windows"}
+        os_rows = list(os_result.all())
+        os_total_users = sum(row[1] for row in os_rows)
+        os_insight = [
+            OsItem(
+                platform=row[0],
+                platform_name=platform_names.get(row[0], row[0]),
+                user_count=row[1],
+                event_count=row[2],
+                percentage=f"{round(row[1] / os_total_users * 100)}%" if os_total_users > 0 else "0%",
+            )
+            for row in os_rows
+        ]
+
+        # Version × OS cross (30-day window)
+        cross_result = await self._db.execute(
+            select(
+                TelemetryEvent.app_version,
+                TelemetryEvent.platform,
+                func.count(func.distinct(TelemetryEvent.client_id)),
+            )
+            .where(
+                TelemetryEvent.event_type == "app_start",
+                TelemetryEvent.created_at >= cutoff,
+                TelemetryEvent.app_version != "",
+                TelemetryEvent.platform != "",
+            )
+            .group_by(TelemetryEvent.app_version, TelemetryEvent.platform)
+            .order_by(TelemetryEvent.app_version.desc())
+        )
+        cross_map: dict[str, dict[str, int]] = {}
+        for ver, plat, cnt in cross_result.all():
+            cross_map.setdefault(ver, {})[plat] = cnt
+        version_os_cross = [
+            VersionOsItem(
+                version=ver,
+                mac_users=cross_map[ver].get("darwin", 0),
+                win_users=cross_map[ver].get("win32", 0),
+            )
+            for ver in cross_map
+        ]
+
         return TelemetryStats(
             total_events=total,
             today_events=today,
@@ -236,6 +297,8 @@ class TelemetryService:
             latest_version=latest_version,
             version_coverage=version_coverage,
             version_insight=version_insight,
+            os_insight=os_insight,
+            version_os_cross=version_os_cross,
             event_type_counts=type_counts,
             daily_trend=trend,
             recent_events=recent,
