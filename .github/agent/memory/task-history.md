@@ -661,3 +661,12 @@
 - **摘要**：修复 TASK-059 引入的时区 Bug——`_beijing_now().replace(hour=0)` 得到北京午夜 naive datetime，直接和 DB UTC 时间比较，导致北京 0-8 点数据被排除。新增 `_beijing_today_start()` helper：北京午夜 -8h = 前日 UTC 16:00，正确对齐 DB 的 UTC 时间戳。影响 TelemetryService、AnalyticsService、ReleaseSyncService。
 - **变更文件**：src/services/telemetry.py（改）、src/services/analytics.py（改）、src/services/release_sync.py（改）
 - **验证**：ruff ✅, pytest 190/190 ✅
+
+---
+
+### [TASK-061] 首页移除用户评价和底部CTA
+- **日期**：2026-06-14
+- **类型**：refactor
+- **摘要**：移除首页"用户怎么说"假评价区和"准备好开始了吗？免费下载"CTA区及对应CSS样式，精简页面。
+- **变更文件**：src/portal/templates/index.html（改）、src/static/css/apple.css（改）、src/portal/templates/base.html（版本号）
+- **验证**：pytest 190/190 ✅

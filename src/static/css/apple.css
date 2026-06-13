@@ -309,15 +309,6 @@ img {
   border-radius: var(--radius-sm);
 }
 
-/* Tool card hint / download buttons */
-.tool-card__hint {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  justify-content: center;
-  margin-top: var(--space-2);
-}
-
 /* ── Section Titles ───────────────────────────────────── */
 
 .section-title {
@@ -448,98 +439,6 @@ img {
   .guide-entry__grid {
     grid-template-columns: repeat(2, 1fr);
   }
-}
-
-/* ── Tool Icons Grid ──────────────────────────────────── */
-
-.tools {
-  padding: var(--space-6) var(--space-3);
-  background: var(--color-bg-card);
-}
-
-.tools__grid {
-  display: flex;
-  justify-content: center;
-  gap: var(--space-4);
-  flex-wrap: wrap;
-  max-width: var(--content-max-width);
-  margin: var(--space-4) auto 0;
-  padding: 0 var(--space-3);
-}
-
-.tool-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-3);
-  border-radius: var(--radius-md);
-  transition: transform var(--transition-fast);
-}
-
-.tool-card:hover {
-  transform: translateY(-2px);
-}
-
-.tool-card__icon {
-  width: 3rem;
-  height: 3rem;
-  border-radius: var(--radius-md);
-  background: var(--color-bg-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-}
-
-.tool-card__name {
-  font-size: var(--text-label);
-  font-weight: 500;
-  color: var(--color-text-secondary);
-}
-
-/* ── Testimonials ─────────────────────────────────────── */
-
-.testimonials {
-  padding: var(--space-6) var(--space-3);
-}
-
-.testimonials__list {
-  max-width: 680px;
-  margin: var(--space-4) auto 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.testimonial {
-  text-align: center;
-}
-
-.testimonial__text {
-  font-size: var(--text-card-title);
-  font-style: italic;
-  color: var(--color-text-primary);
-  line-height: 1.6;
-  margin-bottom: var(--space-1);
-}
-
-.testimonial__author {
-  font-size: var(--text-caption);
-  color: var(--color-text-tertiary);
-}
-
-/* ── CTA Section ──────────────────────────────────────── */
-
-.cta {
-  padding: var(--space-7) var(--space-3);
-  text-align: center;
-}
-
-.cta__title {
-  font-size: var(--text-section-title);
-  font-weight: 600;
-  margin-bottom: var(--space-4);
 }
 
 /* ── Footer ───────────────────────────────────────────── */
@@ -1052,10 +951,6 @@ img {
 
   .hero__title {
     font-size: var(--text-hero);
-  }
-
-  .tools__grid {
-    gap: var(--space-2);
   }
 
   .guide-step {

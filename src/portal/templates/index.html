@@ -49,24 +49,6 @@
   </div>
 </section>
 
-<section class="tools">
-  <h2 class="section-title">下载安装包</h2>
-  <p class="section-subtitle">已上传的安装包直接下载，国内高速镜像</p>
-
-  <div class="tools__grid" id="toolsGrid">
-    <div class="tool-card" data-package="codex-desktop">
-      <div class="tool-card__icon"><img src="/static/images/logo-codex.png" width="36" height="36" alt="Codex" style="vertical-align:middle;"></div>
-      <span class="tool-card__name">Codex Desktop</span>
-      <span class="tool-card__hint">加载中...</span>
-    </div>
-    <div class="tool-card" data-package="claude-desktop">
-      <div class="tool-card__icon"><img src="/static/images/logo-claude.svg" width="28" height="28" alt="Claude" style="vertical-align:middle;"></div>
-      <span class="tool-card__name">Claude Desktop</span>
-      <span class="tool-card__hint">加载中...</span>
-    </div>
-  </div>
-</section>
-
 <section class="features">
   <h2 class="section-title">为什么选择 Codex Switch？</h2>
   <p class="section-subtitle">三分钟上手，从此告别复杂的网络配置</p>
@@ -90,73 +72,5 @@
   </div>
 </section>
 
-<section class="testimonials">
-  <h2 class="section-title">用户怎么说</h2>
 
-  <div class="testimonials__list">
-    <div class="testimonial">
-      <p class="testimonial__text">"以前下载 Codex 要等半小时，还经常失败。现在用 Codex Switch 几分钟就装好了，太方便了。"</p>
-      <p class="testimonial__author">— 后端开发工程师</p>
-    </div>
-    <div class="testimonial">
-      <p class="testimonial__text">"作为一个非技术背景的 PM，我居然也能自己装好 AI 编程工具，配置简单到不可思议。"</p>
-      <p class="testimonial__author">— 产品经理</p>
-    </div>
-  </div>
-</section>
-
-<section class="cta">
-  <h2 class="cta__title">准备好开始了吗？</h2>
-  <a href="/download" class="btn btn--primary btn--large">免费下载</a>
-</section>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  fetch('/api/v1/packages')
-    .then(function(r) { return r.json(); })
-    .then(function(resp) {
-      var packages = resp.data && resp.data.packages ? resp.data.packages : [];
-      if (!packages.length) return;
-
-      var cards = document.querySelectorAll('.tool-card[data-package]');
-      cards.forEach(function(card) {
-        var pkgName = card.getAttribute('data-package');
-        var pkg = null;
-        for (var i = 0; i < packages.length; i++) {
-          if (packages[i].name.trim() === pkgName) {
-            pkg = packages[i];
-            break;
-          }
-        }
-
-        var hint = card.querySelector('.tool-card__hint');
-        if (!hint) return;
-
-        if (!pkg || !pkg.platforms || !pkg.platforms.length) {
-          hint.textContent = '暂未提供独立下载';
-          return;
-        }
-
-        // Show download buttons for each platform
-        var html = '';
-        for (var j = 0; j < pkg.platforms.length; j++) {
-          var plat = pkg.platforms[j];
-          var sizeMB = (plat.file_size / 1048576).toFixed(0);
-          var label = plat.platform === 'macos' ? 'Mac' :
-                      plat.platform === 'windows' ? 'Windows' :
-                      plat.platform === 'linux' ? 'Linux' : plat.platform;
-          if (plat.arch === 'arm64') label += ' ARM';
-          var dlUrl = '/api/v1/packages/' + encodeURIComponent(pkg.name.trim()) + '/' +
-                      encodeURIComponent(plat.version) + '/' + plat.platform + '-' + plat.arch;
-          html += '<a href="' + dlUrl + '" class="btn btn--primary btn--small" style="margin:2px;" data-track="tool-card-' + pkgName + '">' +
-                  label + ' ' + sizeMB + ' MB</a>';
-        }
-        hint.innerHTML = html;
-      });
-    })
-    .catch(function() {
-      // API unavailable — leave fallback text
-    });
-});
-</script>
 {% endblock %}
