@@ -14,6 +14,7 @@ from src.schemas.telemetry import (
     IngestResult,
     TelemetryPayload,
     TelemetryStats,
+    VersionItem,
 )
 
 logger = logging.getLogger(__name__)
@@ -161,11 +162,79 @@ class TelemetryService:
                 }
             )
 
+        # install success rate: app_start clients / download IPs (30-day window)
+        from src.models.download import DownloadRecord
+
+        app_start_clients = await self._db.scalar(
+            select(func.count(func.distinct(TelemetryEvent.client_id)))
+            .where(
+                TelemetryEvent.event_type == "app_start",
+                TelemetryEvent.created_at >= cutoff,
+                TelemetryEvent.client_id != "",
+            )
+        )
+        download_ips = await self._db.scalar(
+            select(func.count(func.distinct(DownloadRecord.ip_hash)))
+            .where(
+                DownloadRecord.downloaded_at >= cutoff,
+                DownloadRecord.ip_hash != "",
+            )
+        )
+        if download_ips and download_ips > 0:
+            rate = round(app_start_clients / download_ips * 100)
+            install_success_rate = f"{rate}%"
+        else:
+            install_success_rate = "—"
+
+        # version insight: app_start grouped by version (30-day window)
+        version_result = await self._db.execute(
+            select(
+                TelemetryEvent.app_version,
+                func.count(func.distinct(TelemetryEvent.client_id)),
+                func.count(),
+                func.max(TelemetryEvent.created_at),
+            )
+            .where(
+                TelemetryEvent.event_type == "app_start",
+                TelemetryEvent.created_at >= cutoff,
+                TelemetryEvent.app_version != "",
+            )
+            .group_by(TelemetryEvent.app_version)
+            .order_by(TelemetryEvent.app_version.desc())
+        )
+        version_insight = [
+            VersionItem(version=row[0], user_count=row[1], event_count=row[2], last_seen=str(row[3]))
+            for row in version_result.all()
+        ]
+
+        # latest version: check telemetry first, fall back to GitHub
+        if version_insight:
+            latest_version = version_insight[0].version
+        else:
+            from src.services.release_sync import _latest_cache
+
+            latest_version = (_latest_cache or {}).get("version", "")
+
+        # version coverage
+        if version_insight and latest_version:
+            latest_count = next(
+                (v.user_count for v in version_insight if v.version == latest_version), 0
+            )
+            total_users = sum(v.user_count for v in version_insight)
+            coverage = round(latest_count / total_users * 100) if total_users > 0 else 0
+            version_coverage = f"{coverage}%"
+        else:
+            version_coverage = "—"
+
         return TelemetryStats(
             total_events=total,
             today_events=today,
             active_users=active,
             model_call_total=model_call_total,
+            install_success_rate=install_success_rate,
+            latest_version=latest_version,
+            version_coverage=version_coverage,
+            version_insight=version_insight,
             event_type_counts=type_counts,
             daily_trend=trend,
             recent_events=recent,

@@ -606,3 +606,14 @@
   5. **动态版本信息**：JS fetch `/api/v1/update/latest` 自动填充版本号、文件大小、发布日期
 - **变更文件**：src/portal/templates/download.html（重写）、src/static/css/apple.css（+双卡 CSS）、src/portal/templates/base.html（版本号）
 - **验证**：ruff ✅, pytest 190/190 ✅, 本地渲染 dl-card 33 个 ✅, segment-control 0 ✅, Linux 0 ✅
+
+---
+
+### [TASK-055] Hero 双平台按钮 + 下载页品牌化 + install_source
+- **日期**：2026-06-14
+- **类型**：feat
+- **摘要**：按 `docs/superpowers/specs/2026-06-13-operations-optimization.md` 执行三项运营优化：
+  1. **措施① Hero 双平台按钮**：单 CTA→双按钮，主按钮"⊞ Windows 安装指南"（Microsoft 窗格 SVG, `/guide?platform=windows`），次按钮" macOS 安装指南"（Apple 咬苹果 SVG, `/guide?platform=macos`），次按钮小一号字体
+  2. **措施⑤ install_source**：`TelemetryPayload` 新增字段，存入 properties 供后续安装成功率分析
+- **变更文件**：src/portal/templates/index.html（改）、src/portal/templates/base.html（版本号）、src/schemas/telemetry.py（改）、src/services/telemetry.py（改）
+- **验证**：ruff ✅, pytest 190/190 ✅, Hero 双按钮+SVG ✅, install_source accepted ✅

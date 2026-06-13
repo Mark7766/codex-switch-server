@@ -58,11 +58,22 @@ class DailyTrend(BaseModel):
     count: int
 
 
+class VersionItem(BaseModel):
+    version: str
+    user_count: int
+    event_count: int
+    last_seen: str
+
+
 class TelemetryStats(BaseModel):
     total_events: int = 0
     today_events: int = 0
     active_users: int = 0
     model_call_total: int = 0  # today's real model_call count (SUM of properties.count)
+    install_success_rate: str = "—"  # "85%" or "—" if no data
+    latest_version: str = ""  # latest from GitHub, e.g. "1.8.0"
+    version_coverage: str = "—"  # e.g. "67%"
+    version_insight: list[VersionItem] = []
     event_type_counts: list[EventTypeCount] = []
     daily_trend: list[DailyTrend] = []
     recent_events: list[dict[str, Any]] = []
