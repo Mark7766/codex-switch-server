@@ -75,6 +75,8 @@ class TelemetryService:
                 props["period_start"] = evt.period_start
             if evt.period_end is not None:
                 props["period_end"] = evt.period_end
+            if payload.install_source:
+                props["install_source"] = payload.install_source
 
             record = TelemetryEvent(
                 client_id=payload.client_id,

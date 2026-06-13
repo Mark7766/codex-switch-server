@@ -639,9 +639,34 @@ img {
 }
 
 .download-section {
-  max-width: 600px;
+  max-width: 900px;
   margin: 0 auto;
   padding: 0 var(--space-3);
+}
+
+/* Download cards — side by side */
+.dl-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+.dl-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 32px 24px 24px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  text-align: center;
+}
+.dl-card__icon { margin-bottom: 8px; }
+.dl-card__version { font-size: 28px; font-weight: 600; color: var(--color-text-primary); }
+.dl-card__date { font-size: 13px; color: var(--color-text-secondary); margin: 4px 0 16px; }
+.dl-card__download { margin-bottom: 8px; }
+.dl-card__size { font-size: 14px; color: var(--color-text-secondary); margin-bottom: 8px; }
+
+@media (max-width: 767px) {
+  .dl-cards { grid-template-columns: 1fr; }
+  .download-section { max-width: 500px; }
 }
 
 /* Version Card */

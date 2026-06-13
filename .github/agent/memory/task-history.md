@@ -592,3 +592,17 @@
   5. **测试**：pytest 190/190 ✅，本地渲染验证全部卡片和图表正常。
 - **变更文件**：src/schemas/telemetry.py（改）、src/services/telemetry.py（改）、src/admin/router.py（改）、src/admin/templates/dashboard.html（改）
 - **验证**：ruff ✅, ruff format ✅, pytest 190/190 ✅, 本地渲染门户PV卡片 ✅/模型调用卡片 ✅/配置操作图表 ✅
+
+---
+
+### [TASK-054] 下载页重构：Linux 移除 + Windows/macOS 双卡并排
+- **日期**：2026-06-13
+- **类型**：feat
+- **摘要**：按 `docs/superpowers/specs/2026-06-13-operations-optimization.md` 措施②重构下载页：
+  1. **移除 Linux Tab**：30 天下载量为 0，API 保留但前端不展示
+  2. **移除段控制器（Tab 切换）**：不再需要点击切换平台
+  3. **双卡并排布局**：Windows 和 macOS 两个卡片左右并排显示，零交互直达下载
+  4. **主架构按钮 + 次要链接**：每个卡片主按钮展示主力架构（Win x64 / Mac ARM64），次要架构用小字链接
+  5. **动态版本信息**：JS fetch `/api/v1/update/latest` 自动填充版本号、文件大小、发布日期
+- **变更文件**：src/portal/templates/download.html（重写）、src/static/css/apple.css（+双卡 CSS）、src/portal/templates/base.html（版本号）
+- **验证**：ruff ✅, pytest 190/190 ✅, 本地渲染 dl-card 33 个 ✅, segment-control 0 ✅, Linux 0 ✅

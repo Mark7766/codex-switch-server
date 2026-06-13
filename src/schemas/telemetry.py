@@ -39,6 +39,7 @@ class TelemetryPayload(BaseModel):
     platform: str = ""
     arch: str = ""
     os_version: str = ""
+    install_source: str = ""  # "" = unknown, "portal" = from codexswtich.cloud, "github" = from GitHub Releases
     events: list[TelemetryEventIn] = Field(default_factory=list, max_length=100)
 
 
