@@ -61,6 +61,7 @@ class TelemetryStats(BaseModel):
     total_events: int = 0
     today_events: int = 0
     active_users: int = 0
+    model_call_total: int = 0  # today's real model_call count (SUM of properties.count)
     event_type_counts: list[EventTypeCount] = []
     daily_trend: list[DailyTrend] = []
     recent_events: list[dict[str, Any]] = []

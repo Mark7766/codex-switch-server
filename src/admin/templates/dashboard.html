@@ -22,7 +22,8 @@
     .admin-tab--active { background:var(--color-accent); color:#fff !important; }
 
     /* Cards */
-    .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:32px; }
+    .stats-row { display:grid; grid-template-columns:repeat(5,1fr); gap:16px; margin-bottom:32px; }
+    .stats-row--3col { grid-template-columns:repeat(3,1fr); }
     .stat-card { background:#fff; border-radius:18px; padding:24px; box-shadow:0 1px 4px rgba(0,0,0,.05); text-align:center; }
     .stat-card__num { font-size:2rem; font-weight:600; color:var(--color-text-primary); }
     .stat-card__label { font-size:13px; color:var(--color-text-secondary); margin-top:4px; }
@@ -40,6 +41,7 @@
     .range-btns { display:flex; gap:8px; margin-bottom:12px; }
     .range-btn { padding:4px 12px; font-size:12px; border-radius:16px; border:1px solid #d2d2d7; background:#fff; cursor:pointer; color:var(--color-text-secondary); }
     .range-btn--active { background:var(--color-accent); color:#fff; border-color:var(--color-accent); }
+    @media (max-width:980px) { .stats-row { grid-template-columns:repeat(3,1fr); } }
     @media (max-width:767px) { .stats-row { grid-template-columns:repeat(2,1fr); } .chart-grid { grid-template-columns:1fr; } .admin-tabs { flex-direction:column; } }
   </style>
 </head>
@@ -56,7 +58,7 @@
     <!-- Tab bar -->
     <div class="admin-tabs">
       <button class="admin-tab admin-tab--active" onclick="switchTab('server')">Server 运营</button>
-      <button class="admin-tab" onclick="switchTab('app')">App 遥测</button>
+      <button class="admin-tab" onclick="switchTab('app')">Client 运营</button>
       <button class="admin-tab" onclick="switchTab('packages')">安装包管理</button>
     </div>
 
@@ -67,6 +69,7 @@
         <div class="stat-card"><div class="stat-card__num" id="stat-today-dl">—</div><div class="stat-card__label">今日下载</div></div>
         <div class="stat-card"><div class="stat-card__num" id="stat-cos-rate">—</div><div class="stat-card__label">COS 命中率</div></div>
         <div class="stat-card"><div class="stat-card__num" id="stat-today-pv">—</div><div class="stat-card__label">今日页面访问</div></div>
+        <div class="stat-card"><div class="stat-card__num" id="stat-total-pv">—</div><div class="stat-card__label">门户 PV（累计）</div></div>
       </div>
 
       <div class="chart-section full-width" style="margin-bottom:24px;">
@@ -110,36 +113,33 @@
       </div>
     </div>
 
-    <!-- ═══ App 遥测 ═══ -->
+    <!-- ═══ Client 运营 ═══ -->
     <div id="tab-app" class="tab-panel">
-      <div class="stats-row">
-        <div class="stat-card"><div class="stat-card__num">{{ telemetry.total_events }}</div><div class="stat-card__label">事件总数</div></div>
+      <div class="stats-row stats-row--3col">
         <div class="stat-card"><div class="stat-card__num">{{ telemetry.today_events }}</div><div class="stat-card__label">今日事件</div></div>
         <div class="stat-card"><div class="stat-card__num">{{ telemetry.active_users }}</div><div class="stat-card__label">活跃用户 (30天)</div></div>
-        <div class="stat-card"><div class="stat-card__num" id="stat-total-pv">—</div><div class="stat-card__label">累计页面访问</div></div>
+        <div class="stat-card"><div class="stat-card__num">{{ telemetry.model_call_total }}</div><div class="stat-card__label">模型调用 (今日)</div></div>
       </div>
 
       <div class="chart-grid">
         <div class="chart-section">
-          <h2>功能使用分布</h2>
-          <canvas id="typeChart"></canvas>
+          <h2>模型调用活跃度 (今日)</h2>
+          <canvas id="modelCallChart"></canvas>
         </div>
         <div class="chart-section">
-          <h2>事件趋势 (30天)</h2>
-          <canvas id="trendChart"></canvas>
+          <h2>功能使用 · 配置操作 (30天)</h2>
+          <canvas id="configChart"></canvas>
         </div>
       </div>
 
       <div class="chart-section full-width" style="margin-top:16px;">
-        <h2>平台下载分布</h2>
-        {% if download_stats.platform_distribution %}
-        <div class="table-wrap"><table>
-          <tr><th>平台</th><th>下载次数</th></tr>
-          {% for item in download_stats.platform_distribution %}
-          <tr><td>{{ item.platform }}</td><td>{{ item.count }}</td></tr>
-          {% endfor %}
-        </table></div>
-        {% else %}<p style="color:var(--color-text-secondary);font-size:13px;">暂无数据</p>{% endif %}
+        <h2>事件趋势 (30天)</h2>
+        <div class="range-btns" id="trend-filter-btns" style="margin-bottom:8px;">
+          <button class="range-btn range-btn--active" onclick="switchTrend('all')">全部</button>
+          <button class="range-btn" onclick="switchTrend('config')">仅功能操作</button>
+          <button class="range-btn" onclick="switchTrend('model')">仅模型调用</button>
+        </div>
+        <canvas id="trendChart"></canvas>
       </div>
 
       <div class="chart-section full-width" style="margin-top:16px;">
@@ -301,9 +301,12 @@
       fetch('/api/v1/admin/analytics/page-stats?range_days=' + currentRange)
         .then(function(r){ return r.json(); })
         .then(function(d){
-          // Today pageviews
+          // Today pageviews + cumulative
           var todayPV = d.daily_trend.length ? d.daily_trend[d.daily_trend.length-1].pageviews : 0;
           document.getElementById('stat-today-pv').textContent = todayPV.toLocaleString();
+          var totalPV = 0;
+          d.page_views.forEach(function(p){ totalPV += p.count; });
+          document.getElementById('stat-total-pv').textContent = totalPV.toLocaleString();
 
           // Page view chart
           var ctx = document.getElementById('pageViewChart').getContext('2d');
@@ -336,43 +339,78 @@
     }
 
     // ── App tab: telemetry charts ────────────────────────────
-    var appChartsLoaded = false;
+    var appChartsLoaded = false, trendFilter = 'all';
+    var modelCallChart = null, configChart = null, trendChart = null;
+    var allTypeCounts = {{ type_counts_json | safe }};
+    var configTypeCounts = {{ config_types_json | safe }};
+    var trendData = {{ trend_json | safe }};
+
     function loadAppTab() {
       if (appChartsLoaded) return;
       appChartsLoaded = true;
 
-      var typeCounts = {{ type_counts_json | safe }};
-      var trendData = {{ trend_json | safe }};
+      // Model call activity (dummy for now — placeholder, will show real data when available)
+      var mcCtx = document.getElementById('modelCallChart').getContext('2d');
+      if (modelCallChart) modelCallChart.destroy();
+      modelCallChart = new Chart(mcCtx, {
+        type: 'bar',
+        data: {
+          labels: ['今日模型调用'],
+          datasets: [{
+            label: '调用次数',
+            data: [{{ telemetry.model_call_total }}],
+            backgroundColor: '#0071e3', borderRadius: 4
+          }]
+        },
+        options: { responsive:true, plugins:{ legend:{display:false} },
+          scales:{ y:{ title:{ display:true, text:'调用次数' } } } }
+      });
 
-      if (typeCounts.length) {
-        new Chart(document.getElementById('typeChart'), {
+      // Config operations chart (horizontal bar, excludes model_call)
+      if (configTypeCounts.length) {
+        var cfgCtx = document.getElementById('configChart').getContext('2d');
+        if (configChart) configChart.destroy();
+        configChart = new Chart(cfgCtx, {
           type: 'bar',
           data: {
-            labels: typeCounts.map(function(d){ return d.event_type; }),
-            datasets: [{ label:'事件次数', data:typeCounts.map(function(d){ return d.count; }), backgroundColor:'#0071e3', borderRadius:4 }]
+            labels: configTypeCounts.map(function(d){ return d.event_type; }),
+            datasets: [{ label:'次数', data:configTypeCounts.map(function(d){ return d.count; }), backgroundColor:'#34c759', borderRadius:4 }]
           },
-          options: { responsive:true, plugins:{ legend:{display:false} } }
-        });
-      }
-      if (trendData.length) {
-        new Chart(document.getElementById('trendChart'), {
-          type: 'line',
-          data: {
-            labels: trendData.map(function(d){ return d.date; }),
-            datasets: [{ label:'事件数', data:trendData.map(function(d){ return d.count; }), borderColor:'#34c759', backgroundColor:'rgba(52,199,89,0.1)', fill:true, tension:0.3, pointRadius:2 }]
-          },
-          options: { responsive:true, plugins:{ legend:{display:false} } }
+          options: { responsive:true, indexAxis:'y', plugins:{ legend:{display:false} } }
         });
       }
 
-      // Load total page views for stat card
-      fetch('/api/v1/admin/analytics/page-stats?range_days=365')
-        .then(function(r){ return r.json(); })
-        .then(function(d){
-          var total = 0;
-          d.page_views.forEach(function(p){ total += p.count; });
-          document.getElementById('stat-total-pv').textContent = total.toLocaleString();
-        });
+      // Event trend (30d) with filter
+      drawTrendChart('all');
+    }
+
+    function drawTrendChart(filter) {
+      trendFilter = filter;
+      var ctx = document.getElementById('trendChart').getContext('2d');
+      if (trendChart) trendChart.destroy();
+      trendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: trendData.map(function(d){ return d.date; }),
+          datasets: [{
+            label: filter==='all'?'全部事件':(filter==='model'?'模型调用':'功能操作'),
+            data: trendData.map(function(d){ return d.count; }),
+            borderColor: filter==='model'?'#0071e3':'#34c759',
+            backgroundColor: filter==='model'?'rgba(0,113,227,0.1)':'rgba(52,199,89,0.1)',
+            fill: true, tension: 0.3, pointRadius: 2
+          }]
+        },
+        options: { responsive:true, plugins:{ legend:{display:false} } }
+      });
+    }
+
+    function switchTrend(filter) {
+      document.querySelectorAll('#trend-filter-btns .range-btn').forEach(function(b){
+        b.classList.toggle('range-btn--active', b.textContent === ({
+          all:'全部', config:'仅功能操作', model:'仅模型调用'
+        })[filter]);
+      });
+      drawTrendChart(filter);
     }
 
     // ── Initial load ─────────────────────────────────────────

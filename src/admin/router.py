@@ -54,10 +54,14 @@ async def dashboard(request: Request, db: AsyncSession = _db_dep) -> HTMLRespons
     mgr = PackageManager()
     pkgs = await mgr.list_packages()
 
+    # Split event types: config operations (exclude model_call) vs stream data
+    config_types = [t for t in telem_stats.event_type_counts if t.event_type != "model_call"]
+
     ctx = {
         "download_stats": dl_stats,
         "telemetry": telem_stats,
         "packages": pkgs,
+        "config_types_json": json.dumps([t.model_dump() for t in config_types]),
         "type_counts_json": json.dumps([t.model_dump() for t in telem_stats.event_type_counts]),
         "trend_json": json.dumps([t.model_dump() for t in telem_stats.daily_trend]),
     }

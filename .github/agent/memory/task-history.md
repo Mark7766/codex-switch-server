@@ -578,3 +578,17 @@
 - **变更文件**：src/schemas/telemetry.py（改）、src/services/telemetry.py（改）、src/main.py（改）、tests/unit/test_telemetry_service.py（改）、tests/integration/test_api_telemetry.py（改）、docs/superpowers/specs/2026-06-12-telemetry-optimization.md（新）
 - **验证**：ruff ✅, ruff format ✅, pytest 190/190 ✅, 生产冒烟 4/4 ✅
 - **注意事项**：客户端改造（措施① client-side aggregation）待客户端配合实施。当前服务端已支持 count 字段，老客户端不传 count 走原逻辑不受影响。
+
+---
+
+### [TASK-053] Admin App Tab 重构 — 模型调用独立展示 + 门户PV移回Server Tab
+- **日期**：2026-06-13
+- **类型**：feat
+- **摘要**：按 `docs/superpowers/specs/2026-06-13-admin-app-tab-redesign.md` 重构运营后台 App 遥测 Tab：
+  1. **门户 PV 移入 Server Tab**：将"累计页面访问"卡片从 App Tab 移到 Server Tab 第 5 卡片位，改名"门户 PV（累计）"，数据来源为 `page-stats?range_days=365` API。
+  2. **功能使用分布拆分**：model_call 独立为"模型调用活跃度"柱状图（展示今日真实调用量 `SUM(count)`），配置操作独立为横向柱状图（排除 model_call，7 种事件类型）。
+  3. **事件趋势加筛选**：全部 / 仅功能操作 / 仅模型调用 三个按钮切换。
+  4. **新增 model_call_total**：`TelemetryStats` 新增字段，`get_stats()` 用 `SUM(json_extract(properties, '$.count'))` 计算今日真实调用量。
+  5. **测试**：pytest 190/190 ✅，本地渲染验证全部卡片和图表正常。
+- **变更文件**：src/schemas/telemetry.py（改）、src/services/telemetry.py（改）、src/admin/router.py（改）、src/admin/templates/dashboard.html（改）
+- **验证**：ruff ✅, ruff format ✅, pytest 190/190 ✅, 本地渲染门户PV卡片 ✅/模型调用卡片 ✅/配置操作图表 ✅

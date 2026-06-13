@@ -119,6 +119,23 @@ class TelemetryService:
         )
         type_counts = [EventTypeCount(event_type=row[0], count=row[1]) for row in type_counts_result.all()]
 
+        # Real model_call count: SUM properties->>'count' for today's events
+        model_call_total = await self._db.scalar(
+            select(func.sum(func.json_extract(TelemetryEvent.properties, "$.count"))).where(
+                TelemetryEvent.event_type == "model_call",
+                TelemetryEvent.created_at >= today_start,
+            )
+        )
+        # Fallback: if no aggregated data, use COUNT(*)
+        if not model_call_total:
+            model_call_total = await self._db.scalar(
+                select(func.count()).where(
+                    TelemetryEvent.event_type == "model_call",
+                    TelemetryEvent.created_at >= today_start,
+                )
+            )
+        model_call_total = int(model_call_total or 0)
+
         trend_result = await self._db.execute(
             select(func.date(TelemetryEvent.created_at), func.count())
             .where(TelemetryEvent.created_at >= cutoff)
@@ -128,7 +145,7 @@ class TelemetryService:
         trend = [DailyTrend(date=str(row[0]), count=row[1]) for row in trend_result.all()]
 
         recent_result = await self._db.execute(
-            select(TelemetryEvent).order_by(TelemetryEvent.created_at.desc()).limit(20)
+            select(TelemetryEvent).order_by(TelemetryEvent.created_at.desc()).limit(10)
         )
         recent = []
         for evt in recent_result.scalars().all():
@@ -146,6 +163,7 @@ class TelemetryService:
             total_events=total,
             today_events=today,
             active_users=active,
+            model_call_total=model_call_total,
             event_type_counts=type_counts,
             daily_trend=trend,
             recent_events=recent,

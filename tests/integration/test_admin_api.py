@@ -105,7 +105,7 @@ class TestAdminDashboardTabLayout:
         assert resp.status_code == 200
         html = resp.text
         assert "Server 运营" in html
-        assert "App 遥测" in html
+        assert "Client 运营" in html
         assert "安装包管理" in html
 
     async def test_dashboard_has_package_upload_forms(self, client: AsyncClient):
