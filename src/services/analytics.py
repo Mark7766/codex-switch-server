@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,6 +27,11 @@ from src.schemas.analytics import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _beijing_now() -> datetime:
+    """Return current Beijing time (UTC+8) as naive datetime for DB comparison."""
+    return (datetime.now(UTC) + timedelta(hours=8)).replace(tzinfo=None)
 
 
 class AnalyticsService:
@@ -57,7 +62,7 @@ class AnalyticsService:
     # ── Page stats ────────────────────────────────────────
 
     async def get_page_stats(self, range_days: int = 30) -> PageStatsResponse:
-        cutoff = datetime.now() - timedelta(days=range_days)
+        cutoff = _beijing_now() - timedelta(days=range_days)
 
         # Page views
         pv_result = await self._db.execute(
@@ -95,7 +100,7 @@ class AnalyticsService:
             )
 
         # Daily trend
-        today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        today = _beijing_now().replace(hour=0, minute=0, second=0, microsecond=0)
         daily_trend = []
         for i in range(range_days - 1, -1, -1):
             day_start = today - timedelta(days=i)
@@ -128,13 +133,13 @@ class AnalyticsService:
     # ── Download trends ───────────────────────────────────
 
     async def get_download_trends(self, range_days: int = 30) -> DownloadTrendsResponse:
-        cutoff = datetime.now() - timedelta(days=range_days)
+        cutoff = _beijing_now() - timedelta(days=range_days)
 
         # Total
         total = await self._db.scalar(select(func.count()).select_from(DownloadRecord)) or 0
 
         # Today
-        today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_start = _beijing_now().replace(hour=0, minute=0, second=0, microsecond=0)
         today = await self._db.scalar(select(func.count()).where(DownloadRecord.downloaded_at >= today_start)) or 0
 
         # By product (package_name) — coalesce NULL to 'codex-switch' for old records
@@ -183,7 +188,7 @@ class AnalyticsService:
         ]
 
         # Daily trend with breakdown
-        today_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_date = _beijing_now().replace(hour=0, minute=0, second=0, microsecond=0)
         daily = []
         for i in range(range_days - 1, -1, -1):
             day_start = today_date - timedelta(days=i)

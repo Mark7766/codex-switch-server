@@ -643,3 +643,12 @@
   4. 位置：Client 运营 Tab 版本洞察下方
 - **变更文件**：src/schemas/telemetry.py（改）、src/services/telemetry.py（改）、src/admin/templates/dashboard.html（改）
 - **验证**：ruff ✅, pytest 190/190 ✅
+
+---
+
+### [TASK-059] 运营后台统计时间改为北京时间
+- **日期**：2026-06-14
+- **类型**：fix
+- **摘要**：三个 service 的统计时间从 UTC 改为北京时间（UTC+8）。新增 `_beijing_now()` helper，替换所有 `datetime.now(UTC)` / `datetime.now()` 为北京时间。影响范围：TelemetryService.get_stats()、AnalyticsService 全部查询、ReleaseSyncService.get_download_stats()。"今日"统计现在北京时间 0 点重置而非凌晨 8 点。
+- **变更文件**：src/services/telemetry.py（改）、src/services/analytics.py（改）、src/services/release_sync.py（改）
+- **验证**：ruff ✅, pytest 190/190 ✅

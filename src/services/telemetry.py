@@ -19,6 +19,12 @@ from src.schemas.telemetry import (
     VersionOsItem,
 )
 
+
+def _beijing_now() -> datetime:
+    """Return current Beijing time (UTC+8) as naive datetime for DB comparison."""
+    return (datetime.now(UTC) + timedelta(hours=8)).replace(tzinfo=None)
+
+
 logger = logging.getLogger(__name__)
 
 # Event types that need deduplication (same client_id+event_type+timestamp).
@@ -102,13 +108,13 @@ class TelemetryService:
         total = await self._db.scalar(select(func.count()).select_from(TelemetryEvent))
         total = total or 0
 
-        today_start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+        today_start = _beijing_now().replace(hour=0, minute=0, second=0, microsecond=0)
         today = await self._db.scalar(
             select(func.count()).select_from(TelemetryEvent).where(TelemetryEvent.created_at >= today_start)
         )
         today = today or 0
 
-        cutoff = datetime.now(UTC).replace(tzinfo=None) - timedelta(days=range_days)
+        cutoff = _beijing_now() - timedelta(days=range_days)
         active = await self._db.scalar(
             select(func.count(func.distinct(TelemetryEvent.client_id))).where(
                 TelemetryEvent.created_at >= cutoff, TelemetryEvent.client_id != ""

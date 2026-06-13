@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import time
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from sqlalchemy import func, select
@@ -15,6 +15,12 @@ from src.utils.http import HttpClient
 from src.utils.storage import LocalStorage
 
 logger = logging.getLogger(__name__)
+
+
+def _beijing_now() -> datetime:
+    """Return current Beijing time (UTC+8) as naive datetime for DB comparison."""
+    return (datetime.now(UTC) + timedelta(hours=8)).replace(tzinfo=None)
+
 
 GITHUB_RELEASES_API = "https://api.github.com/repos/Mark7766/codex-switch/releases"
 
@@ -217,7 +223,7 @@ class ReleaseSyncService:
         total_result = await self._db.execute(select(func.count()).select_from(DownloadRecord))
         total = total_result.scalar() or 0
 
-        cutoff = datetime.now() - timedelta(days=range_days)
+        cutoff = _beijing_now() - timedelta(days=range_days)
         active_result = await self._db.execute(
             select(func.count(func.distinct(DownloadRecord.client_id))).where(
                 DownloadRecord.downloaded_at >= cutoff, DownloadRecord.client_id != ""
@@ -225,7 +231,7 @@ class ReleaseSyncService:
         )
         active = active_result.scalar() or 0
 
-        today_cutoff = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_cutoff = _beijing_now().replace(hour=0, minute=0, second=0, microsecond=0)
         today_result = await self._db.execute(
             select(func.count()).select_from(DownloadRecord).where(DownloadRecord.downloaded_at >= today_cutoff)
         )
