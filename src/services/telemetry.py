@@ -181,16 +181,14 @@ class TelemetryService:
         from src.models.download import DownloadRecord
 
         app_start_clients = await self._db.scalar(
-            select(func.count(func.distinct(TelemetryEvent.client_id)))
-            .where(
+            select(func.count(func.distinct(TelemetryEvent.client_id))).where(
                 TelemetryEvent.event_type == "app_start",
                 TelemetryEvent.created_at >= cutoff,
                 TelemetryEvent.client_id != "",
             )
         )
         download_ips = await self._db.scalar(
-            select(func.count(func.distinct(DownloadRecord.ip_hash)))
-            .where(
+            select(func.count(func.distinct(DownloadRecord.ip_hash))).where(
                 DownloadRecord.downloaded_at >= cutoff,
                 DownloadRecord.ip_hash != "",
                 DownloadRecord.package_name == "codex-switch",
@@ -220,7 +218,9 @@ class TelemetryService:
         )
         version_insight = [
             VersionItem(
-                version=row[0], user_count=row[1], event_count=row[2],
+                version=row[0],
+                user_count=row[1],
+                event_count=row[2],
                 last_seen=str(row[3] + timedelta(hours=8)),
             )
             for row in version_result.all()
@@ -236,9 +236,7 @@ class TelemetryService:
 
         # version coverage
         if version_insight and latest_version:
-            latest_count = next(
-                (v.user_count for v in version_insight if v.version == latest_version), 0
-            )
+            latest_count = next((v.user_count for v in version_insight if v.version == latest_version), 0)
             total_users = sum(v.user_count for v in version_insight)
             coverage = round(latest_count / total_users * 100) if total_users > 0 else 0
             version_coverage = f"{coverage}%"

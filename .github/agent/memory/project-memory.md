@@ -141,6 +141,7 @@
 | src/schemas/ | Pydantic DTO：请求/响应模型 | ⬜ 待开发 |
 | src/api/v1/update.py | 版本检查 + 客户端下载 API | ✅ Phase 3 |
 | src/api/v1/updates.py | electron-updater generic provider 端点（latest-mac.yml / latest.yml / {filename}） | ✅ Phase 5 |
+| src/api/v1/plugins.py | 离线插件包下载 API（pack 信息 + COS 302 下载） | ✅ Phase 6 |
 | src/api/v1/packages.py | 工具包（Node.js/Git/Desktop）下载 API | ✅ Phase 3 |
 | src/api/v1/telemetry.py | 遥测事件上报 API | ✅ Phase 4 |
 | src/services/release_sync.py | 实时 GitHub 最新版查询 + 首次代理下载缓存 + 下载统计 | ✅ Phase 3（v2: 2026-06-06 重构为实时模式） |

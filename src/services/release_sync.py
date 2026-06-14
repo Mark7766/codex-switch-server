@@ -176,8 +176,17 @@ class ReleaseSyncService:
         except (ValueError, IndexError):
             has_update = current_version != version
 
+        highlights = [
+            "一键安装 Codex 插件（173 个精选离线包）",
+            "COS 国内高速下载，15 秒完成",
+        ]
+
         if not has_update:
-            return UpdateCheckResponse(has_update=False, latest_version=version)
+            return UpdateCheckResponse(
+                has_update=False,
+                latest_version=version,
+                update_highlights=highlights,
+            )
 
         file_info = {}
         for f in info.get("files", []):
@@ -190,6 +199,7 @@ class ReleaseSyncService:
             latest_version=version,
             release_date=info.get("release_date", ""),
             release_notes=info.get("release_notes", ""),
+            update_highlights=highlights,
             download_url=f"/api/v1/update/download/{version}/{platform}-{arch}",
             file_size=file_info.get("file_size", 0),
             sha256=file_info.get("sha256", ""),

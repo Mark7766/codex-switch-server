@@ -449,3 +449,35 @@
 > - `src/services/telemetry.py`、`src/services/analytics.py`、`src/services/release_sync.py` 均使用 `_beijing_now()`
 > - 新增功能时必须遵循此规范，不允许直接使用 `datetime.now()`
 > - 入库时间（`created_at`）仍为 UTC naive datetime，不改变存储格式
+
+---
+
+### ADR-013: 离线插件包通过 COS 分发，复用现有 files 下载链路
+
+- **日期**：2026-06-15
+- **状态**：✅ 已采纳
+- **决策者**：wangliang
+
+#### 背景
+> Codex Desktop 用户急需安装插件，但插件市场依赖境外资源，国内无法访问。提供一个 173 个插件的离线包（36MB tar.gz），通过 codex-switch-server 分发给 codex-switch 客户端，用户导入 Codex 完成安装。需要设计服务端 API。
+
+#### 方案对比
+
+| 方案 | 优点 | 缺点 |
+|------|------|------|
+| 新增独立下载端点 `/api/v1/plugins/pack/download` | 语义清晰，可独立扩展 | 与 files 下载逻辑重复 |
+| 复用 `/api/v1/files/codex-offline-pack.tar.gz` | 零代码 | 缺少元数据（版本/大小/插件数），客户端需要额外查询 |
+| 元数据端点 + COS 302 下载（选定方案） | 元数据独立更新，下载复用 COS 链路 | 多一个端点 |
+
+#### 决策
+> `GET /api/v1/plugins/pack` 提供元数据（版本号/大小/插件数/描述），`GET /api/v1/plugins/pack/download` COS 302 下载，与现有 files/updates 下载链路一致。
+
+#### 理由
+> 1) 插件包版本独立于 codex-switch 版本，需要独立的元数据端点告知客户端版本
+> 2) 下载链路复用已验证的 COS 广州 → nginx sendfile 三级降级
+> 3) `update_highlights` 字段推动用户升级到支持插件功能的新版本
+
+#### 影响
+> - 新增 `src/api/v1/plugins.py`（2 端点）
+> - `UpdateCheckResponse` 扩展 `update_highlights`
+> - 离线包上传 COS `files/codex-offline-pack.tar.gz`，本地 `data/files/` 降级

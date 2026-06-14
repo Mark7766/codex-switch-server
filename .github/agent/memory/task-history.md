@@ -670,3 +670,24 @@
 - **摘要**：移除首页"用户怎么说"假评价区和"准备好开始了吗？免费下载"CTA区及对应CSS样式，精简页面。
 - **变更文件**：src/portal/templates/index.html（改）、src/static/css/apple.css（改）、src/portal/templates/base.html（版本号）
 - **验证**：pytest 190/190 ✅
+
+---
+
+### [TASK-062] 首页移除下载安装包区块
+- **日期**：2026-06-14
+- **类型**：refactor
+- **摘要**：移除首页"下载安装包"工具卡片区块（含 JS fetch /api/v1/packages 动态渲染、关联 CSS）。首页现在只保留 Hero + 安装指南入口 + 功能卡片三个核心区块。
+- **变更文件**：src/portal/templates/index.html（改）、src/static/css/apple.css（改）、src/portal/templates/base.html（版本号）
+- **验证**：ruff ✅, pytest 190/190 ✅
+
+---
+
+### [TASK-063] 离线插件安装 — 服务端 API
+- **日期**：2026-06-15
+- **类型**：feat
+- **摘要**：按 `docs/superpowers/specs/2026-06-14-codex-offline-plugins.md` 开发服务端插件接口：
+  1. `GET /api/v1/plugins/pack`：返回插件包元数据（版本 1.0.0 / 173 插件 / 36MB / 描述 / 下载地址）
+  2. `GET /api/v1/plugins/pack/download`：COS 302 → nginx sendfile 降级
+  3. `POST /api/v1/update/check` 扩展 `update_highlights` 字段，推动客户端升级
+- **变更文件**：src/api/v1/plugins.py（新）、src/api/router.py（改）、src/schemas/release.py（改）、src/services/release_sync.py（改）
+- **验证**：ruff ✅, pytest 190/190 ✅, /api/v1/plugins/pack 200 ✅, update_highlights 返回 ✅

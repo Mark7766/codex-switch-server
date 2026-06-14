@@ -49,6 +49,7 @@ class UpdateCheckResponse(BaseModel):
     file_size: int = 0
     sha256: str = ""
     is_critical: bool = False
+    update_highlights: list[str] = []
 
 
 class PackageInfo(BaseModel):
