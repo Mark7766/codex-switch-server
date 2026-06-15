@@ -106,30 +106,31 @@ class AnalyticsService:
                 )
             )
 
-        # Daily trend
-        today = _beijing_today_start()
+        # Daily trend — date labels use Beijing time, DB query uses UTC
+        bj_today = _beijing_now().replace(hour=0, minute=0, second=0, microsecond=0)
         daily_trend = []
         for i in range(range_days - 1, -1, -1):
-            day_start = today - timedelta(days=i)
-            day_end = day_start + timedelta(days=1)
+            day_start_bj = bj_today - timedelta(days=i)
+            day_start_utc = day_start_bj - timedelta(hours=8)
+            day_end_utc = day_start_utc + timedelta(days=1)
 
             pv_count = await self._db.scalar(
                 select(func.count()).where(
                     PageEvent.event_type == "pageview",
-                    PageEvent.created_at >= day_start,
-                    PageEvent.created_at < day_end,
+                    PageEvent.created_at >= day_start_utc,
+                    PageEvent.created_at < day_end_utc,
                 )
             )
             click_count = await self._db.scalar(
                 select(func.count()).where(
                     PageEvent.event_type == "click",
-                    PageEvent.created_at >= day_start,
-                    PageEvent.created_at < day_end,
+                    PageEvent.created_at >= day_start_utc,
+                    PageEvent.created_at < day_end_utc,
                 )
             )
             daily_trend.append(
                 DailyAnalyticsTrend(
-                    date=day_start.strftime("%Y-%m-%d"),
+                    date=day_start_bj.strftime("%Y-%m-%d"),
                     pageviews=pv_count or 0,
                     clicks=click_count or 0,
                 )
@@ -194,18 +195,19 @@ class AnalyticsService:
             for row in pkg_result.all()
         ]
 
-        # Daily trend with breakdown
-        today_date = _beijing_today_start()
+        # Daily trend with breakdown — date labels use Beijing time
+        bj_today = _beijing_now().replace(hour=0, minute=0, second=0, microsecond=0)
         daily = []
         for i in range(range_days - 1, -1, -1):
-            day_start = today_date - timedelta(days=i)
-            day_end = day_start + timedelta(days=1)
+            day_start_bj = bj_today - timedelta(days=i)
+            day_start_utc = day_start_bj - timedelta(hours=8)
+            day_end_utc = day_start_utc + timedelta(days=1)
 
             day_total = (
                 await self._db.scalar(
                     select(func.count()).where(
-                        DownloadRecord.downloaded_at >= day_start,
-                        DownloadRecord.downloaded_at < day_end,
+                        DownloadRecord.downloaded_at >= day_start_utc,
+                        DownloadRecord.downloaded_at < day_end_utc,
                     )
                 )
                 or 0
@@ -218,7 +220,7 @@ class AnalyticsService:
                     DownloadRecord.arch,
                     func.count(),
                 )
-                .where(DownloadRecord.downloaded_at >= day_start, DownloadRecord.downloaded_at < day_end)
+                .where(DownloadRecord.downloaded_at >= day_start_utc, DownloadRecord.downloaded_at < day_end_utc)
                 .group_by(pkg_col, DownloadRecord.platform, DownloadRecord.arch)
             )
             breakdown = {}
@@ -231,7 +233,7 @@ class AnalyticsService:
 
             daily.append(
                 DailyDownloadPoint(
-                    date=day_start.strftime("%Y-%m-%d"),
+                    date=day_start_bj.strftime("%Y-%m-%d"),
                     total=day_total,
                     breakdown=breakdown,
                 )

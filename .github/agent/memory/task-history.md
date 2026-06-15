@@ -691,3 +691,12 @@
   3. `POST /api/v1/update/check` 扩展 `update_highlights` 字段，推动客户端升级
 - **变更文件**：src/api/v1/plugins.py（新）、src/api/router.py（改）、src/schemas/release.py（改）、src/services/release_sync.py（改）
 - **验证**：ruff ✅, pytest 190/190 ✅, /api/v1/plugins/pack 200 ✅, update_highlights 返回 ✅
+
+---
+
+### [TASK-064] 版本洞察语义排序修复
+- **日期**：2026-06-15
+- **类型**：fix
+- **摘要**：版本排序从 SQL `ORDER BY app_version DESC`（字典序，1.9.1 > 1.10.0）改为 Python `sorted(key=_parse_semver, reverse=True)`（语义排序）。修复最新版本显示为 1.9.1 而非 1.10.0 的 Bug。
+- **变更文件**：src/services/telemetry.py（改）
+- **验证**：ruff ✅, pytest 194/194 ✅

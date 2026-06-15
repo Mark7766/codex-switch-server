@@ -18,6 +18,7 @@ from src.schemas.telemetry import (
     VersionItem,
     VersionOsItem,
 )
+from src.services.release_sync import _parse_semver
 
 
 def _beijing_now() -> datetime:
@@ -155,10 +156,10 @@ class TelemetryService:
         model_call_total = int(model_call_total or 0)
 
         trend_result = await self._db.execute(
-            select(func.date(TelemetryEvent.created_at), func.count())
+            select(func.date(TelemetryEvent.created_at, "+8 hours"), func.count())
             .where(TelemetryEvent.created_at >= cutoff)
-            .group_by(func.date(TelemetryEvent.created_at))
-            .order_by(func.date(TelemetryEvent.created_at))
+            .group_by(func.date(TelemetryEvent.created_at, "+8 hours"))
+            .order_by(func.date(TelemetryEvent.created_at, "+8 hours"))
         )
         trend = [DailyTrend(date=str(row[0]), count=row[1]) for row in trend_result.all()]
 
@@ -200,31 +201,49 @@ class TelemetryService:
         else:
             install_success_rate = "—"
 
-        # version insight: app_start grouped by version (30-day window)
-        version_result = await self._db.execute(
+        # version insight: each client counted only under their LATEST version (30-day window)
+        # Step 1: find each client's latest app_start
+        latest_subq = (
             select(
-                TelemetryEvent.app_version,
-                func.count(func.distinct(TelemetryEvent.client_id)),
-                func.count(),
-                func.max(TelemetryEvent.created_at),
+                TelemetryEvent.client_id,
+                func.max(TelemetryEvent.created_at).label("last_seen"),
             )
             .where(
                 TelemetryEvent.event_type == "app_start",
                 TelemetryEvent.created_at >= cutoff,
+                TelemetryEvent.client_id != "",
                 TelemetryEvent.app_version != "",
             )
-            .group_by(TelemetryEvent.app_version)
-            .order_by(TelemetryEvent.app_version.desc())
-        )
-        version_insight = [
-            VersionItem(
-                version=row[0],
-                user_count=row[1],
-                event_count=row[2],
-                last_seen=str(row[3] + timedelta(hours=8)),
+            .group_by(TelemetryEvent.client_id)
+        ).subquery()
+
+        # Step 2: join back to get version+platform for the latest event
+        version_result = await self._db.execute(
+            select(
+                TelemetryEvent.app_version,
+                func.count().label("user_count"),
+                func.max(TelemetryEvent.created_at).label("last_seen"),
             )
-            for row in version_result.all()
-        ]
+            .join(
+                latest_subq,
+                (TelemetryEvent.client_id == latest_subq.c.client_id)
+                & (TelemetryEvent.created_at == latest_subq.c.last_seen),
+            )
+            .group_by(TelemetryEvent.app_version)
+        )
+        version_insight = sorted(
+            (
+                VersionItem(
+                    version=row[0],
+                    user_count=row[1],
+                    event_count=row[1],
+                    last_seen=str(row[2] + timedelta(hours=8)),
+                )
+                for row in version_result.all()
+            ),
+            key=lambda v: _parse_semver(v.version),
+            reverse=True,
+        )
 
         # latest version: check telemetry first, fall back to GitHub
         if version_insight:
@@ -243,18 +262,18 @@ class TelemetryService:
         else:
             version_coverage = "—"
 
-        # OS insight: app_start grouped by platform (30-day window)
+        # OS insight: each client counted once (latest app_start only, same subquery)
         os_result = await self._db.execute(
             select(
                 TelemetryEvent.platform,
-                func.count(func.distinct(TelemetryEvent.client_id)),
-                func.count(),
+                func.count().label("user_count"),
             )
-            .where(
-                TelemetryEvent.event_type == "app_start",
-                TelemetryEvent.created_at >= cutoff,
-                TelemetryEvent.platform != "",
+            .join(
+                latest_subq,
+                (TelemetryEvent.client_id == latest_subq.c.client_id)
+                & (TelemetryEvent.created_at == latest_subq.c.last_seen),
             )
+            .where(TelemetryEvent.platform != "")
             .group_by(TelemetryEvent.platform)
         )
         platform_names = {"darwin": "Mac", "win32": "Windows"}
@@ -271,33 +290,39 @@ class TelemetryService:
             for row in os_rows
         ]
 
-        # Version × OS cross (30-day window)
+        # Version × OS cross: each client counted once (latest app_start only)
         cross_result = await self._db.execute(
             select(
                 TelemetryEvent.app_version,
                 TelemetryEvent.platform,
-                func.count(func.distinct(TelemetryEvent.client_id)),
+                func.count().label("user_count"),
+            )
+            .join(
+                latest_subq,
+                (TelemetryEvent.client_id == latest_subq.c.client_id)
+                & (TelemetryEvent.created_at == latest_subq.c.last_seen),
             )
             .where(
-                TelemetryEvent.event_type == "app_start",
-                TelemetryEvent.created_at >= cutoff,
                 TelemetryEvent.app_version != "",
                 TelemetryEvent.platform != "",
             )
             .group_by(TelemetryEvent.app_version, TelemetryEvent.platform)
-            .order_by(TelemetryEvent.app_version.desc())
         )
         cross_map: dict[str, dict[str, int]] = {}
         for ver, plat, cnt in cross_result.all():
             cross_map.setdefault(ver, {})[plat] = cnt
-        version_os_cross = [
-            VersionOsItem(
-                version=ver,
-                mac_users=cross_map[ver].get("darwin", 0),
-                win_users=cross_map[ver].get("win32", 0),
-            )
-            for ver in cross_map
-        ]
+        version_os_cross = sorted(
+            (
+                VersionOsItem(
+                    version=ver,
+                    mac_users=cross_map[ver].get("darwin", 0),
+                    win_users=cross_map[ver].get("win32", 0),
+                )
+                for ver in cross_map
+            ),
+            key=lambda v: _parse_semver(v.version),
+            reverse=True,
+        )
 
         return TelemetryStats(
             total_events=total,
