@@ -284,7 +284,7 @@ class TelemetryService:
                 platform=row[0],
                 platform_name=platform_names.get(row[0], row[0]),
                 user_count=row[1],
-                event_count=row[2],
+                event_count=row[1],  # same as user_count after dedup
                 percentage=f"{round(row[1] / os_total_users * 100)}%" if os_total_users > 0 else "0%",
             )
             for row in os_rows

@@ -700,3 +700,15 @@
 - **摘要**：版本排序从 SQL `ORDER BY app_version DESC`（字典序，1.9.1 > 1.10.0）改为 Python `sorted(key=_parse_semver, reverse=True)`（语义排序）。修复最新版本显示为 1.9.1 而非 1.10.0 的 Bug。
 - **变更文件**：src/services/telemetry.py（改）
 - **验证**：ruff ✅, pytest 194/194 ✅
+
+---
+
+### [TASK-065] 版本去重 + 趋势日期标签修复
+- **日期**：2026-06-15
+- **类型**：fix
+- **摘要**：
+  1. **版本去重**：版本洞察/OS洞察/版本×OS 改为每客户端只计最新版本（`latest_subq` JOIN `max(created_at)`），消除窗口内升级导致的重复计数（旧方法合计 25 vs 实际 18 客户端）
+  2. **趋势日期标签**：`get_page_stats()`/`get_download_trends()` 每日循环 + telemetry `daily_trend` SQL 日期标签从 UTC 改为北京时间（`+8 hours` / `day_start_bj`）
+  3. 部署后验证：download-trends `date: 2026-06-15` ✅, page-stats `date: 2026-06-15` ✅
+- **变更文件**：src/services/telemetry.py（改）、src/services/analytics.py（改）、docs/superpowers/specs/2026-06-15-version-dedup.md（新）
+- **验证**：ruff ✅, pytest 194/194 ✅, 生产日期标签 2026-06-15 ✅
