@@ -740,3 +740,16 @@
   6. **telemetry ip_hash**：从 Request 提取 IP SHA256 存入 telemetry_events
 - **变更文件**：src/models/client_registry.py（新）、src/models/referral.py（新）、src/api/v1/client.py（新）、src/services/referral_matcher.py（新）、src/models/page_event.py（改）、src/models/telemetry.py（改）、src/api/v1/telemetry.py（改）、src/services/telemetry.py（改）、src/portal/router.py（改）、src/main.py（改）、src/database.py（改）、src/api/router.py（改）
 - **验证**：ruff ✅, pytest 194/194 ✅
+
+---
+
+### [TASK-068] Claude 离线插件 API — type 参数支持
+- **日期**：2026-06-17
+- **类型**：feat
+- **摘要**：按 `DESIGN-claude-offline-plugins-v1.11.0.md` 扩展 plugins API：
+  - `GET /api/v1/plugins/pack?type=claude` 返回 Claude 包元数据（170 plugins, 165MB）
+  - `GET /api/v1/plugins/pack/download?type=claude` COS 302 下载
+  - 向后兼容：不带 type 默认 codex
+  - 新增 1 个测试
+- **变更文件**：src/api/v1/plugins.py（改）、tests/integration/test_api_plugins.py（改）
+- **验证**：ruff ✅, pytest 195/195 ✅

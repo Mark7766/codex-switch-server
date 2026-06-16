@@ -17,7 +17,17 @@ async def test_get_plugin_pack_returns_metadata(client: AsyncClient):
     assert pack["plugin_count"] == 173
     assert pack["size_mb"] == 36
     assert "download_url" in pack
-    assert pack["download_url"] == "/api/v1/plugins/pack/download"
+    assert "/api/v1/plugins/pack/download" in pack["download_url"]
+
+
+@pytest.mark.asyncio
+async def test_get_plugin_pack_claude_returns_metadata(client: AsyncClient):
+    """GET /api/v1/plugins/pack?type=claude returns Claude pack info."""
+    resp = await client.get("/api/v1/plugins/pack?type=claude")
+    assert resp.status_code == 200
+    pack = resp.json()["data"]
+    assert pack["filename"] == "claude-offline-plugins.tar.gz"
+    assert pack["plugin_count"] == 170
 
 
 @pytest.mark.asyncio
