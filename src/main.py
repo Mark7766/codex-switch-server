@@ -65,10 +65,18 @@ async def _cleanup_old_data() -> None:
 async def lifespan(app: FastAPI):
     await run_migrations()
     cleanup_task = asyncio.create_task(_cleanup_old_data())
+    from src.services.referral_matcher import start_referral_matcher
+
+    referral_task = await start_referral_matcher()
     yield
     cleanup_task.cancel()
+    referral_task.cancel()
     try:
         await cleanup_task
+    except asyncio.CancelledError:
+        pass
+    try:
+        await referral_task
     except asyncio.CancelledError:
         pass
 

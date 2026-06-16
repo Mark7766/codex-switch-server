@@ -32,6 +32,7 @@ class DailyAnalyticsTrend(BaseModel):
     date: str
     pageviews: int = 0
     clicks: int = 0
+    uv: int = 0
 
 
 class PageStatsResponse(BaseModel):

@@ -59,8 +59,12 @@ async def download_package(
     if cos.exists(cos_key):
         dl_svc = ReleaseSyncService(db)
         await dl_svc.record_download(
-            version="latest", platform=platform, arch=arch,
-            package_name=package_name, ip_hash=ip, delivery="cos",
+            version="latest",
+            platform=platform,
+            arch=arch,
+            package_name=package_name,
+            ip_hash=ip,
+            delivery="cos",
         )
         headers = {}
         if original_filename:
@@ -70,8 +74,12 @@ async def download_package(
     # 2. Fallback: nginx X-Accel-Redirect from local disk
     dl_svc = ReleaseSyncService(db)
     await dl_svc.record_download(
-        version="latest", platform=platform, arch=arch,
-        package_name=package_name, ip_hash=ip, delivery="local",
+        version="latest",
+        platform=platform,
+        arch=arch,
+        package_name=package_name,
+        ip_hash=ip,
+        delivery="local",
     )
     p = Path(file_path)
     parts = list(p.parts)

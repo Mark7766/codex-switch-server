@@ -725,3 +725,18 @@
   4. Alembic 迁移兼容新旧 DB
 - **变更文件**：src/models/download.py（改）、src/services/release_sync.py（改）、src/services/analytics.py（改）、src/api/v1/update.py（改）、src/api/v1/updates.py（改）、src/api/v1/packages.py（改）、src/api/v1/plugins.py（改）、alembic/versions/b32a1f982dc5_add_delivery_to_download_records.py（新）
 - **验证**：ruff ✅, pytest 194/194 ✅, 迁移链完整 ✅
+
+---
+
+### [TASK-067] 邀请好友功能 — 服务端开发
+- **日期**：2026-06-16
+- **类型**：feat
+- **摘要**：按 `DESIGN-referral-invite-v1.11.0.md` 开发服务端邀请系统：
+  1. **client_registry 表**：AUTOINCREMENT 永久编号，历史用户回填，新用户 auto-register
+  2. **referrals 表**：邀请关系（inviter/invitee，UNIQUE 去重）
+  3. **profile 端点**：`GET /api/v1/client/{client_id}/profile` 返回 client_number/is_early_member/joined_date/invite_count
+  4. **ref 追踪**：`/guide?ref=` 参数 fire-and-forget 写入 page_events
+  5. **归属匹配**：referral_matcher 定时任务（每小时），IP+7天窗口匹配
+  6. **telemetry ip_hash**：从 Request 提取 IP SHA256 存入 telemetry_events
+- **变更文件**：src/models/client_registry.py（新）、src/models/referral.py（新）、src/api/v1/client.py（新）、src/services/referral_matcher.py（新）、src/models/page_event.py（改）、src/models/telemetry.py（改）、src/api/v1/telemetry.py（改）、src/services/telemetry.py（改）、src/portal/router.py（改）、src/main.py（改）、src/database.py（改）、src/api/router.py（改）
+- **验证**：ruff ✅, pytest 194/194 ✅

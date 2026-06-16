@@ -44,7 +44,12 @@ class TelemetryService:
     def __init__(self, db: AsyncSession):
         self._db = db
 
-    async def ingest(self, payload: TelemetryPayload, max_per_client_per_minute: int = 60) -> IngestResult:
+    async def ingest(
+        self,
+        payload: TelemetryPayload,
+        max_per_client_per_minute: int = 60,
+        ip_hash: str = "",
+    ) -> IngestResult:
         accepted = 0
         rejected = 0
 
@@ -104,6 +109,7 @@ class TelemetryService:
                 platform=payload.platform,
                 arch=payload.arch,
                 os_version=payload.os_version,
+                ip_hash=ip_hash,
             )
             self._db.add(record)
             accepted += 1

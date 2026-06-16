@@ -17,4 +17,6 @@ class PageEvent(Base):
     element_id: Mapped[str | None] = mapped_column(String(64), nullable=True)  # click element id, null for pageviews
     ip_hash: Mapped[str] = mapped_column(String(64), default="")
     user_agent: Mapped[str] = mapped_column(String(256), default="")
+    ref: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)  # inviter clientId from ?ref=
+    visitor_id: Mapped[str] = mapped_column(String(16), default="", index=True)  # SHA256(ip+ua)[:16]
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, index=True)

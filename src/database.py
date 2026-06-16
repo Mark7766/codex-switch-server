@@ -4,8 +4,10 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 # Ensure all models are imported so Base.metadata knows about them
+import src.models.client_registry  # noqa: F401
 import src.models.download  # noqa: F401
 import src.models.page_event  # noqa: F401
+import src.models.referral  # noqa: F401
 import src.models.release  # noqa: F401
 import src.models.telemetry  # noqa: F401
 from src.config import settings

@@ -22,7 +22,7 @@
     .admin-tab--active { background:var(--color-accent); color:#fff !important; }
 
     /* Cards */
-    .stats-row { display:grid; grid-template-columns:repeat(5,1fr); gap:16px; margin-bottom:32px; }
+    .stats-row { display:grid; grid-template-columns:repeat(7,1fr); gap:16px; margin-bottom:32px; }
     .stats-row--3col { grid-template-columns:repeat(3,1fr); }
     .stats-row--4col { grid-template-columns:repeat(4,1fr); }
     .stat-card { background:#fff; border-radius:18px; padding:24px; box-shadow:0 1px 4px rgba(0,0,0,.05); text-align:center; }
@@ -69,8 +69,10 @@
         <div class="stat-card"><div class="stat-card__num" id="stat-total-dl">—</div><div class="stat-card__label">总下载量</div></div>
         <div class="stat-card"><div class="stat-card__num" id="stat-today-dl">—</div><div class="stat-card__label">今日下载</div></div>
         <div class="stat-card"><div class="stat-card__num" id="stat-cos-rate">—</div><div class="stat-card__label">COS 命中率</div></div>
-        <div class="stat-card"><div class="stat-card__num" id="stat-today-pv">—</div><div class="stat-card__label">今日页面访问</div></div>
-        <div class="stat-card"><div class="stat-card__num" id="stat-total-pv">—</div><div class="stat-card__label">门户 PV（累计）</div></div>
+        <div class="stat-card"><div class="stat-card__num">{{ uv_stats.month_uv }}</div><div class="stat-card__label">月 UV（30天）</div></div>
+        <div class="stat-card"><div class="stat-card__num">{{ uv_stats.today_uv }}</div><div class="stat-card__label">今日 UV</div></div>
+        <div class="stat-card"><div class="stat-card__num">{{ uv_stats.today_pv }}</div><div class="stat-card__label">今日 PV</div></div>
+        <div class="stat-card"><div class="stat-card__num">{{ uv_stats.pv_uv_ratio }}</div><div class="stat-card__label">PV/UV 比</div></div>
       </div>
 
       <div class="chart-section full-width" style="margin-bottom:24px;">
@@ -83,6 +85,11 @@
           </div>
         </div>
         <canvas id="dlTrendChart" style="margin-top:16px;"></canvas>
+      </div>
+
+      <div class="chart-section full-width" style="margin-bottom:24px;">
+        <h2>PV / UV 趋势 (30天)</h2>
+        <canvas id="pvUvTrendChart"></canvas>
       </div>
 
       <div class="chart-grid">
@@ -285,7 +292,7 @@
     }
 
     // ── Server tab: load data from APIs ─────────────────────
-    var dlTrendChart = null, pageViewChart = null, productPieChart = null;
+    var dlTrendChart = null, pageViewChart = null, productPieChart = null, pvUvTrendChart = null;
     var currentRange = 30;
 
     function loadServerTab() {
@@ -360,13 +367,6 @@
       fetch('/api/v1/admin/analytics/page-stats?range_days=' + currentRange)
         .then(function(r){ return r.json(); })
         .then(function(d){
-          // Today pageviews + cumulative
-          var todayPV = d.daily_trend.length ? d.daily_trend[d.daily_trend.length-1].pageviews : 0;
-          document.getElementById('stat-today-pv').textContent = todayPV.toLocaleString();
-          var totalPV = 0;
-          d.page_views.forEach(function(p){ totalPV += p.count; });
-          document.getElementById('stat-total-pv').textContent = totalPV.toLocaleString();
-
           // Page view chart
           var ctx = document.getElementById('pageViewChart').getContext('2d');
           if (pageViewChart) pageViewChart.destroy();
@@ -382,6 +382,25 @@
                 }]
               },
               options: { responsive:true, indexAxis:'y', plugins:{ legend:{display:false} } }
+            });
+          }
+
+          // PV/UV trend chart
+          var uvCtx = document.getElementById('pvUvTrendChart').getContext('2d');
+          if (pvUvTrendChart) pvUvTrendChart.destroy();
+          if (d.daily_trend.length) {
+            pvUvTrendChart = new Chart(uvCtx, {
+              type: 'line',
+              data: {
+                labels: d.daily_trend.map(function(t){ return t.date; }),
+                datasets: [
+                  { label:'PV', data: d.daily_trend.map(function(t){ return t.pageviews; }),
+                    borderColor:'#0071e3', backgroundColor:'rgba(0,113,227,0.1)', fill:true, tension:0.3, pointRadius:2 },
+                  { label:'UV', data: d.daily_trend.map(function(t){ return t.uv || 0; }),
+                    borderColor:'#34c759', backgroundColor:'rgba(52,199,89,0.1)', fill:true, tension:0.3, pointRadius:2 }
+                ]
+              },
+              options: { responsive:true, plugins:{ legend:{position:'bottom'} } }
             });
           }
 

@@ -52,12 +52,15 @@ class AnalyticsService:
     async def record_page_event(self, event: PageviewRequest, ip: str = "", ua: str = "") -> None:
         """Record a pageview or click event. Fire-and-forget."""
         ip_hash = hashlib.sha256(ip.encode()).hexdigest()[:64] if ip else ""
+        ua_snippet = ua[:256] if ua else ""
+        visitor_id = hashlib.sha256(f"{ip_hash}{ua_snippet}".encode()).hexdigest()[:16]
         record = PageEvent(
             event_type=event.event_type,
             page=event.page,
             element_id=event.element_id if event.element_id else None,
             ip_hash=ip_hash,
-            user_agent=ua[:256] if ua else "",
+            user_agent=ua_snippet,
+            visitor_id=visitor_id,
         )
         self._db.add(record)
         try:
@@ -128,15 +131,72 @@ class AnalyticsService:
                     PageEvent.created_at < day_end_utc,
                 )
             )
+            uv_count = await self._db.scalar(
+                select(func.count(func.distinct(PageEvent.visitor_id))).where(
+                    PageEvent.event_type == "pageview",
+                    PageEvent.visitor_id != "",
+                    PageEvent.created_at >= day_start_utc,
+                    PageEvent.created_at < day_end_utc,
+                )
+            )
             daily_trend.append(
                 DailyAnalyticsTrend(
                     date=day_start_bj.strftime("%Y-%m-%d"),
                     pageviews=pv_count or 0,
                     clicks=click_count or 0,
+                    uv=uv_count or 0,
                 )
             )
 
         return PageStatsResponse(page_views=page_views, top_clicks=top_clicks, daily_trend=daily_trend)
+
+    # ── UV stats ──────────────────────────────────────────
+
+    async def get_uv_stats(self) -> dict:
+        """Return monthly UV, today UV, and PV/UV ratio."""
+        today_start = _beijing_today_start()
+        cutoff_30 = _beijing_now() - timedelta(days=30)
+
+        month_uv = (
+            await self._db.scalar(
+                select(func.count(func.distinct(PageEvent.visitor_id))).where(
+                    PageEvent.event_type == "pageview",
+                    PageEvent.visitor_id != "",
+                    PageEvent.created_at >= cutoff_30,
+                )
+            )
+            or 0
+        )
+
+        today_uv = (
+            await self._db.scalar(
+                select(func.count(func.distinct(PageEvent.visitor_id))).where(
+                    PageEvent.event_type == "pageview",
+                    PageEvent.visitor_id != "",
+                    PageEvent.created_at >= today_start,
+                )
+            )
+            or 0
+        )
+
+        today_pv = (
+            await self._db.scalar(
+                select(func.count()).where(
+                    PageEvent.event_type == "pageview",
+                    PageEvent.created_at >= today_start,
+                )
+            )
+            or 0
+        )
+
+        pv_uv_ratio = f"{today_pv / today_uv:.1f}" if today_uv > 0 else "—"
+
+        return {
+            "month_uv": month_uv,
+            "today_uv": today_uv,
+            "today_pv": today_pv,
+            "pv_uv_ratio": pv_uv_ratio,
+        }
 
     # ── Download trends ───────────────────────────────────
 
@@ -262,12 +322,7 @@ class AnalyticsService:
             )
             or 0
         )
-        total_window = (
-            await self._db.scalar(
-                select(func.count()).where(DownloadRecord.downloaded_at >= cutoff)
-            )
-            or 1
-        )
+        total_window = await self._db.scalar(select(func.count()).where(DownloadRecord.downloaded_at >= cutoff)) or 1
         cos_rate = round(cos_hits / total_window, 2) if total_window > 0 else 0.0
 
         return DownloadTrendsResponse(
