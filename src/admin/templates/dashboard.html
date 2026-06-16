@@ -224,10 +224,18 @@
 
     <!-- ═══ 增长 ═══ -->
     <div id="tab-growth" class="tab-panel">
-      <div class="stats-row stats-row--3col">
-        <div class="stat-card"><div class="stat-card__num">{{ growth.total_clicks }}</div><div class="stat-card__label">邀请链接点击</div></div>
-        <div class="stat-card"><div class="stat-card__num">{{ growth.total_installs }}</div><div class="stat-card__label">成功邀请安装</div></div>
+      <h2 style="font-size:17px;font-weight:600;margin-bottom:16px;">核心漏斗</h2>
+      <div class="stats-row stats-row--4col">
+        <div class="stat-card"><div class="stat-card__num">{{ growth.share_clicks }}</div><div class="stat-card__label">分享按钮点击</div></div>
+        <div class="stat-card"><div class="stat-card__num">{{ growth.guide_clicks }}</div><div class="stat-card__label">指南页访问(带ref)</div></div>
+        <div class="stat-card"><div class="stat-card__num">{{ growth.referral_installs }}</div><div class="stat-card__label">匹配成功安装</div></div>
         <div class="stat-card"><div class="stat-card__num">{{ growth.conversion_rate }}</div><div class="stat-card__label">转化率</div></div>
+      </div>
+
+      <div class="stats-row stats-row--4col">
+        <div class="stat-card"><div class="stat-card__num">{{ growth.organic_installs }}</div><div class="stat-card__label">自然安装(无ref)</div></div>
+        <div class="stat-card"><div class="stat-card__num">{{ growth.match_rate }}</div><div class="stat-card__label">IP匹配率</div></div>
+        <div class="stat-card"><div class="stat-card__num">{{ growth.active_inviter_rate }}</div><div class="stat-card__label">有效邀请率</div></div>
       </div>
 
       {% if growth.top_inviters %}

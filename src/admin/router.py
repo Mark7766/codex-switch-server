@@ -65,13 +65,40 @@ async def dashboard(request: Request, db: AsyncSession = _db_dep) -> HTMLRespons
     from sqlalchemy import func
     from sqlalchemy import select as sa_select
 
+    from src.models.client_registry import ClientRegistry
     from src.models.page_event import PageEvent
     from src.models.referral import Referral
+    from src.models.telemetry import TelemetryEvent
 
-    total_clicks = await db.scalar(sa_select(func.count()).where(PageEvent.ref.isnot(None))) or 0
-    total_installs = await db.scalar(sa_select(func.count()).select_from(Referral)) or 0
-    conversion = f"{round(total_installs / total_clicks * 100)}%" if total_clicks > 0 else "—"
+    # Core funnel
+    guide_clicks = await db.scalar(
+        sa_select(func.count()).where(PageEvent.ref.isnot(None))
+    ) or 0
+    referral_installs = await db.scalar(sa_select(func.count()).select_from(Referral)) or 0
+    conversion = f"{round(referral_installs / guide_clicks * 100)}%" if guide_clicks > 0 else "—"
 
+    # Organic installs: total clients not in referrals
+    total_clients = await db.scalar(sa_select(func.count()).select_from(ClientRegistry)) or 0
+    organic_installs = total_clients - referral_installs
+
+    # Share copy clicks from telemetry
+    share_clicks = await db.scalar(
+        sa_select(func.count()).where(TelemetryEvent.event_type == "share_copy_click")
+    ) or 0
+
+    # Match rate: referrals / guide visits with ref
+    match_rate = f"{round(referral_installs / guide_clicks * 100)}%" if guide_clicks > 0 else "—"
+
+    # Active inviter rate
+    total_inviters = await db.scalar(
+        sa_select(func.count(func.distinct(Referral.inviter_client_id)))
+    ) or 0
+    all_clients_with_ref = await db.scalar(
+        sa_select(func.count(func.distinct(PageEvent.ref))).where(PageEvent.ref.isnot(None))
+    ) or 1
+    active_rate = f"{round(total_inviters / all_clients_with_ref * 100)}%" if all_clients_with_ref > 0 else "—"
+
+    # Top inviters
     top_rows = await db.execute(
         sa_select(Referral.inviter_client_id, func.count().label("cnt"))
         .group_by(Referral.inviter_client_id)
@@ -81,9 +108,13 @@ async def dashboard(request: Request, db: AsyncSession = _db_dep) -> HTMLRespons
     top_inviters = [{"client_id": r[0], "count": r[1]} for r in top_rows.all()]
 
     growth = {
-        "total_clicks": total_clicks,
-        "total_installs": total_installs,
+        "share_clicks": share_clicks,
+        "guide_clicks": guide_clicks,
+        "referral_installs": referral_installs,
+        "organic_installs": organic_installs,
         "conversion_rate": conversion,
+        "match_rate": match_rate,
+        "active_inviter_rate": active_rate,
         "top_inviters": top_inviters,
     }
 
