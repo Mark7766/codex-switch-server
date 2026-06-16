@@ -753,3 +753,12 @@
   - 新增 1 个测试
 - **变更文件**：src/api/v1/plugins.py（改）、tests/integration/test_api_plugins.py（改）
 - **验证**：ruff ✅, pytest 195/195 ✅
+
+---
+
+### [TASK-069] Admin 增长 Tab — 邀请统计
+- **日期**：2026-06-17
+- **类型**：feat
+- **摘要**：补齐邀请系统 Admin 前端展示。新增「📈 增长」Tab：邀请链接点击/成功安装/转化率 3 卡片 + Top 20 邀请者排行榜。数据来自 page_events ref + referrals 表。
+- **变更文件**：src/admin/templates/dashboard.html（改）、src/admin/router.py（改）
+- **验证**：ruff ✅, pytest 195/195 ✅

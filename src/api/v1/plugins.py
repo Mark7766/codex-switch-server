@@ -80,9 +80,13 @@ async def download_plugin_pack(request: Request, db: AsyncSession = _db_dep, typ
     # 1. COS → Guangzhou fast download (302 redirect)
     if cos.exists(cos_key):
         await dl_svc.record_download(
-            version=pack["version"], platform="", arch="",
-            package_name=pack["package_name"], ip_hash=ip,
-            source=pack["source"], delivery="cos",
+            version=pack["version"],
+            platform="",
+            arch="",
+            package_name=pack["package_name"],
+            ip_hash=ip,
+            source=pack["source"],
+            delivery="cos",
         )
         headers = {"Content-Disposition": f"attachment; filename*=UTF-8''{quote(filename)}"}
         return RedirectResponse(url=cos.public_url(cos_key), status_code=302, headers=headers)
@@ -93,9 +97,13 @@ async def download_plugin_pack(request: Request, db: AsyncSession = _db_dep, typ
     path = await storage.get_path(file_key)
     if path:
         await dl_svc.record_download(
-            version=pack["version"], platform="", arch="",
-            package_name=pack["package_name"], ip_hash=ip,
-            source=pack["source"], delivery="local",
+            version=pack["version"],
+            platform="",
+            arch="",
+            package_name=pack["package_name"],
+            ip_hash=ip,
+            source=pack["source"],
+            delivery="local",
         )
         return _send_file(str(path), filename)
 

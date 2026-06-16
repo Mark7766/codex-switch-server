@@ -60,6 +60,7 @@
     <div class="admin-tabs">
       <button class="admin-tab admin-tab--active" onclick="switchTab('server')">Server 运营</button>
       <button class="admin-tab" onclick="switchTab('app')">Client 运营</button>
+      <button class="admin-tab" onclick="switchTab('growth')">📈 增长</button>
       <button class="admin-tab" onclick="switchTab('packages')">安装包管理</button>
     </div>
 
@@ -221,6 +222,27 @@
       </div>
     </div>
 
+    <!-- ═══ 增长 ═══ -->
+    <div id="tab-growth" class="tab-panel">
+      <div class="stats-row stats-row--3col">
+        <div class="stat-card"><div class="stat-card__num">{{ growth.total_clicks }}</div><div class="stat-card__label">邀请链接点击</div></div>
+        <div class="stat-card"><div class="stat-card__num">{{ growth.total_installs }}</div><div class="stat-card__label">成功邀请安装</div></div>
+        <div class="stat-card"><div class="stat-card__num">{{ growth.conversion_rate }}</div><div class="stat-card__label">转化率</div></div>
+      </div>
+
+      {% if growth.top_inviters %}
+      <div class="chart-section full-width" style="margin-bottom:24px;">
+        <h2>Top 邀请者</h2>
+        <div class="table-wrap"><table>
+          <tr><th>排名</th><th>邀请者</th><th>成功邀请</th></tr>
+          {% for inv in growth.top_inviters %}
+          <tr><td>{{ loop.index }}</td><td>{{ inv.client_id[:8] }}...</td><td>{{ inv.count }}</td></tr>
+          {% endfor %}
+        </table></div>
+      </div>
+      {% endif %}
+    </div>
+
     <!-- ═══ 安装包管理 ═══ -->
     <div id="tab-packages" class="tab-panel">
       <div class="slots" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:800px;margin:0 auto;">
@@ -281,7 +303,7 @@
     // ── Tab switching ───────────────────────────────────────
     function switchTab(name) {
       document.querySelectorAll('.admin-tab').forEach(function(t,i){
-        var names = ['server','app','packages'];
+        var names = ['server','app','growth','packages'];
         t.classList.toggle('admin-tab--active', names[i] === name);
       });
       document.querySelectorAll('.tab-panel').forEach(function(p){

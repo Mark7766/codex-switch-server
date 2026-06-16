@@ -61,7 +61,34 @@ async def dashboard(request: Request, db: AsyncSession = _db_dep) -> HTMLRespons
     analytics_svc = AnalyticsService(db)
     uv_stats = await analytics_svc.get_uv_stats()
 
+    # Growth stats for referral tab
+    from sqlalchemy import func
+    from sqlalchemy import select as sa_select
+
+    from src.models.page_event import PageEvent
+    from src.models.referral import Referral
+
+    total_clicks = await db.scalar(sa_select(func.count()).where(PageEvent.ref.isnot(None))) or 0
+    total_installs = await db.scalar(sa_select(func.count()).select_from(Referral)) or 0
+    conversion = f"{round(total_installs / total_clicks * 100)}%" if total_clicks > 0 else "—"
+
+    top_rows = await db.execute(
+        sa_select(Referral.inviter_client_id, func.count().label("cnt"))
+        .group_by(Referral.inviter_client_id)
+        .order_by(func.count().desc())
+        .limit(20)
+    )
+    top_inviters = [{"client_id": r[0], "count": r[1]} for r in top_rows.all()]
+
+    growth = {
+        "total_clicks": total_clicks,
+        "total_installs": total_installs,
+        "conversion_rate": conversion,
+        "top_inviters": top_inviters,
+    }
+
     ctx = {
+        "growth": growth,
         "download_stats": dl_stats,
         "telemetry": telem_stats,
         "uv_stats": uv_stats,
