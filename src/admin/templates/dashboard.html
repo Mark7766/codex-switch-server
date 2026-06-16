@@ -238,17 +238,19 @@
         <div class="stat-card"><div class="stat-card__num">{{ growth.active_inviter_rate }}</div><div class="stat-card__label">有效邀请率</div></div>
       </div>
 
-      {% if growth.top_inviters %}
       <div class="chart-section full-width" style="margin-bottom:24px;">
         <h2>Top 邀请者</h2>
+        {% if growth.top_inviters %}
         <div class="table-wrap"><table>
           <tr><th>排名</th><th>邀请者</th><th>成功邀请</th></tr>
           {% for inv in growth.top_inviters %}
           <tr><td>{{ loop.index }}</td><td>{{ inv.client_id[:8] }}...</td><td>{{ inv.count }}</td></tr>
           {% endfor %}
         </table></div>
+        {% else %}
+        <p style="color:var(--color-text-secondary);font-size:13px;">暂无邀请数据，等待首次邀请发生后展示</p>
+        {% endif %}
       </div>
-      {% endif %}
     </div>
 
     <!-- ═══ 安装包管理 ═══ -->
