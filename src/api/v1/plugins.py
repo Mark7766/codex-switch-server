@@ -49,20 +49,15 @@ async def download_plugin_pack(request: Request, db: AsyncSession = _db_dep) -> 
     cos = CosStorage()
     cos_key = f"files/{_PACK_FILENAME}"
     ip = request.client.host if request.client else ""
-
-    # Record download for analytics
     dl_svc = ReleaseSyncService(db)
-    await dl_svc.record_download(
-        version=_PACK_VERSION,
-        platform="",
-        arch="",
-        package_name="codex-offline-pack",
-        ip_hash=ip,
-        source="plugin-install",
-    )
 
     # 1. COS → Guangzhou fast download (302 redirect)
     if cos.exists(cos_key):
+        await dl_svc.record_download(
+            version=_PACK_VERSION, platform="", arch="",
+            package_name="codex-offline-pack", ip_hash=ip,
+            source="plugin-install", delivery="cos",
+        )
         headers = {"Content-Disposition": f"attachment; filename*=UTF-8''{quote(_PACK_FILENAME)}"}
         return RedirectResponse(url=cos.public_url(cos_key), status_code=302, headers=headers)
 
@@ -71,6 +66,11 @@ async def download_plugin_pack(request: Request, db: AsyncSession = _db_dep) -> 
     file_key = f"files/{_PACK_FILENAME}"
     path = await storage.get_path(file_key)
     if path:
+        await dl_svc.record_download(
+            version=_PACK_VERSION, platform="", arch="",
+            package_name="codex-offline-pack", ip_hash=ip,
+            source="plugin-install", delivery="local",
+        )
         return _send_file(str(path), _PACK_FILENAME)
 
     raise HTTPException(status_code=404, detail="Plugin pack not found")

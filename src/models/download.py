@@ -21,4 +21,5 @@ class DownloadRecord(Base):
     ip_hash: Mapped[str] = mapped_column(String(64), default="")
     user_agent: Mapped[str] = mapped_column(String(256), default="")
     source: Mapped[str] = mapped_column(String(32), default="")  # '' = portal, 'electron-updater' = auto-update
+    delivery: Mapped[str] = mapped_column(String(16), default="")  # 'cos' / 'local' / 'github'
     downloaded_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)

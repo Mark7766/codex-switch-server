@@ -47,30 +47,32 @@ async def download_package(
     if file_path is None:
         raise HTTPException(status_code=404, detail="Package not found")
 
-    # Record download for analytics
-    dl_svc = ReleaseSyncService(db)
-    await dl_svc.record_download(
-        version="latest",
-        platform=platform,
-        arch=arch,
-        package_name=package_name,
-        ip_hash=request.client.host if request.client else "",
-    )
-
     # Build deterministic COS key: packages/{name}/latest/{platform}-{arch}.{ext}
     plat_info = await mgr.get_package_info(package_name, platform, arch)
     file_type = plat_info.get("file_type", "bin") if plat_info else "bin"
     cos_key = f"packages/{package_name}/latest/{platform}-{arch}.{file_type}"
 
+    ip = request.client.host if request.client else ""
+
     # 1. COS → fast download via Guangzhou CDN
     cos = CosStorage()
     if cos.exists(cos_key):
+        dl_svc = ReleaseSyncService(db)
+        await dl_svc.record_download(
+            version="latest", platform=platform, arch=arch,
+            package_name=package_name, ip_hash=ip, delivery="cos",
+        )
         headers = {}
         if original_filename:
             headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(original_filename)}"
         return RedirectResponse(url=cos.public_url(cos_key), status_code=302, headers=headers)
 
     # 2. Fallback: nginx X-Accel-Redirect from local disk
+    dl_svc = ReleaseSyncService(db)
+    await dl_svc.record_download(
+        version="latest", platform=platform, arch=arch,
+        package_name=package_name, ip_hash=ip, delivery="local",
+    )
     p = Path(file_path)
     parts = list(p.parts)
     try:

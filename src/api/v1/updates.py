@@ -79,6 +79,7 @@ async def download_updates_file(
             package_name="codex-switch",
             ip_hash=ip,
             source="electron-updater",
+            delivery="cos",
         )
         headers = {"Content-Disposition": f"attachment; filename*=UTF-8''{quote(filename)}"}
         return RedirectResponse(url=cos.public_url(cos_key), status_code=302, headers=headers)
@@ -93,6 +94,7 @@ async def download_updates_file(
             package_name="codex-switch",
             ip_hash=ip,
             source="electron-updater",
+            delivery="local",
         )
         return _send_file(cached_path, filename)
 
@@ -117,6 +119,7 @@ async def download_updates_file(
         package_name="codex-switch",
         ip_hash=ip,
         source="electron-updater",
+        delivery="github",
     )
     return _send_file(str(file_path), filename)
 

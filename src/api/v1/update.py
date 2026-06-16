@@ -50,7 +50,7 @@ async def download_release(
     ip = request.client.host if request.client else ""
 
     if cos.exists(cos_key):
-        await svc.record_download(version, platform, arch, package_name="codex-switch", ip_hash=ip)
+        await svc.record_download(version, platform, arch, package_name="codex-switch", ip_hash=ip, delivery="cos")
         headers = {}
         if filename:
             headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(filename)}"
@@ -59,7 +59,7 @@ async def download_release(
     # 2. Local cache → nginx X-Accel-Redirect
     file_path = await svc.get_download_path(version, platform, arch)
     if file_path is not None:
-        await svc.record_download(version, platform, arch, package_name="codex-switch", ip_hash=ip)
+        await svc.record_download(version, platform, arch, package_name="codex-switch", ip_hash=ip, delivery="local")
         return _send_file(file_path, filename)
 
     # 3. Fetch from GitHub → cache locally
@@ -75,7 +75,7 @@ async def download_release(
     except Exception:
         raise HTTPException(status_code=502, detail="Failed to download from GitHub")
 
-    await svc.record_download(version, platform, arch, package_name="codex-switch", ip_hash=ip)
+    await svc.record_download(version, platform, arch, package_name="codex-switch", ip_hash=ip, delivery="github")
     return _send_file(file_path, filename)
 
 

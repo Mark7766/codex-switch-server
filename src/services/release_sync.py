@@ -218,6 +218,7 @@ class ReleaseSyncService:
         ip_hash: str = "",
         user_agent: str = "",
         source: str = "",
+        delivery: str = "",
     ) -> None:
         record = DownloadRecord(
             release_id=None,
@@ -228,6 +229,7 @@ class ReleaseSyncService:
             ip_hash=ip_hash,
             user_agent=user_agent,
             source=source,
+            delivery=delivery,
         )
         self._db.add(record)
         await self._db.commit()

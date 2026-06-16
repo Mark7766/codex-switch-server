@@ -252,15 +252,23 @@ class AnalyticsService:
             if row[0]:
                 by_version.append(VersionDownloadItem(version=str(row[0]), count=row[1]))
 
-        # COS hit rate: approximate via cached vs total
-        # (We don't directly track COS vs local, use presence of ip_hash as proxy for "real download")
-        total_non_empty = (
+        # COS hit rate: downloads delivered via COS / total downloads (30-day window)
+        cos_hits = (
             await self._db.scalar(
-                select(func.count()).where(DownloadRecord.ip_hash != "", DownloadRecord.ip_hash.isnot(None))
+                select(func.count()).where(
+                    DownloadRecord.downloaded_at >= cutoff,
+                    DownloadRecord.delivery == "cos",
+                )
+            )
+            or 0
+        )
+        total_window = (
+            await self._db.scalar(
+                select(func.count()).where(DownloadRecord.downloaded_at >= cutoff)
             )
             or 1
         )
-        cos_rate = min(round(total / max(total_non_empty, 1), 2), 1.0) if total_non_empty > 0 else 0.0
+        cos_rate = round(cos_hits / total_window, 2) if total_window > 0 else 0.0
 
         return DownloadTrendsResponse(
             total=total,

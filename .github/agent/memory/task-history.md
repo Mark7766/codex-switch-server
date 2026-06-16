@@ -712,3 +712,16 @@
   3. 部署后验证：download-trends `date: 2026-06-15` ✅, page-stats `date: 2026-06-15` ✅
 - **变更文件**：src/services/telemetry.py（改）、src/services/analytics.py（改）、docs/superpowers/specs/2026-06-15-version-dedup.md（新）
 - **验证**：ruff ✅, pytest 194/194 ✅, 生产日期标签 2026-06-15 ✅
+
+---
+
+### [TASK-066] COS 命中率真实统计 + delivery 字段
+- **日期**：2026-06-16
+- **类型**：fix
+- **摘要**：修复 COS 命中率 100% 假数据 Bug：
+  1. `DownloadRecord` 新增 `delivery` 字段（"cos"/"local"/"github"）
+  2. 6 个下载端点在 COS/本地/GitHub 路径分别标记 delivery
+  3. `analytics.py` COS 命中率改为 `WHERE delivery='cos' / 30天总下载`（之前是 `total/total_non_empty` 恒为 1.0）
+  4. Alembic 迁移兼容新旧 DB
+- **变更文件**：src/models/download.py（改）、src/services/release_sync.py（改）、src/services/analytics.py（改）、src/api/v1/update.py（改）、src/api/v1/updates.py（改）、src/api/v1/packages.py（改）、src/api/v1/plugins.py（改）、alembic/versions/b32a1f982dc5_add_delivery_to_download_records.py（新）
+- **验证**：ruff ✅, pytest 194/194 ✅, 迁移链完整 ✅
