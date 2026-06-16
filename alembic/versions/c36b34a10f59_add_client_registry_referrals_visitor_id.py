@@ -49,6 +49,11 @@ def upgrade() -> None:
     except Exception:
         pass
     try:
+        op.add_column('page_events', sa.Column('ref', sa.String(length=32), nullable=True))
+        op.create_index('ix_page_events_ref', 'page_events', ['ref'], unique=False)
+    except Exception:
+        pass
+    try:
         op.add_column('page_events', sa.Column('visitor_id', sa.String(length=16), nullable=False, server_default=''))
         op.create_index('ix_page_events_visitor_id', 'page_events', ['visitor_id'], unique=False)
     except Exception:
