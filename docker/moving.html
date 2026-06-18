@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Codex Switch 搬家啦！</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Hiragino Sans GB", sans-serif;
+    background: #f5f5f7;
+    color: #1d1d1f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+  }
+  .card {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 64px 48px;
+    max-width: 480px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  }
+  .icon {
+    font-size: 56px;
+    margin-bottom: 24px;
+    line-height: 1;
+  }
+  h1 {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+  }
+  p {
+    font-size: 17px;
+    color: #86868b;
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+  .new-url {
+    display: inline-block;
+    margin-top: 16px;
+    padding: 10px 20px;
+    background: #f5f5f7;
+    border-radius: 8px;
+    font-size: 17px;
+    color: #1d1d1f;
+    font-weight: 500;
+    word-break: break-all;
+  }
+  .cta {
+    display: inline-block;
+    margin-top: 32px;
+    padding: 14px 40px;
+    background: #0071e3;
+    color: #ffffff;
+    font-size: 17px;
+    font-weight: 500;
+    border-radius: 44px;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .cta:hover {
+    background: #0077ed;
+    transform: scale(1.02);
+  }
+  .footer-note {
+    margin-top: 32px;
+    font-size: 14px;
+    color: #6e6e73;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">📦</div>
+    <h1>Codex Switch 搬家啦！</h1>
+    <p>我们已经搬到了新家：</p>
+    <a href="https://codex-switch.cloud" class="new-url">codex-switch.cloud</a>
+    <br>
+    <a href="https://codex-switch.cloud" class="cta">🚀 前往新网站</a>
+    <p class="footer-note">新站已通过 ICP 备案，国内访问更快更稳定</p>
+  </div>
+  <script>
+    // 3 秒后自动跳转
+    setTimeout(function() {
+      window.location.href = 'https://codex-switch.cloud' + window.location.pathname;
+    }, 5000);
+  </script>
+</body>
+</html>

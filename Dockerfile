@@ -13,8 +13,13 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 WORKDIR /app
 
+# 使用清华 PyPI 镜像加速国内构建
+ENV UV_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+
 COPY pyproject.toml uv.lock* ./
-RUN uv sync --frozen --no-dev
+# 去掉 --frozen：让 uv 从镜像重新解析，避开锁文件中 files.pythonhosted.org 的境外下载 URL
+# pyproject.toml 的版本约束足以保证依赖兼容性
+RUN uv sync --no-dev
 
 COPY src/ ./src/
 COPY scripts/ ./scripts/

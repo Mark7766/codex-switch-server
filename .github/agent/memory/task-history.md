@@ -762,3 +762,45 @@
 - **摘要**：补齐邀请系统 Admin 前端展示。新增「📈 增长」Tab：邀请链接点击/成功安装/转化率 3 卡片 + Top 20 邀请者排行榜。数据来自 page_events ref + referrals 表。
 - **变更文件**：src/admin/templates/dashboard.html（改）、src/admin/router.py（改）
 - **验证**：ruff ✅, pytest 195/195 ✅
+
+---
+
+### [TASK-070] 广州服务器 Docker 国内镜像源配置
+- **日期**：2026-06-18
+- **类型**：ops
+- **摘要**：为广州服务器 (134.175.67.120) 配置 Docker 国内镜像加速。编辑 `/etc/docker/daemon.json` 设置 5 个镜像源（DaoCloud / dockerhub.icu / 1ms.run / registry.cyou / 腾讯云），`systemctl restart docker` + `docker compose up -d` 重启服务。验证 5 个镜像生效、服务 HTTP 200 正常。
+- **变更文件**：.deploy/production-cn.md（新增加速配置记录）
+- **验证**：docker info 5 mirrors ✅, 门户 200 (0.16s) ✅, API 200 (3.64s) ✅
+
+---
+
+### [TASK-071] Dockerfile PyPI 国内镜像加速 + --frozen 移除
+- **日期**：2026-06-18
+- **类型**：fix
+- **摘要**：广州服务器 `docker compose up -d --build` 中 `uv sync --frozen --no-dev` 下载 Python 包极慢（119s 后 connection reset 失败）。根因：`uv.lock` 所有包的 download URL 硬编码了 `https://files.pythonhosted.org/...`，`uv sync --frozen` 优先用锁文件 URL，即使设 `UV_INDEX_URL` 也不管用。修复：①Dockerfile 新增 `ENV UV_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple` ②`--frozen` 改为 `uv sync --no-dev`，让 uv 从清华镜像重新解析并下载，`pyproject.toml` 约束保证版本兼容。构建从 119s 失败 → 4.7s 成功，40 个包全部安装。
+- **变更文件**：Dockerfile（改）
+- **验证**：docker compose build 4.7s ✅, 40 packages installed ✅, 门户/API/Admin 200 ✅
+
+---
+
+### [TASK-072] 服务器迁移 Phase A + B：广州升级 + 新加坡搬家页/API 反代
+- **日期**：2026-06-18
+- **类型**：ops
+- **摘要**：按 `docs/superpowers/specs/2026-06-18-cn-server-migration.md` 执行阶段 A 和 B。
+  - **Phase A**：广州服务器 (134.175.67.120) git pull + docker compose up -d --build，验证门户/API/Admin 全 200 ✅
+  - **Phase B**：新加坡服务器 (43.134.110.192) ①新增 `docker/moving.html` Apple 风格搬家页（5s 自动跳转广州新站）②新增 `docker/nginx-singapore.conf`：门户三页面 → 搬家页、/api/v1/* → proxy_pass 广州、/admin → 301 广州 ③更新 `docker-compose.yml` 加 volume mount 持久化 nginx.conf 和 moving.html ④备份原 nginx.conf 为 `docker/nginx.conf.bak`。零容器重建（仅 docker cp + reload），全程服务未中断。
+- **变更文件**：docker/moving.html（新）、docker/nginx-singapore.conf（新）、新加坡 docker-compose.yml（改）、新加坡 docker/nginx.conf（改）
+- **验证**：SG portal 3/3 搬家页 ✅, SG API 3/3 反代 200 ✅, SG /admin 301 ✅, GZ 2/2 直接访问 200 ✅
+
+---
+
+### [TASK-073] 广州 DB 迁移 + download 500 修复 + SSL 证书路径修复
+- **日期**：2026-06-18
+- **类型**：fix
+- **摘要**：
+  1. **下载 500 根因**：广州 `download_records` 表缺 `source` 列（部分 alembic migration 未执行），`record_download()` INSERT 时报 `sqlite3.OperationalError`。
+  2. **Admin 数据缺失**：广州 DB 只有 206 downloads / 6 telemetry / 643 page_events，新加坡有 1942 / 2665 / 5354。
+  3. **修复**：①从新加坡容器导出 2.7MB SQL dump ②广州备份后删除 DB ③导入新加坡 dump（schema 含 `source` 列）④修复广州 nginx.conf 中 SSL 证书路径 `codexswtich.cloud` → `codex-switch.cloud` ⑤docker-compose.yml 加 nginx.conf volume mount 持久化。
+  4. 验证：downloads COS 302 ✅, Admin 401(需登录) ✅, 数据 1942/2665/5354/86 全部对齐 ✅
+- **变更文件**：广州 data/app.db（覆盖）、广州 docker/nginx.conf（证书路径）、广州 docker-compose.yml（+volume mount）
+- **验证**：download 302 ✅, portal 200 ✅, admin 401 ✅, 4 表 row count 与新加坡一致 ✅

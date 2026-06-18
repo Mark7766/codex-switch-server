@@ -208,14 +208,15 @@ class TelemetryService:
             install_success_rate = "—"
 
         # version insight: each client counted only under their LATEST version (30-day window)
-        # Step 1: find each client's latest app_start
+        # Step 1: find each client's latest event (any type — model_call, proxy_start, etc.)
+        # Using all event types instead of just app_start ensures the "last active" time
+        # reflects ongoing usage, not just the last restart of codex-switch.
         latest_subq = (
             select(
                 TelemetryEvent.client_id,
                 func.max(TelemetryEvent.created_at).label("last_seen"),
             )
             .where(
-                TelemetryEvent.event_type == "app_start",
                 TelemetryEvent.created_at >= cutoff,
                 TelemetryEvent.client_id != "",
                 TelemetryEvent.app_version != "",

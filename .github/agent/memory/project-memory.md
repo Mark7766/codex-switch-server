@@ -72,6 +72,20 @@
 
 ### 生产环境
 
+#### 广州（新主站，已备案）
+| 项目 | 值 |
+|------|---|
+| 服务器 IP | 134.175.67.120 |
+| 域名 | codex-switch.cloud |
+| OS | Ubuntu 22.04 LTS |
+| CPU/内存 | 2 核 / 2 GB |
+| Docker | 27.1.2 + Compose v2.29.2 |
+| Docker 镜像源 | 5 个国内镜像（DaoCloud / dockerhub.icu / 1ms.run / registry.cyou / 腾讯云） |
+| 部署路径 | /home/lighthouse/codex-switch-server/ |
+| 部署方式 | Docker 单容器（Nginx SSL + uvicorn，Supervisor 管理） |
+| SSL 证书文件 | codex-switch.cloud_bundle.crt + codex-switch.cloud.key |
+
+#### 新加坡（过渡期保留，4-6 个月后下线）
 | 项目 | 值 |
 |------|---|
 | 服务器 IP | 43.134.110.192 |
@@ -81,10 +95,11 @@
 | Docker | 27.1.2 + Compose v2.29.2 |
 | 部署路径 | /home/lighthouse/codex-switch-server/ |
 | 部署方式 | Docker 单容器（Nginx SSL + uvicorn，Supervisor 管理） |
-| 证书存放 | ./certs/ → /etc/nginx/ssl:ro（容器内） |
 | SSL 证书文件 | codexswtich.cloud_bundle.crt + codexswtich.cloud.key |
-| 端口映射 | 80:80, 443:443（上线后替代 ajepro） |
-| 已运行服务 | ss-server (8388)、ajepro (Docker, :80/:443) |
+| 当前角色 | 搬家页 + API 反代 → 广州 |
+| Nginx 配置 | docker/nginx.conf volume mount 持久化，nginx-singapore.conf 为源文件 |
+| SSL 证书文件 | codexswtich.cloud_bundle.crt + codexswtich.cloud.key |
+| 当前角色 | 搬家页 + API 反代 → 广州 |
 
 ### 核心特征
 - Docker 单容器部署：Nginx（SSL 终止）+ uvicorn（应用），Supervisor 管理双进程
