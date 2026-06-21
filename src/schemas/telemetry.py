@@ -92,4 +92,6 @@ class TelemetryStats(BaseModel):
     version_os_cross: list[VersionOsItem] = []
     event_type_counts: list[EventTypeCount] = []
     daily_trend: list[DailyTrend] = []
+    model_call_trend: list[DailyTrend] = []  # model_call count per day for trend chart filter
+    config_trend: list[DailyTrend] = []  # non-model_call event count per day (server-side computed)
     recent_events: list[dict[str, Any]] = []

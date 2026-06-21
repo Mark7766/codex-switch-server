@@ -71,9 +71,7 @@ async def dashboard(request: Request, db: AsyncSession = _db_dep) -> HTMLRespons
     from src.models.telemetry import TelemetryEvent
 
     # Core funnel
-    guide_clicks = await db.scalar(
-        sa_select(func.count()).where(PageEvent.ref.isnot(None))
-    ) or 0
+    guide_clicks = await db.scalar(sa_select(func.count()).where(PageEvent.ref.isnot(None))) or 0
     referral_installs = await db.scalar(sa_select(func.count()).select_from(Referral)) or 0
     conversion = f"{round(referral_installs / guide_clicks * 100)}%" if guide_clicks > 0 else "—"
 
@@ -82,20 +80,16 @@ async def dashboard(request: Request, db: AsyncSession = _db_dep) -> HTMLRespons
     organic_installs = total_clients - referral_installs
 
     # Share copy clicks from telemetry
-    share_clicks = await db.scalar(
-        sa_select(func.count()).where(TelemetryEvent.event_type == "share_copy_click")
-    ) or 0
+    share_clicks = await db.scalar(sa_select(func.count()).where(TelemetryEvent.event_type == "share_copy_click")) or 0
 
     # Match rate: referrals / guide visits with ref
     match_rate = f"{round(referral_installs / guide_clicks * 100)}%" if guide_clicks > 0 else "—"
 
     # Active inviter rate
-    total_inviters = await db.scalar(
-        sa_select(func.count(func.distinct(Referral.inviter_client_id)))
-    ) or 0
-    all_clients_with_ref = await db.scalar(
-        sa_select(func.count(func.distinct(PageEvent.ref))).where(PageEvent.ref.isnot(None))
-    ) or 1
+    total_inviters = await db.scalar(sa_select(func.count(func.distinct(Referral.inviter_client_id)))) or 0
+    all_clients_with_ref = (
+        await db.scalar(sa_select(func.count(func.distinct(PageEvent.ref))).where(PageEvent.ref.isnot(None))) or 1
+    )
     active_rate = f"{round(total_inviters / all_clients_with_ref * 100)}%" if all_clients_with_ref > 0 else "—"
 
     # Top inviters
@@ -127,6 +121,8 @@ async def dashboard(request: Request, db: AsyncSession = _db_dep) -> HTMLRespons
         "config_types_json": json.dumps([t.model_dump() for t in config_types]),
         "type_counts_json": json.dumps([t.model_dump() for t in telem_stats.event_type_counts]),
         "trend_json": json.dumps([t.model_dump() for t in telem_stats.daily_trend]),
+        "model_call_trend_json": json.dumps([t.model_dump() for t in telem_stats.model_call_trend]),
+        "config_trend_json": json.dumps([t.model_dump() for t in telem_stats.config_trend]),
     }
     return templates.TemplateResponse(request, "dashboard.html", ctx)
 

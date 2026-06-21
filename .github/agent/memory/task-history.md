@@ -804,3 +804,28 @@
   4. 验证：downloads COS 302 ✅, Admin 401(需登录) ✅, 数据 1942/2665/5354/86 全部对齐 ✅
 - **变更文件**：广州 data/app.db（覆盖）、广州 docker/nginx.conf（证书路径）、广州 docker-compose.yml（+volume mount）
 - **验证**：download 302 ✅, portal 200 ✅, admin 401 ✅, 4 表 row count 与新加坡一致 ✅
+
+---
+
+### [TASK-074] Admin 事件趋势筛选按钮修复 — 全部/功能操作/模型调用
+- **日期**：2026-06-21
+- **类型**：fix
+- **摘要**：Admin App 遥测 Tab 事件趋势 (30天) 的两个缺陷：①趋势只显示总事件数，"仅模型调用"/"仅功能操作" 筛选按钮只改变颜色和 label，用的同一份 `trendData`，实际不筛选 ②没有单独的模型调用按日趋势。修复：`TelemetryStats` 新增 `model_call_trend` 字段；`telemetry.py` 新增 `WHERE event_type = model_call` 的按日查询；`admin/router.py` 传 `model_call_trend_json`；`dashboard.html` 的 `drawTrendChart` 根据 filter 切到不同数据源（全部→trendData, 模型调用→modelCallTrendData, 功能操作→两数组相减）。
+- **变更文件**：src/schemas/telemetry.py（改）、src/services/telemetry.py（改）、src/admin/router.py（改）、src/admin/templates/dashboard.html（改）
+- **验证**：ruff ✅, model_call_trend 10 days 正常, 筛选按钮切数据生效
+
+---
+
+### [TASK-075] 修复事件趋势(30天)模型调用数据严重偏低
+- **日期**：2026-06-21
+- **类型**：fix
+- **摘要**：Admin App 遥测 Tab "事件趋势 (30天)" 中模型调用趋势数据严重偏低——今日实际 1246 次调用，图表只显示几百。根因：`daily_trend` 和 `model_call_trend` 两个查询都用 `COUNT(*)` 统计，但 model_call 事件是聚合上报的（一个 event row 的 `properties.count` 可代表 10-100+ 次实际调用），`COUNT(*)` 每行只计 1 次。修复：①主趋势查询改为 `SUM(CASE WHEN event_type='model_call' THEN COALESCE(json_extract(properties,'$.count'),1) ELSE 1 END)` —— model_call 按聚合 count 计，其他事件按行计 ②model_call_trend 查询改为 `SUM(COALESCE(json_extract(properties,'$.count'),1))` ③新增 `from sqlalchemy import case` 导入。
+- **变更文件**：src/services/telemetry.py（改）
+- **验证**：ruff ✅, pytest 195/195 ✅
+
+### [TASK-075b] 修复事件趋势"仅功能操作"筛选数据错误
+- **日期**：2026-06-21
+- **类型**：fix
+- **摘要**：TASK-075 修复了 model_call_trend 的聚合计数问题，但"仅功能操作"筛选仍不对——前端 JS 用 `trendData - modelCallTrendData` 做减法，两个大数相减容易因日期匹配不一致出错。修复：①服务端新增 `config_trend` 查询（`WHERE event_type != 'model_call'`，直接 `COUNT(*)`，非 model_call 事件每行计 1）②`TelemetryStats` 新增 `config_trend` 字段 ③`dashboard.html` 改为直接用 `configTrendData`，不再做 JS 减法。三个筛选按钮（全部/仅功能操作/仅模型调用）现在使用三个独立数据源，完全解耦。
+- **变更文件**：src/schemas/telemetry.py（改）、src/services/telemetry.py（改）、src/admin/router.py（改）、src/admin/templates/dashboard.html（改）
+- **验证**：ruff ✅, pytest 195/195 ✅, 生产部署 200 ✅

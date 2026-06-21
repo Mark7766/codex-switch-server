@@ -454,6 +454,7 @@
     var allTypeCounts = {{ type_counts_json | safe }};
     var configTypeCounts = {{ config_types_json | safe }};
     var trendData = {{ trend_json | safe }};
+    var modelCallTrendData = {{ model_call_trend_json | safe }};
 
     function loadAppTab() {
       if (appChartsLoaded) return;
@@ -494,19 +495,45 @@
       drawTrendChart('all');
     }
 
+    var configTrendData = {{ config_trend_json | safe }};
+
+    console.log('[DEBUG] trendData:', trendData.length, 'days, first:', trendData[0], 'last:', trendData[trendData.length-1]);
+    console.log('[DEBUG] modelCallTrendData:', modelCallTrendData.length, 'days, first:', modelCallTrendData[0], 'last:', modelCallTrendData[modelCallTrendData.length-1]);
+    console.log('[DEBUG] configTrendData:', configTrendData.length, 'days, first:', configTrendData[0], 'last:', configTrendData[configTrendData.length-1]);
+
     function drawTrendChart(filter) {
       trendFilter = filter;
       var ctx = document.getElementById('trendChart').getContext('2d');
       if (trendChart) trendChart.destroy();
+
+      var labels, data, color;
+      console.log('[DEBUG] drawTrendChart filter=' + filter + ' trendData.length=' + trendData.length + ' modelCallTrendData.length=' + modelCallTrendData.length);
+      if (filter === 'model') {
+        labels = modelCallTrendData.map(function(d){ return d.date; });
+        data = modelCallTrendData.map(function(d){ return d.count; });
+        color = '#0071e3';
+        console.log('[DEBUG] model branch: labels=' + labels.length + ' data=' + data.slice(0,3) + '...');
+      } else if (filter === 'config') {
+        labels = configTrendData.map(function(d){ return d.date; });
+        data = configTrendData.map(function(d){ return d.count; });
+        color = '#34c759';
+        console.log('[DEBUG] config branch: labels=' + labels.length + ' data=' + data.slice(0,3) + '...');
+      } else {
+        labels = trendData.map(function(d){ return d.date; });
+        data = trendData.map(function(d){ return d.count; });
+        color = '#34c759';
+        console.log('[DEBUG] all branch: labels=' + labels.length + ' data=' + data.slice(0,3) + '...');
+      }
+
       trendChart = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: trendData.map(function(d){ return d.date; }),
+          labels: labels,
           datasets: [{
             label: filter==='all'?'全部事件':(filter==='model'?'模型调用':'功能操作'),
-            data: trendData.map(function(d){ return d.count; }),
-            borderColor: filter==='model'?'#0071e3':'#34c759',
-            backgroundColor: filter==='model'?'rgba(0,113,227,0.1)':'rgba(52,199,89,0.1)',
+            data: data,
+            borderColor: color,
+            backgroundColor: color==='#0071e3'?'rgba(0,113,227,0.1)':'rgba(52,199,89,0.1)',
             fill: true, tension: 0.3, pointRadius: 2
           }]
         },

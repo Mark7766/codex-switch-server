@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.telemetry import TelemetryEvent
@@ -161,13 +161,43 @@ class TelemetryService:
             )
         model_call_total = int(model_call_total or 0)
 
+        # For model_call events, sum properties->>'count' (aggregated), default 1 per row.
+        # For all other events, count 1 per row.
+        _count_expr = func.sum(
+            case(
+                (
+                    TelemetryEvent.event_type == "model_call",
+                    func.coalesce(func.json_extract(TelemetryEvent.properties, "$.count"), 1),
+                ),
+                else_=1,
+            )
+        )
         trend_result = await self._db.execute(
-            select(func.date(TelemetryEvent.created_at, "+8 hours"), func.count())
+            select(func.date(TelemetryEvent.created_at, "+8 hours"), _count_expr)
             .where(TelemetryEvent.created_at >= cutoff)
             .group_by(func.date(TelemetryEvent.created_at, "+8 hours"))
             .order_by(func.date(TelemetryEvent.created_at, "+8 hours"))
         )
-        trend = [DailyTrend(date=str(row[0]), count=row[1]) for row in trend_result.all()]
+        trend = [DailyTrend(date=str(row[0]), count=int(row[1] or 0)) for row in trend_result.all()]
+
+        # Separate model_call trend for the filter buttons — sum aggregated counts
+        _mc_sum_expr = func.sum(func.coalesce(func.json_extract(TelemetryEvent.properties, "$.count"), 1))
+        mc_trend_result = await self._db.execute(
+            select(func.date(TelemetryEvent.created_at, "+8 hours"), _mc_sum_expr)
+            .where(TelemetryEvent.created_at >= cutoff, TelemetryEvent.event_type == "model_call")
+            .group_by(func.date(TelemetryEvent.created_at, "+8 hours"))
+            .order_by(func.date(TelemetryEvent.created_at, "+8 hours"))
+        )
+        mc_trend = [DailyTrend(date=str(row[0]), count=int(row[1] or 0)) for row in mc_trend_result.all()]
+
+        # Separate non-model_call trend (config operations only)
+        config_trend_result = await self._db.execute(
+            select(func.date(TelemetryEvent.created_at, "+8 hours"), func.count())
+            .where(TelemetryEvent.created_at >= cutoff, TelemetryEvent.event_type != "model_call")
+            .group_by(func.date(TelemetryEvent.created_at, "+8 hours"))
+            .order_by(func.date(TelemetryEvent.created_at, "+8 hours"))
+        )
+        config_trend = [DailyTrend(date=str(row[0]), count=row[1]) for row in config_trend_result.all()]
 
         recent_result = await self._db.execute(
             select(TelemetryEvent).order_by(TelemetryEvent.created_at.desc()).limit(10)
@@ -344,6 +374,8 @@ class TelemetryService:
             version_os_cross=version_os_cross,
             event_type_counts=type_counts,
             daily_trend=trend,
+            model_call_trend=mc_trend,
+            config_trend=config_trend,
             recent_events=recent,
         )
 
