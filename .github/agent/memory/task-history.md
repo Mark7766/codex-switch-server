@@ -829,3 +829,21 @@
 - **摘要**：TASK-075 修复了 model_call_trend 的聚合计数问题，但"仅功能操作"筛选仍不对——前端 JS 用 `trendData - modelCallTrendData` 做减法，两个大数相减容易因日期匹配不一致出错。修复：①服务端新增 `config_trend` 查询（`WHERE event_type != 'model_call'`，直接 `COUNT(*)`，非 model_call 事件每行计 1）②`TelemetryStats` 新增 `config_trend` 字段 ③`dashboard.html` 改为直接用 `configTrendData`，不再做 JS 减法。三个筛选按钮（全部/仅功能操作/仅模型调用）现在使用三个独立数据源，完全解耦。
 - **变更文件**：src/schemas/telemetry.py（改）、src/services/telemetry.py（改）、src/admin/router.py（改）、src/admin/templates/dashboard.html（改）
 - **验证**：ruff ✅, pytest 195/195 ✅, 生产部署 200 ✅
+
+---
+
+### [TASK-076] Claude Desktop Mac 安装指南新增虚拟机加载步骤
+- **日期**：2026-06-22
+- **类型**：docs
+- **摘要**：在 Claude Desktop Mac 安装指南（guide.html）的第 3 步"安装 Claude Desktop"末尾新增"加载虚拟机"部分。内容包括：①百度网盘下载 `mac-claude-core.zip`（提取码 aj53）②三个文件解压后放置到 `~/Library/Application Support/Claude/` 下的三个目标路径的终端命令（含 zstd 解压 + mkdir + cp）。
+- **变更文件**：src/portal/templates/guide.html（改）
+- **验证**：ruff ✅, pytest 195/195 ✅
+
+---
+
+### [TASK-077] Codex Desktop 汉化步骤扩展到 Mac 平台
+- **日期**：2026-06-22
+- **类型**：docs
+- **摘要**：将 Codex Desktop 汉化步骤从仅 Windows（`!isMac`）扩展到 Mac + Windows 双平台（`selTool === 'codex'`）。提示词文案从 Windows 专属（"更新 Codex.exe 的 SHA256 哈希 → 创建桌面快捷方式"）改为通用版本（"更新 Codex 的 SHA256 哈希 → 更新 Codex"）。Mac 平台不显示"Codex CN 桌面快捷方式"相关文字。
+- **变更文件**：src/portal/templates/guide.html（改）
+- **验证**：ruff ✅, pytest 195/195 ✅
