@@ -128,7 +128,7 @@ client.put_object_from_local_file(
     Bucket='${COS_BUCKET}',
     LocalFilePath='${local_path}',
     Key='${cos_key}',
-    ContentDisposition='${disposition}',
+    ContentDisposition="${disposition}",
 )
 " 2>&1 || {
     log_error "Upload failed: ${cos_key}"
