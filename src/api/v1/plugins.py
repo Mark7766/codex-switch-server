@@ -88,8 +88,10 @@ async def download_plugin_pack(request: Request, db: AsyncSession = _db_dep, typ
             source=pack["source"],
             delivery="cos",
         )
-        headers = {"Content-Disposition": f"attachment; filename*=UTF-8''{quote(filename)}"}
-        return RedirectResponse(url=cos.public_url(cos_key), status_code=302, headers=headers)
+        cos_url = cos.public_url(cos_key)
+        cd_header = f"attachment; filename*=UTF-8''{quote(filename)}"
+        cos_url += f"?response-content-disposition={quote(cd_header)}"
+        return RedirectResponse(url=cos_url, status_code=302)
 
     # 2. Local cache → nginx sendfile
     storage = LocalStorage()

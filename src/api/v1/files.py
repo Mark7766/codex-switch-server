@@ -29,10 +29,11 @@ async def download_file(filename: str) -> RedirectResponse:
     # 1. COS → Guangzhou fast download (302 redirect)
     cos = CosStorage()
     if cos.exists(cos_key):
-        headers = {}
+        cos_url = cos.public_url(cos_key)
         if filename:
-            headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(filename)}"
-        return RedirectResponse(url=cos.public_url(cos_key), status_code=302, headers=headers)
+            cd_header = f"attachment; filename*=UTF-8''{quote(filename)}"
+            cos_url += f"?response-content-disposition={quote(cd_header)}"
+        return RedirectResponse(url=cos_url, status_code=302)
 
     # 2. Fallback: nginx serves /static/files/{filename} directly (sendfile, zero-copy)
     return RedirectResponse(url=f"/static/files/{filename}", status_code=302)

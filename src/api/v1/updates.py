@@ -81,8 +81,10 @@ async def download_updates_file(
             source="electron-updater",
             delivery="cos",
         )
-        headers = {"Content-Disposition": f"attachment; filename*=UTF-8''{quote(filename)}"}
-        return RedirectResponse(url=cos.public_url(cos_key), status_code=302, headers=headers)
+        cos_url = cos.public_url(cos_key)
+        cd_header = f"attachment; filename*=UTF-8''{quote(filename)}"
+        cos_url += f"?response-content-disposition={quote(cd_header)}"
+        return RedirectResponse(url=cos_url, status_code=302)
 
     # 2. Local cache → nginx X-Accel-Redirect
     cached_path = await feed_svc.get_cached_path(version, filename)
