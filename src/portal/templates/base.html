@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Codex Switch{% endblock %} — 让 AI 编程触手可及</title>
-  <meta name="description" content="Codex Switch 帮你突破网络限制，在国内流畅使用 Codex 和 Claude，接入 DeepSeek 模型，免费、快速、安全。">
+  <meta name="description" content="Codex Switch 帮你解决网络问题，在国内流畅使用 Codex 和 Claude，接入 DeepSeek 模型，免费、快速、安全。">
 
   <!-- Open Graph (微信 / Facebook / Twitter 分享卡片) -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Codex Switch">
   <meta property="og:title" content="Codex Switch — 让 AI 编程触手可及">
-  <meta property="og:description" content="Codex Switch 帮你突破网络限制，在国内流畅使用 Codex 和 Claude，接入 DeepSeek 模型，免费、快速、本地安全。">
+  <meta property="og:description" content="Codex Switch 帮你解决网络问题，在国内流畅使用 Codex 和 Claude，接入 DeepSeek 模型，免费、快速、本地安全。">
   <meta property="og:url" content="https://www.codexswtich.cloud">
   <meta property="og:image" content="https://www.codexswtich.cloud/static/images/logo.png">
   <meta property="og:image:width" content="1024">
@@ -61,8 +61,19 @@
       </div>
     </div>
     <div class="footer__bottom content-width">
-      <span>&copy; 2026 Codex Switch</span>
-      <span>开源软件 · MIT License</span>
+      <span class="footer__bottom-left">&copy; 2026 Codex Switch</span>
+      <span class="footer__bottom-right">
+        {% if icp_filing_number %}
+        <span class="footer__filing-label">ICP备案/许可证号：</span><a href="http://beian.miit.gov.cn" target="_blank" rel="noopener" class="footer__filing">{{ icp_filing_number }}</a>
+        {% endif %}
+        {% if psb_filing_number %}
+        <span class="footer__filing-sep">|</span>
+        <a href="https://beian.mps.gov.cn/#/query/webSearch" target="_blank" rel="noopener" class="footer__filing footer__filing--psb">
+          <img class="footer__psb-icon" src="/static/images/beian-icon.png" width="16" height="17" alt="" aria-hidden="true">
+          {{ psb_filing_number }}
+        </a>
+        {% endif %}
+      </span>
     </div>
   </footer>
 

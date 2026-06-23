@@ -282,4 +282,5 @@ DATABASE_URL=sqlite+aiosqlite:///data/app.db
 ADMIN_TOKEN=your-secret-token-here
 GITHUB_TOKEN=github_pat_xxx  # 必需！否则 GitHub API 403，下载页无版本数据
 COS_BUCKET=  # 可选，部署到腾讯云时填写
+ICP_FILING_NUMBER=  # ICP 备案号，生产环境必填（如 京ICP备2026035967号-1）
 ```

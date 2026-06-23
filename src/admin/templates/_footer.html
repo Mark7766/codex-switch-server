@@ -1,0 +1,14 @@
+{% if icp_filing_number or psb_filing_number %}
+<footer class="admin-footer">
+  {% if icp_filing_number %}
+  <span class="footer__filing-label">ICP备案/许可证号：</span><a href="http://beian.miit.gov.cn" target="_blank" rel="noopener" class="footer__filing">{{ icp_filing_number }}</a>
+  {% endif %}
+  {% if psb_filing_number %}
+  {% if icp_filing_number %}<span class="footer__filing-sep">|</span>{% endif %}
+  <a href="https://beian.mps.gov.cn/#/query/webSearch" target="_blank" rel="noopener" class="footer__filing footer__filing--psb">
+    <img class="footer__psb-icon" src="/static/images/beian-icon.png" width="16" height="17" alt="" aria-hidden="true">
+    {{ psb_filing_number }}
+  </a>
+  {% endif %}
+</footer>
+{% endif %}

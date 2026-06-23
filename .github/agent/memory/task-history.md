@@ -847,3 +847,21 @@
 - **摘要**：将 Codex Desktop 汉化步骤从仅 Windows（`!isMac`）扩展到 Mac + Windows 双平台（`selTool === 'codex'`）。提示词文案从 Windows 专属（"更新 Codex.exe 的 SHA256 哈希 → 创建桌面快捷方式"）改为通用版本（"更新 Codex 的 SHA256 哈希 → 更新 Codex"）。Mac 平台不显示"Codex CN 桌面快捷方式"相关文字。
 - **变更文件**：src/portal/templates/guide.html（改）
 - **验证**：ruff ✅, pytest 195/195 ✅
+
+---
+
+### [TASK-078] ICP 备案号悬挂 — 全站页脚展示京ICP备2026035967号-1
+- **日期**：2026-06-23
+- **类型**：feat
+- **摘要**：按 `docs/superpowers/specs/2026-06-23-icp-filing-design.md` 实现 ICP 备案号悬挂。①`config.py` 新增 `icp_filing_number` 字段（从 .env 读取）②`portal/router.py` 和 `admin/router.py` 将备案号注入 Jinja2 全局变量 `{{ icp_filing_number }}`，为空时不渲染 ③`base.html` footer__bottom 新增备案号链接（href=http://beian.miit.gov.cn, target=_blank, rel=noopener）④`apple.css` 新增 `.footer__icp` 样式（灰色→hover蓝色+下划线，与 Apple 设计系统一致）⑤新建 `admin/templates/_footer.html` 公共片段，在 dashboard/login/packages 三个后台页面底部 include ⑥`.env` 设置 `ICP_FILING_NUMBER=京ICP备2026035967号-1`。全量测试 195/195 通过，本地验证 4 页面备案号正常渲染。
+- **变更文件**：src/config.py, src/portal/router.py, src/admin/router.py, src/portal/templates/base.html, src/static/css/apple.css, src/admin/templates/_footer.html（新）, src/admin/templates/dashboard.html, src/admin/templates/login.html, src/admin/templates/packages.html, .env, .env.example
+- **注意事项**：备案号通过 Jinja2 模板变量 `{% if icp_filing_number %}` 控制显隐，本地开发留空时不显示。生产环境只需在 .env 配置即可。
+
+---
+
+### [TASK-079] Footer 优化：移除 MIT License + 新增公安备案号 + 国徽图标
+- **日期**：2026-06-23
+- **类型**：feat
+- **摘要**：按用户要求优化页脚备案号展示。①移除"开源软件 · MIT License"②`config.py` 新增 `psb_filing_number` 字段，`portal/router.py` 和 `admin/router.py` 注入 Jinja2 全局变量③`base.html` footer__bottom 重设计布局：左侧 © copyright，右侧 ICP + | + 公安备案号（含国徽 inline SVG）④`apple.css` `.footer__icp` → `.footer__filing` 更通用命名，新增 `.footer__filing-sep` / `.footer__filing--psb` / `.footer__psb-icon` / `.admin-footer` 样式，移动端响应式垂直居中布局⑤`_footer.html` 同步新增公安备案号 + 国徽图标⑥国徽 SVG 红底金字"公安"图标（16x16 inline SVG，零外部依赖）⑦参考腾讯云 footer 单行分隔符布局风格。
+- **变更文件**：src/config.py, src/portal/router.py, src/admin/router.py, src/portal/templates/base.html, src/admin/templates/_footer.html, src/static/css/apple.css, .env, .env.example
+- **注意事项**：公安备案号链接格式 `http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=<纯数字部分>`，从 `psb_filing_number` 中自动提取 recordcode。两个备案号都为空时不显示整个备案栏。

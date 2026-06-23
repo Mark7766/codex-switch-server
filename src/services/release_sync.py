@@ -84,7 +84,11 @@ class ReleaseSyncService:
             name: str = asset.get("name", "")
             plat, arch, ftype = _detect_platform(name)
             if plat:
-                cache_key = f"codex-switch/{version}/{plat}-{arch}.{ftype}"
+                # Prefer original GitHub asset name as cache key
+                cache_key = f"codex-switch/{version}/{name}"
+                legacy_key = f"codex-switch/{version}/{plat}-{arch}.{ftype}"
+                # Check both naming conventions for cached status
+                is_cached = await self._storage.exists(cache_key) or await self._storage.exists(legacy_key)
                 files.append(
                     {
                         "platform": plat,
@@ -94,7 +98,7 @@ class ReleaseSyncService:
                         "download_url": asset.get("browser_download_url", ""),
                         "path": cache_key,
                         "original_name": name,
-                        "cached": await self._storage.exists(cache_key),
+                        "cached": is_cached,
                     }
                 )
 
@@ -114,13 +118,29 @@ class ReleaseSyncService:
     # ── Download with cache-or-proxy ────────────────────────
 
     async def get_download_path(self, version: str, platform: str, arch: str) -> Path | None:
-        """Check if the file is cached locally. No DB lookup needed."""
-        # Scan cache directory for matching file
+        """Check if the file is cached locally. No DB lookup needed.
+
+        Searches both legacy short-name format (``{platform}-{arch}.{ext}``) and original
+        GitHub asset filenames (e.g. ``Codex-Switch-Setup-1.4.0-win-x64.exe``).
+        """
+        # 1. Try legacy short-name format: {platform}-{arch}.{ext}
         prefix = f"codex-switch/{version}/{platform}-{arch}"
         for ext in ("dmg", "exe", "appimage", "zip", "blockmap"):
             path = f"{prefix}.{ext}"
             if await self._storage.exists(path):
                 return await self._storage.get_path(path)
+
+        # 2. Scan directory for original GitHub filename format
+        dir_prefix = f"codex-switch/{version}/"
+        try:
+            for f in await self._storage.list_files(dir_prefix):
+                filename = Path(f).name
+                plat, a, _ = _detect_platform(filename)
+                if plat == platform and a == arch:
+                    return await self._storage.get_path(f)
+        except Exception:
+            pass
+
         return None
 
     async def download_and_cache(

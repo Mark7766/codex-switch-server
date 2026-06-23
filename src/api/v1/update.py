@@ -71,7 +71,7 @@ async def download_release(
         raise HTTPException(status_code=404, detail="No download URL available")
 
     try:
-        file_path = await svc.download_and_cache(download_url, version, platform, arch, ftype)
+        file_path = await svc.download_and_cache(download_url, version, platform, arch, ftype, original_name=filename)
     except Exception:
         raise HTTPException(status_code=502, detail="Failed to download from GitHub")
 

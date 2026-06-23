@@ -8,12 +8,17 @@ from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from starlette.templating import Jinja2Templates
 
+from src.config import settings
 from src.database import async_session
 from src.models.page_event import PageEvent
 
 router = APIRouter()
 _tpl_dir = Path(__file__).parent / "templates"
 templates = Jinja2Templates(directory=str(_tpl_dir))
+
+# ICP/PSB filing numbers available in all portal templates
+templates.env.globals["icp_filing_number"] = settings.icp_filing_number
+templates.env.globals["psb_filing_number"] = settings.psb_filing_number
 
 
 @router.get("/", response_class=HTMLResponse)

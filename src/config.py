@@ -20,5 +20,11 @@ class Settings(BaseSettings):
     telemetry_max_events_per_minute: int = 60
     telemetry_retention_days: int = 90
 
+    # ICP filing (China mainland)
+    icp_filing_number: str = ""
+
+    # PSB filing (China mainland)
+    psb_filing_number: str = ""
+
 
 settings = Settings()

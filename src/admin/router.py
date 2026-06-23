@@ -24,6 +24,10 @@ router = APIRouter(prefix="/admin")
 _tpl_dir = __file__.rsplit("/", 1)[0] + "/templates"
 templates = Jinja2Templates(directory=_tpl_dir)
 
+# ICP/PSB filing numbers available in all admin templates
+templates.env.globals["icp_filing_number"] = settings.icp_filing_number
+templates.env.globals["psb_filing_number"] = settings.psb_filing_number
+
 
 def _make_session() -> str:
     s = URLSafeTimedSerializer(settings.admin_token, salt="admin-session")
