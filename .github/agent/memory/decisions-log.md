@@ -481,3 +481,37 @@
 > - 新增 `src/api/v1/plugins.py`（2 端点）
 > - `UpdateCheckResponse` 扩展 `update_highlights`
 > - 离线包上传 COS `files/codex-offline-pack.tar.gz`，本地 `data/files/` 降级
+
+---
+
+### ADR-014: 本地缓存统一使用 GitHub 原始文件名
+
+- **日期**：2026-06-23
+- **状态**：✅ 已采纳
+- **决策者**：wangliang + Claude
+
+#### 背景
+> `74dae31` 将 `StreamingResponse` 替换为 `X-Accel-Redirect`（nginx sendfile）后，下载文件名从正确的 GitHub 原始名（如 `Codex-Switch-Setup-1.15.0-win-x64.exe`）变为短缩写格式（`windows-x64.exe`）。根因有二：①`download_and_cache()` 未被传入 `original_name`，文件缓存为 `{platform}-{arch}.{ext}` 缩写格式；②`get_download_path()` 只搜索缩写格式。COS 层使用 `original_name` 做 key，与本地缓存命名不一致。
+
+#### 方案对比
+
+| 方案 | 优点 | 缺点 |
+|------|------|------|
+| 改 `_send_file` 设 Content-Disposition | 改动最小 | 治标不治本，X-Accel-Redirect 后 Content-Disposition 不一定可靠 |
+| 统一使用原始文件名 | 本地/COS 命名一致，Content-Disposition + 磁盘文件名 双重保险 | 需改 3 处代码，旧缩名缓存需兼容 |
+| 回退到 StreamingResponse | 恢复旧行为 | 下载速度从 nginx sendfile 48MB/s 掉回 Python chunk 45KB/s |
+
+#### 决策
+> **统一使用 GitHub 原始 asset 文件名作为本地缓存 key**。
+
+#### 理由
+> 1) COS 已经用原始文件名，本地对齐可消除不一致
+> 2) 即使 X-Accel-Redirect 丢失 Content-Disposition，磁盘上的文件名就是正确的
+> 3) `get_download_path()` 增加目录扫描兜底，兼容旧缩名缓存文件
+> 4) `get_latest_from_github()` 同时检查两种命名规范的 cached 状态，保证"已缓存"标记准确
+
+#### 影响
+> - `src/api/v1/update.py:74`: `download_and_cache` 传入 `original_name=filename`
+> - `src/services/release_sync.py:get_download_path()`: 短格式查找后增加目录扫描
+> - `src/services/release_sync.py:get_latest_from_github()`: cache key 改用 `original_name`，双向检查 cached
+> - 旧缩名缓存（`data/codex-switch/{ver}/{plat}-{arch}.{ext}`）仍可被兜底扫描找到，无需手动迁移

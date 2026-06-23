@@ -865,3 +865,16 @@
 - **摘要**：按用户要求优化页脚备案号展示。①移除"开源软件 · MIT License"②`config.py` 新增 `psb_filing_number` 字段，`portal/router.py` 和 `admin/router.py` 注入 Jinja2 全局变量③`base.html` footer__bottom 重设计布局：左侧 © copyright，右侧 ICP + | + 公安备案号（含国徽 inline SVG）④`apple.css` `.footer__icp` → `.footer__filing` 更通用命名，新增 `.footer__filing-sep` / `.footer__filing--psb` / `.footer__psb-icon` / `.admin-footer` 样式，移动端响应式垂直居中布局⑤`_footer.html` 同步新增公安备案号 + 国徽图标⑥国徽 SVG 红底金字"公安"图标（16x16 inline SVG，零外部依赖）⑦参考腾讯云 footer 单行分隔符布局风格。
 - **变更文件**：src/config.py, src/portal/router.py, src/admin/router.py, src/portal/templates/base.html, src/admin/templates/_footer.html, src/static/css/apple.css, .env, .env.example
 - **注意事项**：公安备案号链接格式 `http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=<纯数字部分>`，从 `psb_filing_number` 中自动提取 recordcode。两个备案号都为空时不显示整个备案栏。
+
+---
+
+### [TASK-080] 下载文件名修复 + ICP 备案部署广州
+- **日期**：2026-06-23
+- **类型**：fix
+- **摘要**：修复 X-Accel-Redirect 引入的下载文件名错误（`windows-x64.exe` 替代正确的 GitHub 原始名），与 ICP 备案代码一起部署到广州服务器。
+  1. **下载文件名修复（3 处）**：①`update.py:download_release()` 传 `original_name=filename` 给 `download_and_cache()`，确保本地缓存使用 GitHub 原始文件名（如 `Codex-Switch-Setup-1.15.0-win-x64.exe`）而非缩写格式（`windows-x64.exe`）②`release_sync.py:get_download_path()` 增加目录扫描兜底——若短格式未命中则遍历版本目录用 `_detect_platform()` 匹配原始文件名 ③`release_sync.py:get_latest_from_github()` 的 cache key 改用 `original_name`（原始 GitHub 名），同时检查两种命名规范的 cached 状态保证向后兼容。
+  2. **ICP 备案号悬挂**：`config.py` 新增 `icp_filing_number` + `psb_filing_number` 字段，`portal/router.py` + `admin/router.py` 注入 Jinja2 全局变量，`base.html` footer__bottom 重设计（ICP + 公安备案号 + 国徽 SVG），`_footer.html` admin 公共页脚。
+  3. **部署到广州**（134.175.67.120）：scp 补丁 → docker compose up -d --build → 添加 ICP/PSB .env 配置 → docker compose up -d 重启。
+- **变更文件**：src/api/v1/update.py, src/services/release_sync.py, src/config.py, src/portal/router.py, src/admin/router.py, src/portal/templates/base.html, src/portal/templates/index.html, src/admin/templates/_footer.html（新）, src/admin/templates/dashboard.html, src/admin/templates/login.html, src/admin/templates/packages.html, src/static/css/apple.css, src/static/images/beian-icon.png（新）, .env.example, memory files
+- **验证**：pytest 195/195 ✅, 全端点 200 ✅, Windows 下载 Content-Disposition: Codex-Switch-Setup-1.15.0-win-x64.exe ✅, Mac 下载 Content-Disposition: Codex-Switch-1.15.0-mac-arm64.dmg ✅, ICP 京ICP备2026035967号-1 ✅, 公安备案号 ✅
+- **注意事项**：COS 文件名正确（来自上传脚本的 ContentDisposition 元数据），本地缓存现在用原始文件名。旧缩名缓存文件仍可被 `get_download_path()` 兜底扫描找到。广州 GitHub 访问被墙（GnuTLS error），是通过 scp 补丁方式部署。

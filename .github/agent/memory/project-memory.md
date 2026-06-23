@@ -266,6 +266,7 @@
 | 1 | `.env` 必须配置 `GITHUB_TOKEN`，否则 GitHub API 403 限速，下载页无法显示版本 | 创建 `.env`，填入 Fine-grained PAT，参考 `.env.example` | 2026-06-06 |
 | 2 | 首次下载某个平台/架构组合需 1-2 分钟（从 GitHub 拉取并缓存），用户可能以为卡死 | 下载页 JS 显示"首次下载需从 GitHub 获取，请耐心等待"提示 | 2026-06-06 |
 | 3 | `_detect_platform` 要求 Windows .exe 必须有显式 arch 后缀（-x64/-arm64），无后缀文件（如 `-win.exe`）会跳过 | Windows 发布时确保 asset 名称包含 `-x64` 或 `-arm64` | 2026-06-06 |
+| 4 | 本地缓存文件名从 `{platform}-{arch}.{ext}` 改为 GitHub 原始名（ADR-014）。`get_download_path()` 兼容新旧两种命名 | 旧缓存不需要手动迁移，兜底扫描会自动找到 | 2026-06-23 |
 
 ---
 
