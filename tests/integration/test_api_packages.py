@@ -202,9 +202,7 @@ async def test_download_package_cos_302_redirect(client: AsyncClient, monkeypatc
 
         resp = await client.get("/api/v1/packages/cos-test/1.0/macos-arm64", follow_redirects=False)
         assert resp.status_code == 302
-        location = resp.headers["location"]
-        assert location.startswith("https://cos.example.com/bucket/key/test.dmg")
-        assert "response-content-disposition" in location
-        assert "CosTest.dmg" in location
+        assert resp.headers["location"] == "https://cos.example.com/bucket/key/test.dmg"
+        assert "CosTest.dmg" in resp.headers.get("content-disposition", "")
     finally:
         await mgr.delete_package("cos-test", "macos", "arm64")

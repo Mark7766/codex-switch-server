@@ -54,17 +54,13 @@ async def download_release(
         return _send_file(file_path, filename)
 
     # 2. COS → fast download via Guangzhou CDN
-    # Use response-content-disposition query param so COS always returns
-    # the correct filename regardless of object metadata (which may be
-    # stale in CDN cache due to ETag-based revalidation).
     cos_key = f"codex-switch/{version}/{filename}"
     if cos.exists(cos_key):
         await svc.record_download(version, platform, arch, package_name="codex-switch", ip_hash=ip, delivery="cos")
-        cos_url = cos.public_url(cos_key)
+        headers = {}
         if filename:
-            cd_header = f"attachment; filename*=UTF-8''{quote(filename)}"
-            cos_url += f"?response-content-disposition={quote(cd_header)}"
-        return RedirectResponse(url=cos_url, status_code=302)
+            headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(filename)}"
+        return RedirectResponse(url=cos.public_url(cos_key), status_code=302, headers=headers)
 
     # 3. Fetch from GitHub → cache locally
     if not asset:

@@ -66,11 +66,10 @@ async def download_package(
             ip_hash=ip,
             delivery="cos",
         )
-        cos_url = cos.public_url(cos_key)
+        headers = {}
         if original_filename:
-            cd_header = f"attachment; filename*=UTF-8''{quote(original_filename)}"
-            cos_url += f"?response-content-disposition={quote(cd_header)}"
-        return RedirectResponse(url=cos_url, status_code=302)
+            headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(original_filename)}"
+        return RedirectResponse(url=cos.public_url(cos_key), status_code=302, headers=headers)
 
     # 2. Fallback: nginx X-Accel-Redirect from local disk
     dl_svc = ReleaseSyncService(db)
