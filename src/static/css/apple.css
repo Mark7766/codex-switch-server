@@ -509,7 +509,7 @@ img {
 .footer__bottom-right {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 6px;
 }
 
