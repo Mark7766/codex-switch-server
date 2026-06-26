@@ -100,16 +100,27 @@ _cos_upload() {
 
   # Check if already exists on COS
   if [ "$SKIP_EXISTING" = true ]; then
-    local exists=$(uv run python3 -c "
+    local exists
+    exists=$(COS_BUCKET="$COS_BUCKET" \
+      COS_REGION="$COS_REGION" \
+      COS_SECRET_ID="$COS_SECRET_ID" \
+      COS_SECRET_KEY="$COS_SECRET_KEY" \
+      COS_KEY="$cos_key" \
+      uv run python3 -c '
+import os
 from qcloud_cos import CosConfig, CosS3Client
-config = CosConfig(Region='${COS_REGION}', SecretId='${COS_SECRET_ID}', SecretKey='${COS_SECRET_KEY}')
+config = CosConfig(
+    Region=os.environ["COS_REGION"],
+    SecretId=os.environ["COS_SECRET_ID"],
+    SecretKey=os.environ["COS_SECRET_KEY"],
+)
 client = CosS3Client(config)
 try:
-    client.head_object(Bucket='${COS_BUCKET}', Key='${cos_key}')
-    print('yes')
+    client.head_object(Bucket=os.environ["COS_BUCKET"], Key=os.environ["COS_KEY"])
+    print("yes")
 except:
-    print('no')
-" 2>/dev/null)
+    print("no")
+' 2>/dev/null)
     if [ "$exists" = "yes" ]; then
       echo "  ⏭️  Already on COS. Use --force to re-upload."
       echo ""
@@ -118,19 +129,29 @@ except:
   fi
 
   # Upload
-  uv run python3 -c "
-import sys
-from urllib.parse import quote
+  COS_BUCKET="$COS_BUCKET" \
+    COS_REGION="$COS_REGION" \
+    COS_SECRET_ID="$COS_SECRET_ID" \
+    COS_SECRET_KEY="$COS_SECRET_KEY" \
+    LOCAL_PATH="$local_path" \
+    COS_KEY="$cos_key" \
+    DISPOSITION="$disposition" \
+    uv run python3 -c '
+import os
 from qcloud_cos import CosConfig, CosS3Client
-config = CosConfig(Region='${COS_REGION}', SecretId='${COS_SECRET_ID}', SecretKey='${COS_SECRET_KEY}')
+config = CosConfig(
+    Region=os.environ["COS_REGION"],
+    SecretId=os.environ["COS_SECRET_ID"],
+    SecretKey=os.environ["COS_SECRET_KEY"],
+)
 client = CosS3Client(config)
 client.put_object_from_local_file(
-    Bucket='${COS_BUCKET}',
-    LocalFilePath='${local_path}',
-    Key='${cos_key}',
-    ContentDisposition="${disposition}",
+    Bucket=os.environ["COS_BUCKET"],
+    LocalFilePath=os.environ["LOCAL_PATH"],
+    Key=os.environ["COS_KEY"],
+    ContentDisposition=os.environ["DISPOSITION"],
 )
-" 2>&1 || {
+' 2>&1 || {
     log_error "Upload failed: ${cos_key}"
     return 1
   }

@@ -878,3 +878,32 @@
 - **变更文件**：src/api/v1/update.py, src/services/release_sync.py, src/config.py, src/portal/router.py, src/admin/router.py, src/portal/templates/base.html, src/portal/templates/index.html, src/admin/templates/_footer.html（新）, src/admin/templates/dashboard.html, src/admin/templates/login.html, src/admin/templates/packages.html, src/static/css/apple.css, src/static/images/beian-icon.png（新）, .env.example, memory files
 - **验证**：pytest 195/195 ✅, 全端点 200 ✅, Windows 下载 Content-Disposition: Codex-Switch-Setup-1.15.0-win-x64.exe ✅, Mac 下载 Content-Disposition: Codex-Switch-1.15.0-mac-arm64.dmg ✅, ICP 京ICP备2026035967号-1 ✅, 公安备案号 ✅
 - **注意事项**：COS 文件名正确（来自上传脚本的 ContentDisposition 元数据），本地缓存现在用原始文件名。旧缩名缓存文件仍可被 `get_download_path()` 兜底扫描找到。广州 GitHub 访问被墙（GnuTLS error），是通过 scp 补丁方式部署。
+
+---
+
+### [TASK-081] 修复 COS 上传脚本 SyntaxError — bash 变量注入导致 Python 代码截断
+- **日期**：2026-06-24
+- **类型**：fix
+- **摘要**：修复 `scripts/upload-to-cos.sh` 中 `_cos_upload()` 函数的 `SyntaxError: '(' was never closed` Bug。根因：Python `-c "..."` 代码使用双引号包裹，其中 `ContentDisposition="${disposition}"` 的内层双引号在 bash 中**跳出**了外层双引号字符串，导致 `${disposition}` 被 bash 未加引号展开。Content-Disposition 值含 `;`（如 `attachment; filename*=UTF-8''xxx.dmg`），bash 将 `;` 解释为命令分隔符，Python 代码被截断——`put_object_from_local_file(` 的 `)` 从未到达 Python 解释器。
+- **修复**：将 head_object 检查和 put_object 上传两个 Python 片段改为：①外层 `-c '...'` 单引号（bash 不展开内部内容）②动态值通过环境变量传入（`COS_KEY="$cos_key"` 前置赋值）③Python 端用 `os.environ["KEY"]` 读取。完全消除 bash 变量注入风险。
+- **变更文件**：scripts/upload-to-cos.sh（改：101-157 行 `_cos_upload` 函数，head_object + put_object 两个 Python 嵌入片段）
+- **验证**：bash -n 语法检查 ✅, Python compile 无 SyntaxError ✅, --dry-run 10 文件全部通过 ✅
+
+---
+
+### [TASK-082] 用户运营数据体系方案设计
+- **日期**：2026-06-25
+- **类型**：design
+- **摘要**：编写 `docs/USER-ANALYTICS-DESIGN.md` 用户运营数据体系完整设计方案。核心内容：①定义"用户=client_id"，基于现有遥测系统自动注册（零感知）②设计增强 client_registry 表（+6 字段追踪用户生命周期：first_seen/last_seen/platform/version/event_count）③定义 DAU/WAU/MAU/留存率等核心指标及计算公式 ④新增 UserService + Admin API 端点设计 ⑤Admin 面板 Client 运营 Tab 扩展方案（5 指标卡片 + 活跃趋势图 + 新增趋势 + 留存曲线 + 最近注册用户表）⑥3 阶段实施路径（Phase 1 核心指标 → Phase 2 趋势图表 → Phase 3 增强分析）⑦数据回填脚本 + 测试清单 + 风险分析。3 个设计决策（ADR-提案-1/2/3）待 Review 后正式记录到 decisions-log.md。
+- **变更文件**：docs/USER-ANALYTICS-DESIGN.md（新建）
+- **注意事项**：方案阶段，未实施。核心思路是最小改动——复用现有遥测链路和 client_registry 表，不引入新依赖、新表（仅加字段）、新账号系统。**客户端零改动**：所有逻辑在服务端完成，codex-switch 无需任何修改。Review 通过后按 Phase 1→2→3 实施。
+- **修订 1**（2026-06-25）：①明确标注客户端零改动（ADR-提案-1 新增 ⛔ 块）②移除 §8.3 增长 Tab 增强（暂不需要修改增长 Tab）
+
+---
+
+### [TASK-083] MIT 许可证合规 — 创建 LICENSE 文件 + pyproject.toml 补充 license 字段
+- **日期**：2026-06-26
+- **类型**：chore
+- **摘要**：审查 MIT 许可证合规性，发现 3 个问题并修复：①项目根目录缺少 LICENSE 文件（MIT 唯一要求是"许可文本必须随代码分发"，之前 README 仅有一行 `## License MIT` 不足以构成有效许可）②`pyproject.toml` 缺少 PEP 621 `license` 字段 ③网站页脚此前移除了 "MIT License" 文字（TASK-079）。修复：新建标准 MIT `LICENSE` 文件（版权持有人 Mark7766），`pyproject.toml` 新增 `license = {text = "MIT"}`。
+- **变更文件**：LICENSE（新建）、pyproject.toml（改）
+- **注意事项**：页脚"开源软件"标识属信任信号层面，非法律要求，暂不处理。GitHub 仓库 Settings → General → License 可勾选 MIT 让仓库首页显示许可证标签。
