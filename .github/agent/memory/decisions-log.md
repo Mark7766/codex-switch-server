@@ -515,3 +515,46 @@
 > - `src/services/release_sync.py:get_download_path()`: 短格式查找后增加目录扫描
 > - `src/services/release_sync.py:get_latest_from_github()`: cache key 改用 `original_name`，双向检查 cached
 > - 旧缩名缓存（`data/codex-switch/{ver}/{plat}-{arch}.{ext}`）仍可被兜底扫描找到，无需手动迁移
+
+---
+
+### ADR-015: 网站技术支持采用"悬浮按钮 + 专用页面"双入口体系
+
+- **日期**：2026-07-04
+- **状态**：🔄 提案中（待 Review）
+- **决策者**：wangliang + Claude
+
+#### 背景
+> codex-switch 客户端内置了微信交流群功能（`QaGroupModal.tsx`），但网站缺少对应的技术支持入口。用户在使用中遇到困难时没有渠道求助，需要为网站建立完整的技术支持体系。业内常规做法包括：纯页面入口、纯悬浮按钮、悬浮按钮+页面双入口。
+
+#### 方案对比
+
+| 方案 | 优点 | 缺点 |
+|------|------|------|
+| 纯 `/support` 页面 + 导航/页脚链接 | 干净，零打扰 | 用户需要手动导航，即时求助场景不够便捷 |
+| 仅悬浮按钮 + Modal | 即时可达，操作步骤最少 | 无 SEO 价值，无法被分享，功能扩展受限 |
+| 悬浮按钮 + 专用页面双入口（选定方案） | 即时求助 + 信息汇总 + SEO 友好 + 4 条路径覆盖不同用户行为 | 新增文件稍多（1 页面 + 6 文件变更） |
+
+#### 决策
+> 选择 **"悬浮按钮 + 专用页面"双入口体系**。4 条用户路径：悬浮按钮 → Modal（即时扫码）、导航栏/页脚 → `/support` 页面（帮助资源汇总）、指南页底部 CTA（教程后自然引导）、直接访问 `/support`（搜索引擎/分享）。
+
+#### 理由
+> 1) 悬浮按钮捕获"即时求助"场景——遇到问题 → 点按钮 → 扫码进群，零跳转
+> 2) 专用页面作为帮助信息汇总，可被搜索引擎索引、可被社交媒体分享
+> 3) 导航栏和页脚提供发现入口，覆盖浏览探索型用户
+> 4) 指南页底部 CTA 在教程完成后自然引导，覆盖"跟着教程走但遇到困难"的用户
+> 5) Modal 在 `base.html` 全局注入，一次编写处处生效
+> 6) 全部零外部依赖，纯 HTML+CSS+vanilla JS，符合项目前端极简约束
+> 7) 二维码路径通过 `config.py` → `.env` → Jinja2 模板变量三级注入，与 ICP 备案号模式一致
+> 8) 设计完全遵循 Apple HIG（毛玻璃按钮、18px 圆角卡片、微动画、内容驱动）
+
+#### 影响
+> - 新增 `src/portal/templates/support.html` 支持页面
+> - 新增 `src/static/images/wechat-qr.png` 二维码图片（需管理员提供）
+> - 修改 `base.html`：导航+页脚+悬浮按钮+Modal HTML
+> - 修改 `guide.html`：底部 CTA 区块
+> - 修改 `portal/router.py`：新增 `/support` 路由 + `support_qr_image` 全局变量注入
+> - 修改 `config.py`：新增 `support_qr_image` 配置字段
+> - 修改 `apple.css` / `portal.js`：新增样式和交互逻辑
+> - 修改 `schemas/analytics.py`：新增 13 个埋点中文映射
+> - 纯前端变更，对后端 API 和数据库零影响

@@ -26,5 +26,8 @@ class Settings(BaseSettings):
     # PSB filing (China mainland)
     psb_filing_number: str = ""
 
+    # WeChat QA group QR code image path
+    support_qr_image: str = "/static/images/wechat-qr.jpg"
+
 
 settings = Settings()

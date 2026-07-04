@@ -907,3 +907,25 @@
 - **摘要**：审查 MIT 许可证合规性，发现 3 个问题并修复：①项目根目录缺少 LICENSE 文件（MIT 唯一要求是"许可文本必须随代码分发"，之前 README 仅有一行 `## License MIT` 不足以构成有效许可）②`pyproject.toml` 缺少 PEP 621 `license` 字段 ③网站页脚此前移除了 "MIT License" 文字（TASK-079）。修复：新建标准 MIT `LICENSE` 文件（版权持有人 Mark7766），`pyproject.toml` 新增 `license = {text = "MIT"}`。
 - **变更文件**：LICENSE（新建）、pyproject.toml（改）
 - **注意事项**：页脚"开源软件"标识属信任信号层面，非法律要求，暂不处理。GitHub 仓库 Settings → General → License 可勾选 MIT 让仓库首页显示许可证标签。
+
+---
+
+### [TASK-084] 广州生产环境三类遥测错误洞察分析
+- **日期**：2026-07-02
+- **类型**：docs
+- **摘要**：SSH 到广州生产服务器 (134.175.67.120)，通过 Docker 容器内 Python sqlite3 查询 `telemetry_events` 表，对 `error`（133条）、`tool_install_fail`（49条）、`proxy_error`（36条）三类事件做了全量分析（properties 消息分布、版本分布、平台分布、日趋势、受影响用户数）。
+  - **error**：全部 133 条 `properties.message` 为空——客户端上报 bug，error 事件无诊断价值。7月1日 single-user burst 27 条。
+  - **tool_install_fail**：100% claude-cli + Windows + setx 命令失败。两种模式：`spawn setx ENOENT`（44条，setx.exe 不在 PATH）和 `Command failed: setx ANTHROPIC_AUTH_TOKEN`（5条，执行失败）。仅 4 个用户但反复重试，转化损失 100%。
+  - **proxy_error**：runtime（23条）+ port-conflict（13条，端口 11435）。集中在 v1.10.0/v1.15.0，v1.16.0 零报告——新版本代理稳定性已改善。
+  - **行动建议**：P0 客户端修复 error 上报 + setx 失败兜底；P1 admin 面板暴露错误详情；P2 guide FAQ 增加 setx 条目。
+- **变更文件**：docs/SHANGHAI-PRODUCTION-ERROR-INSIGHT.md（新建）
+- **注意事项**：三类错误占近30天总事件 2%，整体健康。`tool_install_fail` 影响面最小但伤害最大（每个受影响用户都无法使用 claude-cli）。`error` 事件的数据质量问题是最优先应修复的——修好后可能发现新的 bug 类别。
+
+---
+
+### [TASK-085] 网站技术支持体系方案设计
+- **日期**：2026-07-04
+- **类型**：design
+- **摘要**：编写 `docs/SUPPORT-SYSTEM-DESIGN.md` 完整设计方案。参照客户端 `QaGroupModal.tsx` 的交流群功能，为网站设计全渠道技术支持体系：①全站悬浮支持按钮（右下角圆形毛玻璃按钮 + 呼吸动画）②Modal 弹窗（交流群二维码 + GitHub Issues/使用指南/邮件反馈快捷入口）③专用 `/support` 技术支持页面（4 区块：Hero + 交流群主卡片 + 双卡片入口 + FAQ 摘要）④导航栏+页脚入口链接 ⑤使用指南页底部"还有问题？"CTA。遵循 Apple HIG 设计系统，零外部依赖。含 13 个新埋点点位设计、完整的 CSS/JS 伪代码、4 阶段实施步骤、ADR 提案。
+- **变更文件**：docs/SUPPORT-SYSTEM-DESIGN.md（新建）
+- **注意事项**：方案阶段，尚未实施。二维码图片需管理员提供（`src/static/images/wechat-qr.png`）。需确认反馈邮箱。实施时按 Phase 2→3→4→5 顺序执行，共涉及 11 个文件变更。

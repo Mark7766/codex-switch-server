@@ -19,6 +19,7 @@ templates = Jinja2Templates(directory=str(_tpl_dir))
 # ICP/PSB filing numbers available in all portal templates
 templates.env.globals["icp_filing_number"] = settings.icp_filing_number
 templates.env.globals["psb_filing_number"] = settings.psb_filing_number
+templates.env.globals["support_qr_image"] = settings.support_qr_image
 
 
 @router.get("/", response_class=HTMLResponse)
