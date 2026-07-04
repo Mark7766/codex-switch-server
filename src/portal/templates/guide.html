@@ -393,4 +393,78 @@ function loadDesktopDownloads() {
 }
 </script>
 
+<!-- Structured Data: FAQPage -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Codex Switch 是什么？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Codex Switch 是一款免费、开源的桌面工具，帮你解决网络问题，在国内流畅使用 Codex 和 Claude。它通过本地代理自动配置网络，无需手动设置任何参数，支持 DeepSeek 和 Agnes AI 模型。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Codex Switch 支持哪些 AI 模型？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "支持 DeepSeek 全系列模型（deepseek-chat V3 模型和 deepseek-reasoner R1 推理模型）、Agnes AI（免费，256K 上下文窗口），以及任何 OpenAI 兼容的 API（如 GLM、自定义模型）。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Codex Switch 安全吗？API Key 会泄露吗？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "完全本地安全。所有数据不出本机，API Key 存储在操作系统钥匙串（macOS Keychain / Windows Credential Manager）中，不落盘明文。代理仅监听 127.0.0.1（本机回环地址），外网无法访问。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Codex Switch 免费吗？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "完全免费开源（MIT 许可）。Codex Switch 本身不收取任何费用。用户只需自行准备 DeepSeek API Key（注册即用，首次充值几块钱即可）或 Agnes AI Key。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "如何在国内使用 Codex 或 Claude？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "使用 Codex Switch 即可。步骤：1) 前往 codex-switch.cloud 下载安装包；2) 双击安装后启动 Setup 向导；3) 填入 DeepSeek API Key（在 platform.deepseek.com 申请）；4) 点击「完成并启动代理」。Codex/Claude 会自动通过本地代理解决网络问题。整个过程无需命令行操作。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Codex Switch 支持哪些 AI 编程工具？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "支持四款 AI 编程工具：Codex Desktop（OpenAI 官方桌面 IDE）、Claude Desktop（Anthropic 官方桌面应用）、Codex CLI（OpenAI 命令行工具）、Claude Code CLI（Anthropic 命令行工具）。每款工具可以独立选择不同的 AI 模型供应商。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Codex Switch 支持 Windows 和 Mac 吗？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "支持 Windows 10 及以上版本（x64 和 ARM 架构），以及 macOS 11 及以上版本（Apple Silicon 和 Intel 芯片）。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "DeepSeek API Key 怎么获取？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "访问 platform.deepseek.com 注册账号，在 API Keys 页面创建 Key。注册后需要充值（几块钱即可），然后即可使用。将 Key 粘贴到 Codex Switch 的 Setup 向导中即可。"
+      }
+    }
+  ]
+}
+</script>
+
 {% endblock %}

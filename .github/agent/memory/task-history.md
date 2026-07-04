@@ -929,3 +929,44 @@
 - **摘要**：编写 `docs/SUPPORT-SYSTEM-DESIGN.md` 完整设计方案。参照客户端 `QaGroupModal.tsx` 的交流群功能，为网站设计全渠道技术支持体系：①全站悬浮支持按钮（右下角圆形毛玻璃按钮 + 呼吸动画）②Modal 弹窗（交流群二维码 + GitHub Issues/使用指南/邮件反馈快捷入口）③专用 `/support` 技术支持页面（4 区块：Hero + 交流群主卡片 + 双卡片入口 + FAQ 摘要）④导航栏+页脚入口链接 ⑤使用指南页底部"还有问题？"CTA。遵循 Apple HIG 设计系统，零外部依赖。含 13 个新埋点点位设计、完整的 CSS/JS 伪代码、4 阶段实施步骤、ADR 提案。
 - **变更文件**：docs/SUPPORT-SYSTEM-DESIGN.md（新建）
 - **注意事项**：方案阶段，尚未实施。二维码图片需管理员提供（`src/static/images/wechat-qr.png`）。需确认反馈邮箱。实施时按 Phase 2→3→4→5 顺序执行，共涉及 11 个文件变更。
+
+---
+
+### [TASK-086] 实现网站技术支持悬浮按钮 + Modal（交流群二维码）
+- **日期**：2026-07-04
+- **类型**：feat
+- **摘要**：实现门户全站悬浮技术支持按钮 + 微信交流群 Modal。①`config.py` 新增 `support_qr_image` 字段②`portal/router.py` 注入 Jinja2 全局变量③`base.html` 新增毛玻璃胶囊按钮（? 图标 + "技术支持"文字）+ Modal 弹窗（标题"Codex Switch 技术支持群"，文案"扫码添加作者微信，拉你进技术支持群。反馈问题、获取使用技巧。"，240×240 二维码，图片缺失时显示占位虚线框）④`apple.css` 新增 160+ 行样式（胶囊按钮/Modal 遮罩毛玻璃/卡片弹出动画/呼吸动画/响应式）⑤`portal.js` 新增 Modal 交互（打开/关闭/ESC/点击遮罩/焦点锁定/3s 呼吸动画）⑥二维码图片 `wechat-qr.jpg`（220KB）拷贝到 `src/static/images/`。修复 `<script>` 在 DOM 元素之前导致事件绑定失败的问题（移到元素之后）。部署到广州服务器（134.175.67.120），全网 200 验证通过。
+- **变更文件**：src/config.py, src/portal/router.py, src/portal/templates/base.html, src/static/css/apple.css, src/static/js/portal.js, src/static/images/wechat-qr.jpg（新）, src/admin/templates/*.html（CSS 版本号）, .github/agent/memory/*
+- **部署**：git push → 广州 docker compose up -d --build ✅，全端点 200 ✅，二维码图片 COS 200 ✅
+- **注意事项**：二维码图片 220KB 较大，首次加载稍慢，后续浏览器缓存。`www.codexswtich.cloud`（新加坡反代）静态文件代理到广州的 `/static/` 路径可能不完整，直接走 `codex-switch.cloud` 访问正常。
+
+---
+
+### [TASK-087] GEO 改造方案设计
+- **日期**：2026-07-04
+- **类型**：design
+- **摘要**：编写 `docs/GEO-PLAN.md` 完整的 GEO（生成式引擎优化）改造方案，让 codex-switch.cloud 被 DeepSeek/ChatGPT/Kimi/豆包等 AI 聊天应用广泛收录和引用。方案分为 4 个阶段：
+  1. **第一阶段（P0 · 1-2 天）技术地基**：新增 `/robots.txt` `/sitemap.xml` `/llms.txt` `/.well-known/ai-plugin.json` 路由、在 `base.html` 添加 SoftwareApplication + Organization JSON-LD Schema 结构化数据、在 `guide.html` 添加 FAQPage JSON-LD、全站 meta 标签增强（keywords/Twitter Card/application-name）
+  2. **第二阶段（P1 · 1-2 周）内容改造**：创建独立 `/faq` FAQ 页面（≥15 条问答）、首页增加功能对比表格+数据背书、可选创建技术博客栏目（5 篇核心文章）和英文版页面
+  3. **第三阶段（P2 · 长期）权威建设**：多平台分发矩阵（知乎/CSDN/掘金/V2EX）+ 证据链建设 + GitHub 仓库 GEO 优化
+  4. **第四阶段（持续）监测与迭代**：5 个核心关键词 AI 引用追踪 + 每两周检查清单
+  方案参照了 codex-switch 项目已有的 `GEO-PLAN.md`，针对 codex-switch-server 的技术栈（FastAPI + Jinja2 + vanilla JS）做了完整实施适配，包含具体代码示例、文件路径、验收标准。全部实施零新依赖。
+- **变更文件**：docs/GEO-PLAN.md（新建）
+- **注意事项**：方案阶段，尚未实施。全部改动集中在 `src/portal/router.py` + `src/portal/templates/*.html` + `src/static/css/apple.css`，零新依赖。
+- **修订 1**（2026-07-04）：用户 Review 后针对国内市场做全面修正——①移除 `.well-known/ai-plugin.json`（ChatGPT Plugin 规范，国内不可用）②移除 Twitter Card meta 标签（国内不用 Twitter）③移除英文版页面建议（国内用户不需要）④移除 Google Search Console/Analytics/Rich Results Test（国内被墙），替换为百度站长平台/百度统计/Schema.org Validator ⑤移除 ChatGPT 监测，新增通义千问/文心一言/元宝三大国内 AI ⑥新增百度生态（站长平台验证、sitemap 提交、百度统计）⑦新增微信公众号/B站/小红书到多平台分发矩阵 ⑧新增每轮监测日志模板 ⑨新增"国内不推荐的措施"对照表
+
+---
+
+### [TASK-088] GEO 第一阶段（技术地基）代码实施
+- **日期**：2026-07-04
+- **类型**：feat
+- **摘要**：按 `docs/GEO-PLAN.md` 第一阶段实施 GEO 技术地基代码开发：
+  1. **`src/portal/router.py`**：新增 3 个 GEO 路由 — `GET /robots.txt`（爬虫抓取指引，Disallow /admin/ /api/）、`GET /sitemap.xml`（XML 站点地图，含 4 核心页面 + 8 个 guide 场景 URL）、`GET /llms.txt`（AI 大模型内容索引，含核心信息/工具/模型/安装步骤/场景入口/外部链接）。新增 `PlainTextResponse` 和 `Response` import。
+  2. **`src/portal/templates/base.html`**：新增 ①SoftwareApplication JSON-LD（Schema.org 软件产品标记，含平台/价格/作者/许可协议）②Organization JSON-LD（网站身份声明）③meta keywords（中文关键词，百度参考）④baidu-site-verification（百度站长验证占位）⑤application-name + theme-color meta ⑥Cache-Control no-transform + no-siteapp（禁止百度转码，保护 Apple 设计风格）
+  3. **`src/portal/templates/guide.html`**：新增 FAQPage JSON-LD（8 条问答覆盖产品定义/模型/安全/价格/安装/工具/平台/API Key）
+  全部零新依赖，只用了 FastAPI 内置的 PlainTextResponse 和 Response。测试 195/195 通过，ruff lint ✅。
+- **变更文件**：src/portal/router.py（改）、src/portal/templates/base.html（改）、src/portal/templates/guide.html（改）
+- **验证**：ruff ✅, ruff format ✅, pytest 195/195 ✅, robots.txt 200 ✅, sitemap.xml 200 ✅, llms.txt 200 ✅, base.html 含 2 个 JSON-LD ✅, guide.html 含 FAQPage JSON-LD ✅
+- **注意事项**：未 push。`baidu-site-verification` meta 中是占位值 `codeva-xxxxxxxxxx`，需在百度站长平台注册后替换为实际验证码。路由在 `SITE_BASE = "https://codex-switch.cloud"` 常量中引用域名，如需切换域名只需改这一处。
+- **修订 1**（2026-07-04）：Review 发现 2 个缺陷已修复 — ①sitemap.xml 中 `&` 未 XML 转义为 `&amp;`（百度/XML 解析器会报错）②两个 `Cache-Control` meta 互相覆盖（`no-siteapp` 覆盖了 `no-transform`，合并为一个 tag）。同时补上方案里漏掉的 `datePublished` 字段。
+- **修订 2**（2026-07-04）：①sitemap.xml 移除尚不存在的 `/support` 页面 URL（避免搜索引擎 404）②全站替换"帮你突破网络限制"→"帮你解决网络问题"（4 个文件 6 处，与 meta description 原有表述对齐，避免敏感措辞）
