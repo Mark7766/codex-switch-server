@@ -970,3 +970,19 @@
 - **注意事项**：未 push。`baidu-site-verification` meta 中是占位值 `codeva-xxxxxxxxxx`，需在百度站长平台注册后替换为实际验证码。路由在 `SITE_BASE = "https://codex-switch.cloud"` 常量中引用域名，如需切换域名只需改这一处。
 - **修订 1**（2026-07-04）：Review 发现 2 个缺陷已修复 — ①sitemap.xml 中 `&` 未 XML 转义为 `&amp;`（百度/XML 解析器会报错）②两个 `Cache-Control` meta 互相覆盖（`no-siteapp` 覆盖了 `no-transform`，合并为一个 tag）。同时补上方案里漏掉的 `datePublished` 字段。
 - **修订 2**（2026-07-04）：①sitemap.xml 移除尚不存在的 `/support` 页面 URL（避免搜索引擎 404）②全站替换"帮你突破网络限制"→"帮你解决网络问题"（4 个文件 6 处，与 meta description 原有表述对齐，避免敏感措辞）
+- **修订 3**（2026-07-04）：**Phase 2 FAQ 重设计为 Hub-and-Spoke 模式**。从「自建 FAQ 内容」改为网站 `/faq` 页面维护列表链接到外部平台。
+- **修订 4**（2026-07-04）：**Phase 2 FAQ v1.3 平台解绑 + Admin 后台**：①「文字教程」→「图文教程」②平台名从枚举（zhihu/bilibili/shipinhao）改为**自由填写**（知乎/公众号/B站/CSDN/掘金/视频号/...任意平台）③数据存储从 JSON 文件改为 SQLite + Admin 后台管理（复用现有 `/admin` 认证体系，新增 FaqItem 模型 + `/admin/faq` 管理页面）④维护方式从"git push JSON"变为"Admin 后台填表单→即时生效"，手机上也能操作。核心设计原则：网站做「目录 + Admin 后台」，任意平台做「内容」。
+- **部署**（2026-07-04）：git push → 广州 134.175.67.120 docker compose up -d --build ✅，生产验证 23/23 全部通过（robots.txt/sitemap.xml/llms.txt/JSON-LD/meta/页面回归/无敏感词）。部署记录：`.deploy/deployments.md` 部署 2026-07-04-001。
+
+---
+
+### [TASK-089] Codex Desktop 指南下载方式调整：Mac 百度网盘 + Windows 微软应用商店
+- **日期**：2026-07-16
+- **类型**：docs
+- **摘要**：调整使用指南中 Codex Desktop 的下载安装方式：
+  1. **Mac Codex Desktop**：下载步骤从"Codex Switch 国内镜像高速下载"改为百度网盘链接（文件 ChatGPT26716.dmg，链接 `https://pan.baidu.com/s/1N9KucUoszj9PNynwo7w7og?pwd=98yb`，提取码 98yb），移除对应的动态下载按钮和截图。
+  2. **Windows Codex Desktop**：下载步骤从"Codex Switch 国内镜像高速下载"改为 Microsoft Store（微软应用商店）安装，安装步骤从"运行 .exe"改为"Microsoft Store 自动下载安装"。
+  3. **Claude Desktop**：下载方式保持不变（继续使用动态下载按钮）。
+  4. `loadDesktopDownloads()` 调用限制为仅 Claude Desktop（`selTool === 'claude'`），Codex Desktop 无需动态下载。
+- **变更文件**：src/portal/templates/guide.html（改）
+- **验证**：ruff ✅, pytest 195/195 ✅

@@ -234,8 +234,24 @@ function renderGuide() {
     });
 
   } else {
-    // ── Desktop scenarios (existing) ────────────────────────
-    steps.push({title:'下载 ' + toolLabel(), body:'<p>从 Codex Switch 国内镜像高速下载。</p><div id="step-dl-tool"></div>' + imgTag('step-dl-' + selTool + '.png')});
+    // ── Desktop scenarios ────────────────────────────────────
+    var dlBody;
+    if (selTool === 'codex' && isMac) {
+      // Codex Desktop Mac: 百度网盘下载
+      dlBody = '<p>通过百度网盘下载 Codex Desktop 安装包。</p>' +
+        '<div style="margin-top:8px;padding:16px;background:#f0f7ff;border-radius:12px;border:1px solid #d0e3f7;line-height:1.8;">' +
+        '<p style="margin-bottom:6px;">📦 <strong>网盘文件</strong>：<code>ChatGPT26716.dmg</code></p>' +
+        '<p style="margin-bottom:6px;">🔗 <strong>链接</strong>：<a href="https://pan.baidu.com/s/1N9KucUoszj9PNynwo7w7og?pwd=98yb" target="_blank" rel="noopener" style="color:var(--color-accent);word-break:break-all;">https://pan.baidu.com/s/1N9KucUoszj9PNynwo7w7og?pwd=98yb</a></p>' +
+        '<p>🔑 <strong>提取码</strong>：<code>98yb</code></p></div>';
+    } else if (selTool === 'codex' && !isMac) {
+      // Codex Desktop Windows: 微软应用商店安装
+      dlBody = '<p>打开 <strong>Microsoft Store（微软应用商店）</strong>，搜索 <strong>"Codex"</strong>，点击<strong>"获取"</strong>即可自动下载安装。</p>' +
+        '<p style="color:var(--color-text-secondary);font-size:14px;">系统要求：Windows 10 及以上版本。</p>';
+    } else {
+      // Claude Desktop: 保持动态下载
+      dlBody = '<p>从 Codex Switch 国内镜像高速下载。</p><div id="step-dl-tool"></div>' + imgTag('step-dl-' + selTool + '.png');
+    }
+    steps.push({title:'下载 ' + toolLabel(), body: dlBody});
     steps.push({title:'安装 ' + toolLabel(), body:desktopInstall() + imgTag('step-install-' + selTool + '-' + selPlat + '.png')});
     steps.push({title:'下载 Codex Switch', body:'<p>本地代理管理工具，让 Codex / Claude 通过 DeepSeek API 工作。</p><div id="step-dl-switch"></div><div id="step-dl-switch-install"></div>' + imgTag(isMac ? 'codex-switch-mac-error.jpg' : 'step-dl-switch-windows.png')});
     steps.push({title:'配置 Codex Switch', body:'<ol style="margin:0;padding-left:20px;font-size:15px;color:var(--color-text-secondary);line-height:1.6;"><li>启动 Codex Switch，进入<strong>设置</strong></li><li>填入第一步获取的 <strong>DeepSeek API Key</strong>（<code>sk-xxx</code>）</li><li>选择模型（推荐 <strong>DeepSeek V4 Flash</strong>）</li><li>点击<strong>"启动代理"</strong>，等待绿色"运行中"状态</li></ol><p style="margin-top:8px;color:var(--color-text-tertiary);">代理地址：<code>http://127.0.0.1:11435</code></p>' + '<img src="' + img('step-config-switch.png') + '" alt="Codex Switch 配置" class="guide-step__img" onload="this.classList.add(\'guide-step__img--loaded\')" onerror="this.style.display=\'none\'">'});
@@ -266,8 +282,8 @@ function renderGuide() {
   document.getElementById('steps-all').innerHTML = html;
   document.getElementById('steps-all').classList.add('guide-steps--show');
 
-  // Load download buttons
-  if (!isCLI) {
+  // Load download buttons (Claude Desktop uses dynamic download; Codex Desktop has hardcoded links)
+  if (!isCLI && selTool === 'claude') {
     loadDesktopDownloads();
     // Desktop Mac xattr warning
     if (isMac) {
@@ -316,7 +332,7 @@ function desktopInstall() {
   if (selTool === 'codex' && isMac)
     return '<p>打开 <code>.dmg</code> 文件，将 <strong>' + name + '</strong> 拖入 <strong>Applications</strong> 文件夹。</p><p>如提示"无法验证开发者"，到<strong>系统设置 → 安全性与隐私</strong>中点击"仍要打开"。</p>';
   if (selTool === 'codex' && !isMac)
-    return '<p>运行 <code>.exe</code> 安装程序，按照向导提示完成安装。</p>';
+    return '<p>Microsoft Store 会自动下载并安装，无需手动操作。</p>';
   if (selTool === 'claude' && isMac)
     return '<p>打开 <code>.dmg</code> 文件，将 <strong>' + name + '</strong> 拖入 <strong>Applications</strong> 文件夹。</p><p>如提示"无法验证开发者"，到<strong>系统设置 → 安全性与隐私</strong>中点击"仍要打开"。</p>' +
       '<div style="margin-top:16px;padding:16px;background:#f0f7ff;border-radius:12px;border:1px solid #d0e3f7;">' +
