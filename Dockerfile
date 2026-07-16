@@ -1,6 +1,8 @@
 FROM python:3.12-slim
 
-RUN apt-get update && \
+# 使用清华大学 Debian 镜像源（国内加速）
+RUN sed -i 's|deb.debian.org|mirrors.tuna.tsinghua.edu.cn|g' /etc/apt/sources.list.d/debian.sources && \
+    apt-get update && \
     apt-get install -y --no-install-recommends \
         nginx \
         supervisor \
@@ -9,7 +11,8 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* && \
     rm -f /etc/nginx/sites-enabled/default
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+# pip 装 uv（清华镜像），避免从 ghcr.io 拉取（国内极慢）
+RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple uv
 
 WORKDIR /app
 
