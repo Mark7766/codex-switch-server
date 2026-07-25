@@ -29,5 +29,8 @@ class Settings(BaseSettings):
     # WeChat QA group QR code image path
     support_qr_image: str = "/static/images/wechat-qr.jpg"
 
+    # ai-working-ok release cache TTL (seconds)
+    ai_working_ok_cache_ttl: int = 300
+
 
 settings = Settings()

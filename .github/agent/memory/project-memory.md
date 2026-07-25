@@ -165,6 +165,7 @@
 | src/services/update_feed.py | electron-updater yml 缓存 + 文件查找 + 原始文件名缓存 | ✅ Phase 5 |
 | src/services/telemetry.py | 事件验证、去重、聚合统计 | ✅ Phase 4 |
 | src/services/package_manager.py | 包文件索引、上传、代理缓存 | 🚫 合并至 packages API |
+| src/services/ai_working_ok_releases.py | ai-working-ok 版本查询、本地缓存+GitHub 下载兜底 | ✅ 2026-07-26 |
 | src/portal/ | 门户路由 + 首页/下载/指南模板 | ✅ Phase 2 |
 | src/admin/ | 管理员路由 + 登录/仪表盘模板 | ✅ Phase 3 |
 | src/static/ | Apple 风格 CSS + 图标 + 极简 JS | ✅ Phase 2 |

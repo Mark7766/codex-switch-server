@@ -558,3 +558,41 @@
 > - 修改 `apple.css` / `portal.js`：新增样式和交互逻辑
 > - 修改 `schemas/analytics.py`：新增 13 个埋点中文映射
 > - 纯前端变更，对后端 API 和数据库零影响
+
+---
+
+### ADR-016: ai-working-ok 下载服务 — 本地缓存 + GitHub 兜底
+
+- **日期**：2026-07-26
+- **状态**：✅ 已采纳
+- **决策者**：wangliang + Claude
+
+#### 背景
+> 用户新做了一个工程 ai-working-ok（https://github.com/Mark7766/ai-working-ok），需要在 codex-switch-server 网站上提供一个下载地址，始终可以下载到最新版本，同时也可以指定版本。服务器上如果没有缓存，就从 GitHub 下载后缓存，之后再从本地缓存下载。不使用 COS。
+
+#### 方案对比
+
+| 方案 | 优点 | 缺点 |
+|------|------|------|
+| 静态文件直链 | 零代码 | 不能自动更新，每次 release 要手动上传 |
+| 302 重定向到 GitHub | 零存储 | 国内访问不稳定，用户体验差 |
+| 本地缓存 + GitHub 兜底（选定方案） | 首次后秒下，自动跟随最新版，无 COS 依赖 | 首次下载慢（需从 GitHub 拉取），需要 GitHub token |
+
+#### 决策
+> 选择 **本地缓存 + GitHub 兜底**。新增 `AiWorkingOkReleaseService` 统一管理：latest 版本有双层 TTL（内存 + 磁盘 releases.json），版本文件优先本地缓存，未命中则从 GitHub 下载并缓存。
+
+#### 理由
+> 1) 不需 COS — 需求明确不要 COS，本地文件系统够用
+> 2) latest 端点有 TTL（默认 5 分钟，可配），避免每次请求打 GitHub API（有 rate limit）
+> 3) 复用现有的 HttpClient（重试/限速）+ LocalStorage（文件存取）工具层
+> 4) 路由复用 `/api/v1/packages/` 前缀，与现有包下载体系一致，无需新建路由组
+> 5) 文件下载走 X-Accel-Redirect（nginx sendfile），与现有下载链路一致
+> 6) 首页只需一个链接，零 UI 改动
+
+#### 影响
+> - 新增 `src/services/ai_working_ok_releases.py` 服务
+> - `src/api/v1/packages.py` 新增 2 个路由（注册在参数化路由之前避免冲突）
+> - `src/config.py` 新增 `AI_WORKING_OK_CACHE_TTL` 配置项
+> - 缓存目录 `data/packages/ai-working-ok/`，含 `releases.json` 元数据文件
+> - 首页 Hero 区域底部增加链接，改动一行 HTML
+> - 不使用 COS、不需要数据库迁移

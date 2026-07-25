@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.deps import _db_dep
 from src.schemas.release import APIResponse, PackageInfo, PackageListData
+from src.services.ai_working_ok_releases import AiWorkingOkReleaseService
 from src.services.package_manager import PackageManager
 from src.services.release_sync import ReleaseSyncService
 from src.utils.cos_storage import CosStorage
@@ -31,6 +32,70 @@ async def list_packages() -> APIResponse[PackageListData]:
         for p in raw
     ]
     return APIResponse(data=PackageListData(packages=packages))
+
+
+# ── ai-working-ok release download ─────────────────────────────
+# Registered BEFORE the parameterized route below to avoid path conflicts.
+
+
+@router.get("/ai-working-ok/latest")
+async def download_ai_working_ok_latest(request: Request, db: AsyncSession = _db_dep) -> Response:
+    """Download the latest ai-working-ok release tarball."""
+    svc = AiWorkingOkReleaseService()
+    try:
+        version = await svc.get_latest_version()
+    except Exception:
+        raise HTTPException(status_code=502, detail="Failed to fetch latest version from GitHub")
+
+    return await _serve_ai_working_ok(version, request, db)
+
+
+@router.get("/ai-working-ok/releases/{version}")
+async def download_ai_working_ok_version(
+    version: str,
+    request: Request,
+    db: AsyncSession = _db_dep,
+) -> Response:
+    """Download a specific ai-working-ok release tarball by version (e.g. v1.0.0)."""
+    return await _serve_ai_working_ok(version, request, db)
+
+
+async def _serve_ai_working_ok(version: str, request: Request, db: AsyncSession) -> Response:
+    """Shared helper: serve ai-working-ok tarball, cache-or-download from GitHub."""
+    svc = AiWorkingOkReleaseService()
+
+    # 1. Get file (local cache → GitHub download)
+    try:
+        file_path, filename = await svc.get_release(version)
+    except Exception:
+        raise HTTPException(status_code=502, detail="Failed to download from GitHub")
+
+    # 2. Record download
+    ip = request.client.host if request.client else ""
+    dl_svc = ReleaseSyncService(db)
+    await dl_svc.record_download(
+        version=version,
+        platform="linux",  # ai-working-ok is a generic tarball
+        arch="x64",
+        package_name="ai-working-ok",
+        ip_hash=ip,
+        delivery="local",
+    )
+
+    # 3. Serve via nginx X-Accel-Redirect
+    p = Path(file_path)
+    parts = list(p.parts)
+    try:
+        idx = parts.index("data")
+        cache_path = "/".join(parts[idx + 1 :])
+    except ValueError:
+        cache_path = f"packages/ai-working-ok/{p.name}"
+
+    headers = {
+        "X-Accel-Redirect": f"/_cache/{cache_path}",
+        "Content-Disposition": f"attachment; filename*=UTF-8''{quote(filename)}",
+    }
+    return Response(headers=headers)
 
 
 @router.get("/{package_name}/{version}/{platform}-{arch}")

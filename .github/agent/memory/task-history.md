@@ -986,3 +986,18 @@
   4. `loadDesktopDownloads()` 调用限制为仅 Claude Desktop（`selTool === 'claude'`），Codex Desktop 无需动态下载。
 - **变更文件**：src/portal/templates/guide.html（改）
 - **验证**：ruff ✅, pytest 195/195 ✅
+
+---
+
+### [TASK-090] ai-working-ok 下载服务实现
+- **日期**：2026-07-26
+- **类型**：feat
+- **摘要**：为网站新增 ai-working-ok 工具集下载服务：
+  1. **新增 `src/services/ai_working_ok_releases.py`**：AiWorkingOkReleaseService — GitHub 最新版查询（内存缓存+磁盘 releases.json 双层 TTL）、本地文件缓存、GitHub 下载兜底。支持 latest 和指定版本两种模式。
+  2. **新增 2 个 API 路由**（`packages.py`）：`GET /api/v1/packages/ai-working-ok/latest`（始终下载最新版）、`GET /api/v1/packages/ai-working-ok/releases/{version}`（指定版本下载）。本地缓存命中走 nginx X-Accel-Redirect，未命中从 GitHub 下载后缓存再返回。
+  3. **新增配置项**：`AI_WORKING_OK_CACHE_TTL`（默认 300 秒），控制 latest 版本刷新频率。
+  4. **首页链接**：Hero 区域底部新增「🧩 AI Working OK 工具集」链接，点击直接下载最新版。
+  5. **测试**：10 单元测试 + 5 集成测试（210 total passed）。
+- **变更文件**：src/services/ai_working_ok_releases.py（新）、src/api/v1/packages.py（改）、src/config.py（改）、.env.example（改）、src/portal/templates/index.html（改）、tests/unit/test_ai_working_ok_releases.py（新）、tests/integration/test_ai_working_ok_api.py（新）
+- **验证**：ruff ✅, ruff format ✅, pytest 210/210 ✅
+- **注意事项**：不使用 COS，纯本地缓存。latest 查询有 5 分钟 TTL（可配置），避免每次请求打 GitHub API。缓存目录 `data/packages/ai-working-ok/`。首次下载需从 GitHub 拉取（约 1-2 分钟），后续秒下。
