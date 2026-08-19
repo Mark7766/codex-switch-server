@@ -35,8 +35,13 @@ async def community_stats(db: AsyncSession = _db_dep) -> dict:
             TelemetryEvent.created_at >= cutoff, TelemetryEvent.client_id != ""
         )
     )
+    # v2.0.0: 累计注册客户端数（侧边栏「和 X 位朋友一起使用」显示该口径）
+    total_clients = await db.scalar(select(func.count()).select_from(ClientRegistry)) or 0
 
-    _community_cache = {"code": 0, "data": {"active_users": active or 0}}
+    _community_cache = {
+        "code": 0,
+        "data": {"active_users": active or 0, "total_clients": total_clients},
+    }
     _community_cache_time = now
     return _community_cache
 
