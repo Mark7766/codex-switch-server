@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %}Codex Switch 使用文档{% endblock %}
+
+{% block content %}
+
+<div class="doc">
+  <!-- 移动端横向目录 -->
+  <nav class="doc__chips" aria-label="目录">
+    <a class="doc__chip" href="#sec-what">这是什么</a>
+    <a class="doc__chip" href="#sec-who">适合谁</a>
+    <a class="doc__chip" href="#sec-problem">解决什么</a>
+    <a class="doc__chip" href="#sec-install">下载安装</a>
+    <a class="doc__chip" href="#sec-key">填 API Key</a>
+    <a class="doc__chip" href="#sec-start">启动并连接</a>
+    <a class="doc__chip" href="#sec-verify">验证能用</a>
+    <a class="doc__chip" href="#sec-tools">支持的工具</a>
+    <a class="doc__chip" href="#sec-models">支持模型</a>
+    <a class="doc__chip" href="#sec-features">功能亮点</a>
+    <a class="doc__chip" href="#sec-faq">常见问题</a>
+    <a class="doc__chip" href="#sec-links">GitHub · Wiki</a>
+  </nav>
+
+  <!-- 左侧粘性目录 -->
+  <aside class="doc__side">
+    <nav class="doc__toc" aria-label="本页目录">
+      <p class="doc__group">开始</p>
+      <a class="doc__toc-item" href="#sec-what">这是什么</a>
+      <a class="doc__toc-item" href="#sec-who">适合谁</a>
+      <a class="doc__toc-item" href="#sec-problem">解决什么问题</a>
+      <p class="doc__group">快速开始</p>
+      <a class="doc__toc-item" href="#sec-install">下载安装</a>
+      <a class="doc__toc-item" href="#sec-key">填写 API Key</a>
+      <a class="doc__toc-item" href="#sec-start">启动并连接</a>
+      <a class="doc__toc-item" href="#sec-verify">验证能用</a>
+      <p class="doc__group">理解</p>
+      <a class="doc__toc-item" href="#sec-tools">支持的 4 款工具</a>
+      <a class="doc__toc-item" href="#sec-models">支持的模型</a>
+      <a class="doc__toc-item" href="#sec-features">功能亮点</a>
+      <p class="doc__group">帮助</p>
+      <a class="doc__toc-item" href="#sec-faq">常见问题</a>
+      <a class="doc__toc-item" href="#sec-links">GitHub · Wiki</a>
+    </nav>
+  </aside>
+
+  <!-- 右侧正文 -->
+  <article class="doc__body">
+    <p class="doc__crumb"><a href="/">Codex Switch</a> · 工具 · Codex Switch</p>
+    <h1 class="doc__title">Codex Switch</h1>
+    <p class="doc__lede">
+      让 AI 编程触手可及。一款 macOS / Windows 桌面工具，在本地帮你把 Codex、Claude
+      接入 DeepSeek、Agnes AI 等模型——双击安装、点几下按钮即可用，无需翻墙、无需懂命令行，免费开源。
+    </p>
+
+    <section class="doc__sec" id="sec-what">
+      <h2>这是什么</h2>
+      <p>
+        Codex Switch 是一款<strong>跨平台桌面应用</strong>。它帮你解决国内使用 Codex、Claude 时的网络与模型问题，
+        并自动写好 Codex / Claude 的本地配置，让<strong>不懂命令行的用户</strong>也能几分钟用上：
+      </p>
+      <ul>
+        <li><strong>一键配置</strong>：自动写好本地配置，点几下按钮就完成连接</li>
+        <li><strong>多种模型</strong>：DeepSeek、Agnes AI、智谱 GLM、自定义 API 都可接入</li>
+        <li><strong>本地安全</strong>：代理只在本机 127.0.0.1 上运行，数据不出本机</li>
+        <li><strong>免费开源</strong>：MIT 协议，Windows 11 · macOS 11+</li>
+      </ul>
+    </section>
+
+    <section class="doc__sec" id="sec-who">
+      <h2>适合谁</h2>
+      <p>
+        想在国内顺畅用 Codex、Claude，又不想折腾命令行/网络的 <strong>AI 开发者与使用者</strong>。
+        无论你用桌面对话窗口还是终端 CLI，都能一条路连上 DeepSeek 等国产可用的模型。
+      </p>
+      <div class="doc__note">
+        💡 需要 4 款工具里某款未安装？本站 <a href="/guide">使用指南</a> 提供了对应的下载与安装教程。
+      </div>
+    </section>
+
+    <section class="doc__sec" id="sec-problem">
+      <h2>解决什么问题</h2>
+      <ul>
+        <li><strong>网络受限</strong>：官方 Codex / Claude 模型连不上或用得卡 → 改为接入国内可用的模型服务。</li>
+        <li><strong>配置门槛高</strong>：写配置文件、配环境变量太麻烦 → 图形界面一键完成。</li>
+        <li><strong>模型不好选</strong>：贵的用不起、免费的找不到 → 内置 DeepSeek（便宜）、Agnes（免费 256K）等。</li>
+        <li><strong>多工具各配各的</strong>：Codex、Claude、CLI 每个都要配一遍 → 一处设置全部打通。</li>
+      </ul>
+    </section>
+
+    <section class="doc__sec" id="sec-install">
+      <h2>快速开始 · 下载安装</h2>
+      <p>从这里下载 macOS 或 Windows 安装包，双击安装即可。完整图文安装步骤见本站 <a href="/guide">使用指南</a>。</p>
+      <div class="doc__ctas">
+        <a class="btn btn--primary btn--large" href="/download" data-track="tools-codex-download">下载 Codex Switch（macOS / Windows）</a>
+        <a class="btn btn--outline btn--large" href="/guide" data-track="tools-codex-guide">查看图文使用指南 &#8599;</a>
+      </div>
+      <p style="margin-top:var(--space-2)">想从 GitHub 直接拿安装包？见 <a href="https://github.com/Mark7766/codex-switch/releases" target="_blank" rel="noopener">GitHub Releases</a>。</p>
+    </section>
+
+    <section class="doc__sec" id="sec-key">
+      <h2>填写 API Key</h2>
+      <p>首次启动会弹出 Setup 向导，让你填入想用的模型 Key（任选其一）：</p>
+      <ul>
+        <li><strong>DeepSeek</strong>：到 <a href="https://platform.deepseek.com" target="_blank" rel="noopener">platform.deepseek.com</a> 注册获取 API Key（便宜、稳定，官方免费申请入口）。</li>
+        <li><strong>Agnes AI</strong>：到 <a href="https://platform.agnes-ai.com" target="_blank" rel="noopener">platform.agnes-ai.com</a> 获取 Key（免费、256K 上下文）。</li>
+      </ul>
+      <div class="doc__note">🔐 Key 会存入系统钥匙串（macOS Keychain / Windows 凭据管理器），不以明文写在磁盘上。</div>
+    </section>
+
+    <section class="doc__sec" id="sec-start">
+      <h2>启动并连接</h2>
+      <ol>
+        <li>点<strong>「完成并启动代理」</strong>，Codex Switch 会自动写好配置，状态变绿即为「运行中」。</li>
+        <li>打开 Codex Desktop 或 Codex CLI，直接开始对话：</li>
+      </ol>
+      <div class="doc-msg">你好，请用一句话介绍你自己，并告诉我你能帮我做哪 5 件事</div>
+      <ul>
+        <li><strong>Claude Desktop</strong>：启动时会自动写好配置，打开即用。</li>
+        <li><strong>Claude Code CLI（claude）</strong>：配置写入了环境变量，需<strong>新开一个终端窗口</strong>再运行 claude 才会生效。</li>
+      </ul>
+    </section>
+
+    <section class="doc__sec" id="sec-verify">
+      <h2>验证能用</h2>
+      <p>
+        顶栏状态灯为绿色「代理运行中 ●」即正常。向 Codex 发一条消息能收到回复就算连上了。
+        如果发了没反应或报错，先看下方<a href="#sec-faq">常见问题</a>第一条——多数情况"完全退出 Codex 再打开"即可解决。
+      </p>
+    </section>
+
+    <section class="doc__sec" id="sec-tools">
+      <h2>支持的 4 款工具</h2>
+      <ul>
+        <li><strong>Codex Desktop</strong>：GUI 对话窗口</li>
+        <li><strong>Codex CLI</strong>：终端命令行（macOS 可用 <code class="doc-inline">brew install codex</code>）</li>
+        <li><strong>Claude Desktop</strong>：GUI 对话窗口</li>
+        <li><strong>Claude Code CLI</strong>：终端 <code class="doc-inline">claude</code></li>
+      </ul>
+      <p>每款工具都可以<strong>独立选择不同的模型</strong>，各配各的、互不干扰。</p>
+    </section>
+
+    <section class="doc__sec" id="sec-models">
+      <h2>支持的模型与连接方式</h2>
+      <ul>
+        <li><strong>DeepSeek</strong>（推荐入门）：价格低、速度快，<strong>直连官方 API</strong>，无需本地代理。</li>
+        <li><strong>Agnes AI</strong>：免费，256K 上下文，支持工具调用。</li>
+        <li><strong>智谱 GLM</strong>：中文能力强，国内网络友好。</li>
+        <li><strong>自定义供应商</strong>：填任意 OpenAI / Anthropic 兼容的 Base URL，按需接入。</li>
+      </ul>
+      <div class="doc__note">
+        ⚙️ Agnes、智谱 GLM 会经本地代理（127.0.0.1:11435）做协议翻译；DeepSeek 与自定义供应商走直连。
+        切换供应商<strong>不影响正在进行的对话</strong>，也无需重启 Codex。
+      </div>
+    </section>
+
+    <section class="doc__sec" id="sec-features">
+      <h2>功能亮点</h2>
+      <ul>
+        <li><strong>零命令行</strong>：自动写好配置文件，双击安装、点几下就上手。</li>
+        <li><strong>一键切换供应商</strong>：不重启、不打断对话。</li>
+        <li><strong>本地安全</strong>：代理只监听 127.0.0.1，日志自动打码 API Key，不上传数据。</li>
+        <li><strong>自动更新</strong>：默认官方 CDN，可切换 ghproxy 镜像或 GitHub 直连（国内更快），带校验。</li>
+        <li><strong>离线插件包</strong>：一键装 Codex 插件包（约 36MB、170+ 插件）与 Claude 精选技能。</li>
+        <li><strong>配置备份</strong>：每次写入前自动备份，历史配置一键回滚。</li>
+        <li><strong>多模型可读图</strong>：新版支持接入视觉模型，直接把截图发给 Codex。</li>
+      </ul>
+    </section>
+
+    <section class="doc__sec" id="sec-faq">
+      <h2>常见问题</h2>
+      <h3>Codex 发消息没反应 / 报错？</h3>
+      <p>先确认代理绿灯「运行中」→ 设置里点「保存并应用」重写配置 → <strong>完全退出 Codex</strong>（Mac ⌘Q / Windows 从托盘退出）→ 重新打开再发消息。多数情况是 Codex 缓存了旧配置。</p>
+      <h3>提示 401 / 429 / 额度不足？</h3>
+      <p>401 说明 Key 失效或过期，去控制台重新生成；429 是请求太频繁，等 30–60 秒再试；额度不足则到 DeepSeek 控制台充值。</p>
+      <h3>下载 / 更新很慢？</h3>
+      <p>在 设置 → 自动更新 里把源切到 ghproxy 镜像或 GitHub 直连，下载会快很多；也可直接到本站 <a href="/download">下载页</a> 拿最新安装包。</p>
+      <h3>Claude Code CLI 说不认识 claude 或环境没生效？</h3>
+      <p>Codex Switch 把配置写进了你的终端配置文件，<strong>需要新开一个终端窗口</strong>再运行 <code class="doc-inline">claude</code>。</p>
+      <h3>端口 11435 被占用？</h3>
+      <p>应用会弹窗提示：关闭占用进程后重试，或换一个端口（会自动同步更新配置）。</p>
+    </section>
+
+    <section class="doc__sec" id="sec-links">
+      <h2>GitHub · Wiki</h2>
+      <p>完整文档（快速开始、常见问题、故障排查）都在 GitHub 上，欢迎查看和共建：</p>
+      <div class="doc__ctas">
+        <a class="btn btn--outline" href="https://github.com/Mark7766/codex-switch" target="_blank" rel="noopener" data-track="tools-codex-github">GitHub 仓库 &#8599;</a>
+        <a class="btn btn--outline" href="https://github.com/Mark7766/codex-switch/wiki" target="_blank" rel="noopener" data-track="tools-codex-wiki">Wiki 文档 &#8599;</a>
+        <a class="btn btn--outline" href="https://github.com/Mark7766/codex-switch/issues" target="_blank" rel="noopener">提问题 / 反馈 &#8599;</a>
+      </div>
+      <p class="doc__note" style="margin-top:var(--space-2)">
+        作者另有两款 AI 护栏工具，也可一并看看：<a href="/tools/ai-working-ok">ai-working-ok（AI 工作）</a> ·
+        <a href="/tools/ai-coding-ok">ai-coding-ok（AI 编程）</a>。
+      </p>
+    </section>
+  </article>
+</div>
+
+{% endblock %}

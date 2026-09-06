@@ -36,6 +36,7 @@ async def robots_txt():
         "Allow: /\n"
         "Allow: /download\n"
         "Allow: /guide\n"
+        "Allow: /tools\n"
         "Allow: /support\n"
         "Allow: /faq\n"
         "Allow: /static/\n"
@@ -55,6 +56,9 @@ async def sitemap_xml():
         {"loc": f"{SITE_BASE}/", "priority": "1.0", "changefreq": "weekly"},
         {"loc": f"{SITE_BASE}/download", "priority": "0.9", "changefreq": "weekly"},
         {"loc": f"{SITE_BASE}/guide", "priority": "0.9", "changefreq": "weekly"},
+        {"loc": f"{SITE_BASE}/tools/ai-coding-ok", "priority": "0.8", "changefreq": "weekly"},
+        {"loc": f"{SITE_BASE}/tools/ai-working-ok", "priority": "0.8", "changefreq": "weekly"},
+        {"loc": f"{SITE_BASE}/tools/codex-switch", "priority": "0.8", "changefreq": "weekly"},
     ]
     # Guide pages with tool × platform permutations (8 scenario URLs)
     tools = ["codex", "claude", "codex-cli", "claude-cli"]
@@ -107,12 +111,22 @@ async def llms_txt():
         "- 首页（产品介绍+下载入口）: https://codex-switch.cloud/\n"
         "- 下载页（平台选择+版本信息）: https://codex-switch.cloud/download\n"
         "- 使用指南（分步骤安装教程）: https://codex-switch.cloud/guide\n"
-        "- 技术支持（交流群+帮助资源）: https://codex-switch.cloud/support\n"
+        "- Codex Switch 使用文档（工具介绍+快速开始）: https://codex-switch.cloud/tools/codex-switch\n"
+        "- ai-working-ok（AI 工作护栏 · 知识工作者快速上手）: https://codex-switch.cloud/tools/ai-working-ok\n"
+        "- ai-coding-ok（AI 编程记忆 · 开发者快速上手）: https://codex-switch.cloud/tools/ai-coding-ok\n"
+        "- 技术支持（交流群+帮助资源）: https://codex-switch.cloud/support\n\n"
         "## 支持的 AI 编程工具\n\n"
         "1. Codex Desktop — OpenAI 官方桌面 IDE\n"
         "2. Claude Desktop — Anthropic 官方桌面应用\n"
         "3. Codex CLI — OpenAI 命令行工具\n"
         "4. Claude Code CLI — Anthropic 命令行工具\n\n"
+        "## 开源工具\n\n"
+        "- Codex Switch — 让 AI 编程触手可及（桌面应用）: https://codex-switch.cloud/tools/codex-switch\n"
+        "- ai-working-ok — AI 工作护栏（面向知识工作者）: https://codex-switch.cloud/tools/ai-working-ok\n"
+        "- ai-coding-ok — AI 编程的 PDCA 记忆闭环（面向开发者）: https://codex-switch.cloud/tools/ai-coding-ok\n"
+        "- Codex Switch GitHub: https://github.com/Mark7766/codex-switch\n"
+        "- ai-coding-ok GitHub: https://github.com/Mark7766/ai-coding-ok\n"
+        "- ai-working-ok GitHub: https://github.com/Mark7766/ai-working-ok\n\n"
         "## 支持的模型供应商\n\n"
         "- DeepSeek Chat (deepseek-chat) — V3 模型，适合日常编码对话\n"
         "- DeepSeek Reasoner (deepseek-reasoner) — R1 推理模型\n"
@@ -157,6 +171,21 @@ async def guide(request: Request) -> HTMLResponse:
         ua = request.headers.get("user-agent", "")[:256]
         asyncio.create_task(_record_guide_ref(ref, ip_hash, ua))
     return templates.TemplateResponse(request, "guide.html")
+
+
+@router.get("/tools/ai-coding-ok", response_class=HTMLResponse)
+async def tool_ai_coding_ok(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request, "doc-ai-coding-ok.html")
+
+
+@router.get("/tools/ai-working-ok", response_class=HTMLResponse)
+async def tool_ai_working_ok(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request, "doc-ai-working-ok.html")
+
+
+@router.get("/tools/codex-switch", response_class=HTMLResponse)
+async def tool_codex_switch(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request, "doc-codex-switch.html")
 
 
 async def _record_guide_ref(ref: str, ip_hash: str, user_agent: str) -> None:

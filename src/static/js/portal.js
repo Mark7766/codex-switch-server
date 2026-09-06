@@ -87,3 +87,75 @@ document.addEventListener('click', function (e) {
     floatBtn.classList.add('support-float--breathe');
   }, 3000);
 })();
+
+// ── Nav dropdown (工具 menu) ──────────────────────────────
+(function () {
+  var tools = document.querySelector('.nav__item--tools');
+  if (!tools) return;
+  var btn = tools.querySelector('.nav__link--btn');
+  if (!btn) return;
+
+  function close() {
+    tools.classList.remove('is-open');
+    btn.setAttribute('aria-expanded', 'false');
+  }
+
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    var open = tools.classList.toggle('is-open');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!tools.contains(e.target)) close();
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') close();
+  });
+})();
+
+// ── Doc pages: left TOC active section on scroll ──────────
+(function () {
+  var toc = document.querySelector('.doc__toc');
+  if (!toc) return;
+  var ids = [];
+  var linkById = {};
+  Array.prototype.forEach.call(toc.querySelectorAll('a[href^="#"]'), function (a) {
+    var id = a.getAttribute('href').slice(1);
+    if (document.getElementById(id)) {
+      ids.push(id);
+      linkById[id] = a;
+    }
+  });
+  if (!ids.length) return;
+
+  function setActive(id) {
+    Array.prototype.forEach.call(toc.querySelectorAll('a[href^="#"]'), function (a) {
+      a.classList.remove('doc__toc-item--active');
+    });
+    if (linkById[id]) linkById[id].classList.add('doc__toc-item--active');
+  }
+
+  function update() {
+    var limit = window.scrollY + 130;
+    var cur = ids[0];
+    ids.forEach(function (id) {
+      var top = document.getElementById(id).getBoundingClientRect().top + window.scrollY;
+      if (top <= limit) cur = id;
+    });
+    setActive(cur);
+  }
+
+  var ticking = false;
+  window.addEventListener('scroll', function () {
+    if (!ticking) {
+      window.requestAnimationFrame(function () {
+        update();
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, { passive: true });
+  update();
+})();

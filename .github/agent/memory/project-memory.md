@@ -38,7 +38,10 @@
 │  ├── portal/        门户路由（Jinja2 渲染）        │
 │  │   ├── /           首页                       │
 │  │   ├── /download   下载页                     │
-│  │   └── /guide      使用指南                   │
+│  │   ├── /guide      使用指南                   │
+│  │   ├── /tools/codex-switch   工具文档（Codex Switch）│
+│  │   ├── /tools/ai-working-ok  工具文档（AI 工作护栏）│
+│  │   └── /tools/ai-coding-ok   工具文档（AI 编程记忆）│
 │  ├── api/v1/        客户端 API（JSON）            │
 │  │   ├── /update     版本检查+下载              │
 │  │   ├── /packages   工具包下载                  │
@@ -166,7 +169,7 @@
 | src/services/telemetry.py | 事件验证、去重、聚合统计 | ✅ Phase 4 |
 | src/services/package_manager.py | 包文件索引、上传、代理缓存 | 🚫 合并至 packages API |
 | src/services/ai_working_ok_releases.py | ai-working-ok 版本查询、本地缓存+GitHub 下载兜底 | ✅ 2026-07-26 |
-| src/portal/ | 门户路由 + 首页/下载/指南模板 | ✅ Phase 2 |
+| src/portal/ | 门户路由 + 首页/下载/指南/工具文档模板（下拉 codex-switch + ai-* 三页） | ✅ Phase 2（工具文档 2026-09-07） |
 | src/admin/ | 管理员路由 + 登录/仪表盘模板 | ✅ Phase 3 |
 | src/static/ | Apple 风格 CSS + 图标 + 极简 JS | ✅ Phase 2 |
 | src/utils/ | HTTP 客户端封装 + 存储抽象层 | ✅ Phase 3 |
@@ -235,6 +238,8 @@
 **下载页**：平台切换（分段控件）→ 最新版本大卡片（版本号 + 日期 + 文件大小 + CTA 按钮）→ 系统要求 → 历史版本（details/summary 可折叠）。
 
 **使用指南**：三步向导交互（4 工具卡片 2×2 网格 → 选平台 → 动态步骤）：支持 Codex Desktop / Claude Desktop（6 步）+ Codex CLI / Claude Code CLI（8 步，含 git/node/python 安装 + Git Bash 使用引导）。Codex Switch CLI 管理统一配置（设置 → CLI 管理 → 保存并应用）。URL 参数 `?tool=xxx` 可预选工具。`renderGuide()` 数组驱动动态渲染。16 张截图按场景加载。
+
+**工具文档页（/tools/codex-switch、/tools/ai-coding-ok、/tools/ai-working-ok）**：导航「工具」为**下拉菜单**（顺序 **Codex Switch → ai-working-ok → ai-coding-ok**，无父级 URL），子项进入各自「左粘性目录 + 右正文」单页长文档（参考 codexguide.ai/start）；目录分组：开始/快速开始/理解/帮助，锚点 + 滚动高亮，移动端退化为顶部横向 chips。面向使用者中文写作、快速开始为重点。ai-working-ok 复用 `/api/v1/packages/ai-working-ok/latest` 国内镜像下载；ai-coding-ok 无下载（git 安装）；Codex Switch 的快速开始=精简 3 步，下载/图文深链站内 `/download` 与 `/guide`（安装细节单一来源）。**首页 hero 已移除 AI Working OK 直链**（入口收敛到下拉 + 页脚两条 ai 文档直链；Codex Switch 页脚入口即 下载/使用指南）。样式：apple.css `.nav__menu*`（下拉）与 `.doc*`（文档布局）。内容为一次性改写（非运行时拉取 wiki），wiki 变更需手动同步。
 
 **运营后台**：3 个指标卡片（总下载量/活跃用户/今日事件）→ 下载趋势折线图（Chart.js）→ 功能使用分布柱状图 → 最近事件表。仅管理员可访问。
 

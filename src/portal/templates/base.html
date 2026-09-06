@@ -17,7 +17,7 @@
   <meta property="og:image:height" content="1024">
 
   <link rel="icon" type="image/png" href="/static/images/logo.png">
-  <link rel="stylesheet" href="/static/css/apple.css?v=20260623f">
+  <link rel="stylesheet" href="/static/css/apple.css?v=20260907">
 
   <!-- ═══════════════════════════════════════════════════════════════ -->
   <!-- GEO Phase 1: Structured Data & AI-friendly Meta                -->
@@ -88,6 +88,27 @@
       <ul class="nav__links" id="navLinks">
         <li><a href="/download" class="nav__link" data-track="nav-download">下载</a></li>
         <li><a href="/guide" class="nav__link" data-track="nav-guide">指南</a></li>
+        <li class="nav__item nav__item--tools">
+          <button type="button" class="nav__link nav__link--btn" data-track="nav-tools"
+                  aria-haspopup="true" aria-expanded="false">
+            工具
+            <svg class="nav__caret" width="10" height="6" viewBox="0 0 10 6" fill="currentColor" aria-hidden="true"><path d="M5 6 0 0h10z"/></svg>
+          </button>
+          <div class="nav__menu">
+            <a class="nav__menu-link" href="/tools/codex-switch" data-track="nav-tools-codex">
+              <span class="nav__menu-name">Codex Switch</span>
+              <span class="nav__menu-tag">桌面应用 · 轻松接入 Codex / Claude</span>
+            </a>
+            <a class="nav__menu-link" href="/tools/ai-working-ok" data-track="nav-tools-working">
+              <span class="nav__menu-name">ai-working-ok</span>
+              <span class="nav__menu-tag">AI 工作 · 知识工作者</span>
+            </a>
+            <a class="nav__menu-link" href="/tools/ai-coding-ok" data-track="nav-tools-coding">
+              <span class="nav__menu-name">ai-coding-ok</span>
+              <span class="nav__menu-tag">AI 编程 · 开发者</span>
+            </a>
+          </div>
+        </li>
         <li><a href="https://github.com/Mark7766/codex-switch" class="nav__link" data-track="nav-github" target="_blank" rel="noopener">GitHub</a></li>
       </ul>
       <button class="nav__toggle" id="navToggle" aria-label="菜单">&#9776;</button>
@@ -110,6 +131,8 @@
           <ul class="footer__col">
             <li><a href="/download">下载</a></li>
             <li><a href="/guide">使用指南</a></li>
+            <li><a href="/tools/ai-working-ok">ai-working-ok</a></li>
+            <li><a href="/tools/ai-coding-ok">ai-coding-ok</a></li>
           </ul>
         </div>
         <div>
@@ -164,7 +187,7 @@
     </div>
   </div>
 
-  <script src="/static/js/portal.js?v=20260614e"></script>
+  <script src="/static/js/portal.js?v=20260907"></script>
 
   {% block scripts %}{% endblock %}
 </body>

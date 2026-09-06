@@ -633,3 +633,65 @@
 > - `scripts/download-latest-release.sh` 额外下载 latest*.yml；`scripts/upload-to-cos.sh` 上传版本化 + 稳定 key（force 覆盖）
 > - 上线顺序：先跑 download + upload 种 COS，再部署服务端代码
 > - 已知独立隐患（未修）：GitHub v2.1.0 的 latest-mac.yml 仅含 x64 条目（mac arm64 走客户端自定义 DMG 下载不受影响）；Windows latest.yml 顶层 path 指向无架构 win.exe（electron-updater 按架构选 files[]，历史正常）
+
+---
+
+### ADR-018: 门户「工具」顶级菜单 → 下拉 + 两工具文档页（左目录 + 右正文）；移除首页 AI Working OK 直链
+
+- **日期**：2026-09-07（2026-09-06 初版「/tools 单页两区块」经用户预览后重构替代）
+- **状态**：✅ 已采纳
+- **决策者**：wangliang + Claude
+
+#### 背景
+> 网站需给作者另两个开源 AI 护栏工具（ai-coding-ok 面向开发者、ai-working-ok 面向知识工作者）加导航入口。目标用户是国内 AI 工具使用者，github.com 不稳定，需使用者视角中文介绍、重点快速开始。两工程 GitHub 上已写好 wiki，要求最小改动复用。初版做「导航平铺 工具 → /tools 单页两区块」，用户预览后要求更像文档站：**工具下要有下拉可选两款工具，进入后左目录右正文**（参考 codexguide.ai/start），并移除首页 hero 的 AI Working OK 直链。
+
+#### 方案对比
+
+| 方案 | 优点 | 缺点 |
+|------|------|------|
+| 仅链接 GitHub Wiki / 单页两区块概览（初版） | 改动小 | 单页信息密度弱、非文档站体验；github.com 国内不稳 |
+| **下拉 + 每工具「单页长文档 + 左粘性目录」（选定）** | 使用者导向、快速开始突出、结构像文档站；正文站内即达，GitHub/Wiki 做外链补充 | 两个长模板 + 下拉/目录 CSS/JS，内容与样式工作量中等；wiki 变更需人工同步（一次性改写，非运行时拉取） |
+| 多子页镜像 wiki 每章 | 每页短、最贴近 codexguide | 路由/模板/测试成倍增加，内容需大幅扩写，维护成本高 |
+
+#### 决策
+> 顶级导航「工具」= **下拉菜单**（子项 ai-working-ok、ai-coding-ok，顺序即此），纯下拉、无父级落地页。子项进入各自**单页长文档**：`/tools/ai-working-ok`、`/tools/ai-coding-ok`，文档页 = 移动端顶部横向 chips + 桌面左侧粘性分组目录（开始/快速开始/理解/帮助，锚点 + 滚动高亮）+ 右侧白卡正文（这是什么/适合谁/解决什么问题/快速开始…+ FAQ + GitHub·Wiki 外链）。**删除初版 /tools 单页概览**与首页 hero「🧩 AI Working OK 工具集」链接（入口收敛到下拉 + 页脚两条直链）。ai-working-ok 复用 `/api/v1/packages/ai-working-ok/latest` 国内镜像下载；ai-coding-ok 无下载（git 安装）。纯前端 Jinja2，零后端/DB/依赖。
+
+#### 理由
+> 1) 使用者视角中文正文站内即达，不依赖 github.com 2) 下拉是文档站常见导航；左目录右正文对"介绍+快速开始+概念+FAQ"阅读体验最优 3) 两工具本质是"装进 AI 的脚手架"，快速开始=安装指令+一句对话，单页锚点文档内容量适中、最贴现有 README/wiki 素材 4) 复用既有 token/btn/portal.js 基建，改动收敛 portal 层，未提交历史即重构（初版无提交，干净替换）5) 埋点/SEO 对齐既有体系。
+
+#### 影响
+> - 新增 `doc-ai-coding-ok.html`、`doc-ai-working-ok.html`（左目录+右正文）；`apple.css` 新增 `.nav__menu*` 下拉与 `.doc*` 文档样式（复用 :root token，≤979/≤767 响应式）；`portal.js` 加下拉开关 + TOC 滚动高亮；`base.html` 导航 li 改 button+menu、页脚两条直链、CSS/JS 版本 `20260907`。
+> - 删除初版 `tools.html`、`GET /tools` 路由、`.tools-*` 样式、旧 /tools 埋点/测试；首页 hero 移除 AI Working OK 链接。
+> - `router.py` 两个 doc 路由 + robots/sitemap(2 条)/llms.txt 指向 doc URL；`schemas/analytics.py` 页面/元素映射改两 doc 页；`test_portal.py` 重构（两 doc 200/内容/下拉/404/首页无直链/GEO）。
+> - 下拉入口无父级 URL；页脚直链两个文档页。移动端汉堡菜单内下拉静态展开（无 hover）。
+> - 内容一次性改写，后续两工具 wiki/命令变更需人工同步本站文案（已记 task-history 注意事项）。
+
+---
+
+### ADR-019: 「工具」下拉收录 Codex Switch（置顶）+ 文档页快速开始采用"站内单源"策略
+
+- **日期**：2026-09-07
+- **状态**：✅ 已采纳
+- **决策者**：wangliang + Claude
+
+#### 背景
+> 上一迭代把「工具」做成了下拉 + 文档站形态，收录 ai-working-ok / ai-coding-ok 两个 AI 护栏工具。用户要求把作者的主产品 **Codex Switch** 也收进「工具」下拉（它同样有 wiki），风格与其他工具一致。Codex Switch 本身是本站主产品，站内已有较深的 下载页(/download) 与 使用指南(/guide)，需要避免文档页与其重复维护。
+
+#### 方案对比
+
+| 方案 | 优点 | 缺点 |
+|------|------|------|
+| 不在文档站收录 Codex Switch（保持现有下拉两项） | 零改动 | 不满足"作者工具集中展示"，入口不统一 |
+| 文档页内完整复制 Codex Switch 安装图文 | 自给自足 | 与站内 /download、/guide 内容重复，需双份维护、易失同步 |
+| **下拉收录 + 文档页"精简快速开始 + 深链站内下载/指南"（选定）** | 工具集完整展示；安装细节单一来源（/download、/guide）；快速开始在文档站仍可独立看懂 | 多一页内容；下载/指南若大改需留意文档页里的简述与深链文案 |
+
+#### 决策
+> 「工具」下拉改为 **Codex Switch（置顶，主产品）→ ai-working-ok → ai-coding-ok**。新增 `/tools/codex-switch` 文档页（左目录 + 右正文，样式复用 `.doc*`），内容改写自 codex-switch 仓库 README/CHANGELOG/`docs/help/faq.json`/onboarding + GitHub wiki；其「快速开始」= 精简 3 步自包含（下载安装→填 API Key→启动连接 + 验证），下载/图文深链 `href=/download` 与 `href=/guide`。页脚不重复加 Codex Switch 文档链接（其站内入口即 下载/使用指南）。纯前端，零后端/DB/依赖。
+
+#### 理由
+> 1) 「工具」成为作者三个开源项目的统一入口（桌面应用 + 两个 AI 护栏），使用户探索路径一致 2) 安装细节单一来源在 /download、/guide，文档页不做双份维护 3) 复用既有 `.doc*`/下拉/埋点/测试基建，本轮零 CSS/JS 改动 4) 措辞沿用站点既有「帮你解决网络问题 / 本地安全 / 数据不出本机」语气，避免照搬内部合规文案风险。
+
+#### 影响
+> - 新增 `doc-codex-switch.html` + `GET /tools/codex-switch`；`base.html` 下拉加 Codex Switch 置顶；sitemap/llms.txt 收录；`schemas/analytics.py` 补页与点位；`test_portal.py` +2。
+> - 下拉顺序确定为 Codex Switch 置顶；ai-working-ok/ai-coding-ok 页面与顺序不变。
+> - 文档一次性与 wiki/README 内容同步；后续 Codex Switch wiki 变更需人工同步本站。

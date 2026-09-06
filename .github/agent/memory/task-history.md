@@ -1031,3 +1031,44 @@
 - **变更文件**：src/utils/cos_storage.py、src/services/update_feed.py、src/api/v1/updates.py、scripts/download-latest-release.sh、scripts/upload-to-cos.sh、tests/unit/test_cos_storage.py、tests/unit/test_update_feed.py、tests/integration/test_api_updates.py
 - **验证**：ruff ✅、ruff format ✅、pytest 220 passed（1 个既有失败 `test_ai_working_ok_releases` 与本次无关，TASK-091 已记录）✅、import sanity ✅
 - **注意事项**：本次未部署（用户选择只改代码本地验证）。**上线顺序**：① 跑 `download-latest-release.sh`（拉 latest*.yml 到本地）→ ② `upload-to-cos.sh --codex-switch latest`（种 COS 稳定 key，含 yml）→ ③ 部署服务端代码 `git pull && docker compose up -d --build`。部署后 yml 端点从 COS 读最新版，不再依赖广州服务器连 GitHub。
+
+---
+
+### [TASK-094] 客户端"发现新版本 v2.1.0 但进度卡 0%"根因排查（客户端侧问题，非服务端）
+- **日期**：2026-09-06
+- **类型**：fix 排查（只诊断未改码）
+- **摘要**：服务端 COS yml 修复部署后客户端能检测到 v2.1.0，但下载进度恒 0%。本机 main.log 证据：`12:47:25.336 开始检查更新 autoDownload=false` → `12:47:25.505 Found version 2.1.0`，其后**无任何 download-progress/error 行**。根因：用户点的是 Settings「立即检查更新」，走 `ipcMain.updateCheck → updater.check()` **默认 autoDownload=false**，electron-updater 只发现版本**不启动下载**；而 `src/components/UpdateBadge.tsx`（codex-switch 客户端）把**任何 `available` 事件无条件置为 `downloading` 态**显示 `↓ 0%`，因无下载运行永远停在 0%（downloading 态非按钮，无操作入口）。mac 真正下载走 `UpdaterManager` 'available' + autoDownload=true 分支的 `downloadMacDmg()`（下载 `${serverBaseUrl}/updates/Codex-Switch-{v}-mac-{arch}.dmg`），自动路径正常。
+- **变更文件**：无（客户端代码层建议修复点：codex-switch `src/components/UpdateBadge.tsx` `case 'available'` 应仅在确会下载时进入 downloading，否则给出可点击升级入口；或手动 check 时传 autoDownload=true）
+- **验证**：main.log 无下载活动即无进度 → 结论 0% 为 UI 死锁，与 COS/服务端下载链路无关
+- **注意事项**：属 codex-switch 客户端仓库问题；用户表示暂不改代码。
+
+---
+
+### [TASK-095] 新增顶级菜单「工具」下拉 → 两工具文档页（左目录+右正文）；移除首页 AI Working OK 直链
+- **日期**：2026-09-07（含 2026-09-06 首版 /tools 概览，已在本任务内按用户新方向重构、未提交即被替代）
+- **类型**：feat
+- **摘要**：导航新增与「下载/指南/GitHub」平行的顶级菜单**「工具」**，为**下拉菜单**（ai-working-ok / ai-coding-ok），点进各自进入**「左侧粘性目录 + 右侧正文」文档页**（布局参考 codexguide.ai/start），面向**使用者**中文写作、**快速开始为重点**，正文改写自两工程 wiki/README，附 GitHub/Wiki 外链。**移除首页 hero 的「🧩 AI Working OK 工具集」直链**。ai-coding-ok 无下载入口（git 安装）；ai-working-ok 复用站内 `/api/v1/packages/ai-working-ok/latest` 国内镜像下载。纯前端，零后端逻辑/DB/依赖。
+  - 路径：`/tools/ai-coding-ok`、`/tools/ai-working-ok`；旧 `/tools` 单页概览**删除**（404）。
+  - `doc-ai-coding-ok.html` / `doc-ai-working-ok.html`（新建）：移动端顶部横向 chips + 桌面左粘性 TOC（分组：开始/快速开始/理解/帮助，滚动高亮）+ 白卡正文（这是什么/适合谁/解决什么/快速开始步骤 + `.doc-code` 深色命令块 + `.doc-msg` 蓝色「对 AI 说」气泡 + 三层记忆/PDCA/多工具/FAQ/外链）。
+  - `base.html`：导航「工具」li 改为 button + `.nav__menu` 下拉两项；页脚「产品」列改两条文档直链；CSS/JS 版本号 bump `20260907`。
+  - `apple.css`：删除上一版 `.tools-*`；新增 `.nav__menu*`（桌面 hover/focus/is-open 显示，移动端汉堡内静态展开）与 `.doc*`（左目录/正文/高亮/chips/响应式 ≤979 / ≤767）。
+  - `portal.js`：下拉开关（click toggle、点外/Esc 关闭）+ 文档页 TOC 滚动高亮（rAF 节流取当前节）。
+  - `router.py`：删 `GET /tools`；加两个 `/tools/<tool>` 路由；robots Allow `/tools` 保留；sitemap 两条 doc URL（priority 0.8）；llms.txt 主要页面改为两 doc URL、`## 开源工具` 小节 URL 指向两 doc 页。
+  - `schemas/analytics.py`：PAGE_NAME_MAP 改 `"/tools/ai-coding-ok"`、`"/tools/ai-working-ok"`；ELEMENT 改 `nav-tools`（下拉按钮）+ `nav-tools-coding/working`（子项），文档页外链/下载点位保留。
+  - `test_portal.py`：删除旧 /tools 概览 4 测试，新增 8 项（首页无 AI Working OK 链接 / 两 doc 200 / 各自内容命令与锚点 / 下拉 href 出现在共享导航 / 旧 /tools 404 / GEO 含两 doc URL）；share_nav urls 换成两 doc URL。
+- **验证**：ruff ✅（改动文件）、ruff format ✅、test_portal+admin_api+analytics 54/54 ✅、全量 pytest（除存量慢/失败文件）219 passed ✅（含该文件则 224 passed + 1 failed，存量 `test_ai_working_ok_releases.py` 与本任务无关）、uvicorn 冒烟：两 doc 200、/tools 404、正文含快速开始/安装命令/镜像按钮/左目录锚点、下载页导航含下拉两 href、首页无 AI Working OK 链接、robots Allow /tools、sitemap 2 条 /tools/ai-*、llms 含两 doc URL ✅
+- **注意事项**：未 push 未部署（用户自行提交/上线）。用户在本地预览首版「/tools 单页两区块」后改主意 → 重构为下拉+文档站形态，首版 tools.html / `.tools-*` / 路由 / 测试 / 埋点全部清理，未产生提交历史。文档为一次性改写（非运行时拉取 wiki），后续两工具 wiki/命令变更需人工同步本站文案。首页不再有 AI Working OK 直链（入口收敛到「工具」下拉 + 页脚两条）。记忆记录：本条目为重写（原 2026-09-06 首版记录已覆盖），ADR-018 同步重写为最终方案。
+
+---
+
+### [TASK-096] 「工具」下拉加入 Codex Switch（置顶）+ 新增 /tools/codex-switch 文档页
+- **日期**：2026-09-07
+- **类型**：feat
+- **摘要**：在「工具」下拉最前加入 Codex Switch（主产品），并新增与另两工具同风格的文档页 `/tools/codex-switch`（模板 `doc-codex-switch.html`，左粘性目录 + 右正文）。下拉顺序改为 **Codex Switch → ai-working-ok → ai-coding-ok**；Codex Switch 文档页的快速开始采用**精简自包含 3 步 + 深链站内 `/download` 与 `/guide`**（安装说明单一来源，不双份维护）。
+  - `base.html`：`.nav__menu` 首项加 Codex Switch（data-track=nav-tools-codex，tag「桌面应用 · 轻松接入 Codex / Claude」）；无 css/js 变更、版本号不动。
+  - `doc-codex-switch.html`（新建）：分组 开始/快速开始/理解/帮助；内容改写自 codex-switch 仓库 README/CHANGELOG/`docs/help/faq.json`/onboarding + GitHub wiki（是什么/适合谁/3 步快速开始/4 工具/模型与直连·代理/功能亮点/FAQ/外链）；正文措辞保持站点既有「帮你解决网络问题/本地安全」语气，未照搬内部合规文案。
+  - `router.py`：加 `GET /tools/codex-switch`；sitemap 加第 3 条 doc URL；llms.txt 主要页面与「## 开源工具」各加 Codex Switch 一行。
+  - `schemas/analytics.py`：PAGE 加 `"/tools/codex-switch"`；ELEMENT 加 `nav-tools-codex` + `tools-codex-*`（download/guide/github/wiki）。
+  - `test_portal.py`：+2 测试（codex doc 200/内容含快速开始、sec-key、download、guide、GitHub 链接）；share_nav 加 URL、dropdown/geo 断言补 codex-switch。
+- **验证**：ruff ✅、ruff format ✅、portal+admin+analytics 56/56 ✅、全量（除存量慢/失败文件）221 passed ✅（含该文件应为 226 passed + 1 failed 存量失败与本任务无关）、uvicorn 冒烟 `/tools/codex-switch` 200 + 内容命中、下拉三 href（codex 仅下拉 1 处，页脚不含）、sitemap/llms 含 codex-switch ✅
+- **注意事项**：未 push 未部署。页脚未加 codex-switch 文档链接（Codex Switch 站内入口由 下载/使用指南 承担，避免冗余）。文档为一次性改写，wiki/命令变更需人工同步。

@@ -88,6 +88,9 @@ PAGE_NAME_MAP: dict[str, str] = {
     "/": "首页",
     "/download": "下载页",
     "/guide": "使用指南",
+    "/tools/codex-switch": "工具文档·Codex Switch",
+    "/tools/ai-coding-ok": "工具文档·ai-coding-ok",
+    "/tools/ai-working-ok": "工具文档·ai-working-ok",
 }
 
 ELEMENT_NAME_MAP: dict[str, tuple[str, str]] = {
@@ -119,8 +122,22 @@ ELEMENT_NAME_MAP: dict[str, tuple[str, str]] = {
     "guide-apikey-btn": ("指南-创建API Key按钮", "使用指南"),
     "nav-download": ("导航栏-下载链接", "全局"),
     "nav-guide": ("导航栏-指南链接", "全局"),
+    "nav-tools": ("导航栏-工具下拉按钮", "全局"),
+    "nav-tools-codex": ("导航栏-工具下拉·Codex Switch", "全局"),
+    "nav-tools-coding": ("导航栏-工具下拉·ai-coding-ok", "全局"),
+    "nav-tools-working": ("导航栏-工具下拉·ai-working-ok", "全局"),
     "nav-github": ("导航栏-GitHub链接", "全局"),
     "footer-github": ("页脚-GitHub链接", "全局"),
+    "tools-codex-download": ("工具文档-Codex Switch 下载按钮", "工具文档"),
+    "tools-codex-guide": ("工具文档-Codex Switch 使用指南按钮", "工具文档"),
+    "tools-codex-github": ("工具文档-Codex Switch GitHub链接", "工具文档"),
+    "tools-codex-wiki": ("工具文档-Codex Switch Wiki链接", "工具文档"),
+    "tools-coding-wiki": ("工具文档-ai-coding-ok Wiki链接", "工具"),
+    "tools-coding-github": ("工具文档-ai-coding-ok GitHub链接", "工具"),
+    "tools-working-wiki": ("工具文档-ai-working-ok Wiki链接", "工具"),
+    "tools-working-github": ("工具文档-ai-working-ok GitHub链接", "工具"),
+    "tools-working-mirror": ("工具文档-ai-working-ok国内镜像下载按钮", "工具"),
+    "tools-working-release": ("工具文档-ai-working-ok GitHub Releases按钮", "工具"),
 }
 
 PRODUCT_NAME_MAP: dict[str, str] = {

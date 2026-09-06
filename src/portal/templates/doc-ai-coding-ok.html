@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% block title %}ai-coding-ok 工具文档{% endblock %}
+
+{% block content %}
+
+<div class="doc">
+  <!-- 移动端横向目录 -->
+  <nav class="doc__chips" aria-label="目录">
+    <a class="doc__chip" href="#sec-what">这是什么</a>
+    <a class="doc__chip" href="#sec-who">适合谁</a>
+    <a class="doc__chip" href="#sec-problem">解决什么</a>
+    <a class="doc__chip" href="#sec-install">安装</a>
+    <a class="doc__chip" href="#sec-firstuse">第一次使用</a>
+    <a class="doc__chip" href="#sec-verify">验证安装</a>
+    <a class="doc__chip" href="#sec-memory">三层记忆</a>
+    <a class="doc__chip" href="#sec-pdca">PDCA 工作流</a>
+    <a class="doc__chip" href="#sec-tools">多工具支持</a>
+    <a class="doc__chip" href="#sec-superpowers">与 superpowers</a>
+    <a class="doc__chip" href="#sec-faq">常见问题</a>
+    <a class="doc__chip" href="#sec-links">GitHub · Wiki</a>
+  </nav>
+
+  <!-- 左侧粘性目录 -->
+  <aside class="doc__side">
+    <nav class="doc__toc" aria-label="本页目录">
+      <p class="doc__group">开始</p>
+      <a class="doc__toc-item" href="#sec-what">这是什么</a>
+      <a class="doc__toc-item" href="#sec-who">适合谁</a>
+      <a class="doc__toc-item" href="#sec-problem">解决什么问题</a>
+      <p class="doc__group">快速开始</p>
+      <a class="doc__toc-item" href="#sec-install">安装</a>
+      <a class="doc__toc-item" href="#sec-firstuse">第一次使用</a>
+      <a class="doc__toc-item" href="#sec-verify">验证安装</a>
+      <p class="doc__group">理解</p>
+      <a class="doc__toc-item" href="#sec-memory">三层记忆系统</a>
+      <a class="doc__toc-item" href="#sec-pdca">PDCA 工作流</a>
+      <a class="doc__toc-item" href="#sec-tools">多工具支持</a>
+      <a class="doc__toc-item" href="#sec-superpowers">与 superpowers 搭配</a>
+      <p class="doc__group">帮助</p>
+      <a class="doc__toc-item" href="#sec-faq">常见问题</a>
+      <a class="doc__toc-item" href="#sec-links">GitHub · Wiki</a>
+    </nav>
+  </aside>
+
+  <!-- 右侧正文 -->
+  <article class="doc__body">
+    <p class="doc__crumb"><a href="/">Codex Switch</a> · 工具 · ai-coding-ok</p>
+    <h1 class="doc__title">ai-coding-ok</h1>
+    <p class="doc__lede">
+      AI 编程的 PDCA 记忆闭环。给 Claude Code、Codex 等 AI 编程工具装上三层记忆 + PDCA，
+      让它在几十轮迭代里始终记得你的项目 —— 架构、决策、踩过的坑，不会"修好 Bug X 却弄坏功能 Y"。
+    </p>
+
+    <section class="doc__sec" id="sec-what">
+      <h2>这是什么</h2>
+      <p>
+        一句话：<strong>让你的 AI 编程助手"不失忆"</strong>。很多 AI 工具能让一次对话很聪明，
+        但换个新会话它就忘了你的项目背景。ai-coding-ok 在项目里装一套<strong>三层记忆文件 +
+        PDCA 强制流程</strong>，让 AI 每次开工先读记忆、每次收尾更新记忆 —— 跨很多次会话依然准确。
+      </p>
+      <ul>
+        <li><strong>三层记忆</strong>：项目长期事实 · 技术决策（ADR）· 任务流水</li>
+        <li><strong>PDCA 闭环</strong>：Plan → Do → Check → Act，每轮任务都过一遍</li>
+        <li><strong>零依赖</strong>：纯 Markdown + Shell + Python 3 标准库，全中文</li>
+        <li><strong>MIT 开源</strong>：免费、可商用</li>
+      </ul>
+    </section>
+
+    <section class="doc__sec" id="sec-who">
+      <h2>适合谁</h2>
+      <p>
+        用 <strong>Claude Code、Codex、GitHub Copilot、Cursor、OpenCode</strong> 写代码的开发者，
+        一个人写项目、或小团队协作都适合。只要"让 AI 持续懂你的项目"对你有价值，就值得装。
+      </p>
+      <div class="doc__note">
+        💡 和 ai-working-ok 的分工：<strong>写代码的项目</strong>装 ai-coding-ok；
+        <strong>做研究 / 写报告 / 运营等工作项目</strong>装 ai-working-ok。
+      </div>
+    </section>
+
+    <section class="doc__sec" id="sec-problem">
+      <h2>解决什么问题</h2>
+      <ul>
+        <li><strong>跨会话失忆</strong>：换新对话就要把架构、约定、坑重新讲一遍 → 记忆文件替你记住。</li>
+        <li><strong>改坏功能</strong>：AI 修一个 Bug 却弄坏另一个功能 → 每轮任务前后 PDCA 检查一次。</li>
+        <li><strong>规范不统一</strong>：团队每个人问 AI 的标准都不一样 → AGENTS.md + 编码规范一键进项目。</li>
+        <li><strong>接手没背景</strong>：接手旧项目 / 隔很久回来，AI 对代码一无所知 → 记忆里全都有。</li>
+      </ul>
+    </section>
+
+    <section class="doc__sec" id="sec-install">
+      <h2>快速开始 · 安装</h2>
+      <h3>一次性下载框架（所有项目共用一份）</h3>
+      <pre class="doc-code"># macOS / Linux
+git clone https://github.com/Mark7766/ai-coding-ok ~/ai-coding-ok</pre>
+      <h3>把它装进你用的 AI 工具</h3>
+      <pre class="doc-code"># Claude Code —— 全局 skill（最推荐）
+bash ~/ai-coding-ok/install.sh --claude-code
+
+# Codex / OpenCode —— 全局 skill
+bash ~/ai-coding-ok/install.sh --codex
+bash ~/ai-coding-ok/install.sh --opencode</pre>
+      <div class="doc__note">
+        使用 GitHub Copilot / Cursor 的，按项目安装，见下方「多工具支持」；Windows 用
+        <code class="doc-inline">python ~/ai-coding-ok/install.py</code>（参数相同）。
+      </div>
+    </section>
+
+    <section class="doc__sec" id="sec-firstuse">
+      <h2>第一次使用</h2>
+      <ol>
+        <li>在<strong>项目目录</strong>里启动 Claude Code / Codex（已装好 skill 后，任何项目都能用）。</li>
+        <li>对它说一句话，让它把三层记忆装进当前项目：</li>
+      </ol>
+      <div class="doc-msg">安装 ai-coding-ok，我想做一个 一句话描述你的项目，例如：个人博客</div>
+      <ol start="3">
+        <li>AI 会自动拷入记忆文件、根据你的描述填好项目信息，并写入第一条任务记录。</li>
+        <li>打开生成的 <code class="doc-inline">AGENTS.md</code> 看一眼，就可以正常写代码了 —— 之后每轮它自动读、写记忆，你不用管。</li>
+      </ol>
+    </section>
+
+    <section class="doc__sec" id="sec-verify">
+      <h2>验证安装</h2>
+      <p>想确认装得对不对，在项目里运行自带的校验脚本：</p>
+      <pre class="doc-code">bash ~/ai-coding-ok/scripts/verify.sh</pre>
+      <p>它会检查 16 个文件是否齐全、占位符是否都填好，并给出退出码提示：通过 / 缺文件 / 还有占位符没填。</p>
+    </section>
+
+    <section class="doc__sec" id="sec-memory">
+      <h2>三层记忆系统</h2>
+      <ul>
+        <li><strong>project-memory.md（长期）</strong>：项目是什么、技术栈、架构约束、当前阶段。AI 靠它秒懂项目全局。</li>
+        <li><strong>decisions-log.md（中期）</strong>：重要的技术决策记录（ADR，Architecture Decision Records）——为什么选 A 不选 B。AI 靠它不推翻你拍过板的决定。</li>
+        <li><strong>task-history.md（短期）</strong>：每轮任务做了什么、结果、注意事项。AI 靠它记住"上次干到哪"。</li>
+      </ul>
+      <p>规则：<strong>任务前读、任务后写</strong>。这正是防止"修了 X 坏了 Y"跨迭代发生的机制。</p>
+    </section>
+
+    <section class="doc__sec" id="sec-pdca">
+      <h2>PDCA 工作流</h2>
+      <ol>
+        <li><strong>Plan</strong>：开工前读取记忆，明确本次改动方案。</li>
+        <li><strong>Do</strong>：实现代码（并同步补测试）。</li>
+        <li><strong>Check</strong>：跑测试，确认没把别处改坏。</li>
+        <li><strong>Act</strong>：把结果写回 task-history（必须做），涉及架构变化再记一条 ADR。</li>
+      </ol>
+      <p>安装时项目里会挂上强制提醒（hooks），Agent 想"跳过记档"会被拦住，保证闭环不漏。</p>
+    </section>
+
+    <section class="doc__sec" id="sec-tools">
+      <h2>多工具支持</h2>
+      <p>同一份 ai-coding-ok 通吃主流 AI 编程工具，分两种装法：</p>
+      <pre class="doc-code"># 全局 skill（一次装，所有项目都能用）
+bash ~/ai-coding-ok/install.sh --claude-code   # Claude Code
+bash ~/ai-coding-ok/install.sh --codex          # Codex
+bash ~/ai-coding-ok/install.sh --opencode       # OpenCode
+
+# 按项目（装到具体项目目录里，推荐团队/规范类用法）
+cd ~/你的项目
+bash ~/ai-coding-ok/install.sh --copilot        # GitHub Copilot
+bash ~/ai-coding-ok/install.sh --cursor         # Cursor</pre>
+      <div class="doc__note">
+        Windows 上统一用 <code class="doc-inline">python install.py</code>（支持跨平台），参数与上方相同。
+      </div>
+    </section>
+
+    <section class="doc__sec" id="sec-superpowers">
+      <h2>与 superpowers 搭配</h2>
+      <p>
+        两者不冲突、是互补关系：<strong>superpowers</strong> 让"一次对话"更有纪律；
+        <strong>ai-coding-ok</strong> 让"一个项目跨几十轮"记忆不失真。
+      </p>
+      <p>如果两个都装，建议按各自文档安装即可 —— ai-coding-ok 的 AGENTS.md 里内置了与 superpowers 的组合使用指引。</p>
+    </section>
+
+    <section class="doc__sec" id="sec-faq">
+      <h2>常见问题</h2>
+      <h3>它会不会乱改我的代码？</h3>
+      <p>不会。它只往项目里<strong>新增</strong> AGENTS.md / CLAUDE.md / .github/agent 记忆文件，不改你的业务代码；要不要采纳它的流程由你决定。</p>
+      <h3>每轮都要我手动触发吗？</h3>
+      <p>不用。安装后项目里挂了自动 hooks：任务开始读记忆、结束时提醒写记忆，你只管正常对话。</p>
+      <h3>团队多人用同一个项目怎么办？</h3>
+      <p>记忆文件随项目走（提交进仓库），谁开新会话都能读到；AGENTS.md 统一了团队的 AI 行为规范。</p>
+      <h3>换电脑 / 重装系统？</h3>
+      <p>skill 装一次即可（全局那份放 <code class="doc-inline">~/ai-coding-ok</code>）；项目里的记忆已入库，clone 下来 AI 就能接着用。</p>
+      <h3>想升级新版本？</h3>
+      <p>先在 <code class="doc-inline">~/ai-coding-ok</code> 里 <code class="doc-inline">git pull</code>，然后对项目里的 AI 说"升级 ai-coding-ok"，它会自动应用框架级更新、保留你的定制。</p>
+    </section>
+
+    <section class="doc__sec" id="sec-links">
+      <h2>GitHub · Wiki</h2>
+      <p>安装教程、三层记忆、PDCA、hooks 机制、团队实践等完整文档都在 GitHub：</p>
+      <div class="doc__ctas">
+        <a class="btn btn--outline" href="https://github.com/Mark7766/ai-coding-ok" target="_blank" rel="noopener" data-track="tools-coding-github">GitHub 仓库 &#8599;</a>
+        <a class="btn btn--outline" href="https://github.com/Mark7766/ai-coding-ok/wiki" target="_blank" rel="noopener" data-track="tools-coding-wiki">Wiki 文档 &#8599;</a>
+        <a class="btn btn--outline" href="https://github.com/Mark7766/ai-coding-ok/issues" target="_blank" rel="noopener">提问题 / 反馈 &#8599;</a>
+      </div>
+      <p class="doc__note" style="margin-top:var(--space-2)">
+        更多 Codex Switch 相关能力？看看面向知识工作者的 <a href="/tools/ai-working-ok">ai-working-ok 文档</a>。
+      </p>
+    </section>
+  </article>
+</div>
+
+{% endblock %}
