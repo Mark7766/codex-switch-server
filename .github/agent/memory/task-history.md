@@ -1071,4 +1071,4 @@
   - `schemas/analytics.py`：PAGE 加 `"/tools/codex-switch"`；ELEMENT 加 `nav-tools-codex` + `tools-codex-*`（download/guide/github/wiki）。
   - `test_portal.py`：+2 测试（codex doc 200/内容含快速开始、sec-key、download、guide、GitHub 链接）；share_nav 加 URL、dropdown/geo 断言补 codex-switch。
 - **验证**：ruff ✅、ruff format ✅、portal+admin+analytics 56/56 ✅、全量（除存量慢/失败文件）221 passed ✅（含该文件应为 226 passed + 1 failed 存量失败与本任务无关）、uvicorn 冒烟 `/tools/codex-switch` 200 + 内容命中、下拉三 href（codex 仅下拉 1 处，页脚不含）、sitemap/llms 含 codex-switch ✅
-- **注意事项**：未 push 未部署。页脚未加 codex-switch 文档链接（Codex Switch 站内入口由 下载/使用指南 承担，避免冗余）。文档为一次性改写，wiki/命令变更需人工同步。
+- **注意事项**：已 commit `753702d` 并推送 origin/main（2026-09-07，用户准备部署）。页脚未加 codex-switch 文档链接（Codex Switch 站内入口由 下载/使用指南 承担，避免冗余）。文档为一次性改写，wiki/命令变更需人工同步。
