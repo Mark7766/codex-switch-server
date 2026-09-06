@@ -1001,3 +1001,33 @@
 - **变更文件**：src/services/ai_working_ok_releases.py（新）、src/api/v1/packages.py（改）、src/config.py（改）、.env.example（改）、src/portal/templates/index.html（改）、tests/unit/test_ai_working_ok_releases.py（新）、tests/integration/test_ai_working_ok_api.py（新）
 - **验证**：ruff ✅, ruff format ✅, pytest 210/210 ✅
 - **注意事项**：不使用 COS，纯本地缓存。latest 查询有 5 分钟 TTL（可配置），避免每次请求打 GitHub API。缓存目录 `data/packages/ai-working-ok/`。首次下载需从 GitHub 拉取（约 1-2 分钟），后续秒下。
+
+---
+
+### [TASK-091] community 端点新增 total_clients + 部署广州
+- **日期**：2026-08-19
+- **类型**：feat
+- **摘要**：`src/api/v1/client.py` community_stats 新增 `total_clients` 字段（ClientRegistry 全量计数，侧边栏「和 X 位朋友一起使用」改用该口径）。推送远程（commit `55706fe`）并部署广州 (134.175.67.120)。
+- **变更文件**：src/api/v1/client.py（改）
+- **验证**：ruff ✅, pytest 209 passed（1 个既有失败 `test_ai_working_ok_releases.py::test_get_latest_version_from_disk_cache_within_ttl`，stash 验证为存量问题与本次无关）✅, 生产 community 端点返回 `{"active_users":172,"total_clients":381}` ✅, /api/v1/update/latest 200 无回归 ✅
+- **注意事项**：部署方式 git pull（本次 GitHub 可访问）+ docker compose up -d --build，重建后首次 curl 有短暂 502（uvicorn 启动窗口）后续恢复。生产验证时用假 client_id 调用了 profile 端点触发自动注册（新增 1 条 registry 行 id=382），无遥测数据不影响统计。部署记录：`.deploy/deployments.md` 部署 2026-08-19-001。
+
+---
+
+### [TASK-092] 排查 2.0.0 客户端检测不到 2.1.0 更新（根因：yml feed 依赖 GitHub 实时拉取，广州连不上回退陈旧缓存）
+- **日期**：2026-09-06
+- **类型**：fix 排查（尚未改码，仅诊断 + 缓存刷新）
+- **摘要**：用户反馈 2.0.0 客户端检测不到新发布 v2.1.0。端到端排查结论：①客户端 electron-updater（`updateMirror=server`）读 `www.codex-switch.cloud/api/v1/updates/latest-mac.yml|latest.yml` 判断版本；②服务端这两个端点由 `UpdateFeedService.get_latest_yml()` 实现，**实时从 GitHub release asset 下载 yml 文本**（github.com，30s httpx 超时），失败则回退内存陈旧缓存；③广州服务器连 github.com 下载会超时（客户端日志每次 check 耗时 ~31s），v2.1.0（03:55Z 发布）后服务端缓存从未成功刷新 → 一直返回 `latest 2.0.0` → 2.0.0 客户端判无更新、2.1.0 客户端判"降级禁止"；④/download 页、/update/latest、/update/check 显示 2.1.0 是另一条链路（仅 api.github.com，可达）不受影响，造成"界面已 2.1.0 但客户端检测不到"的表象。本机 curl（能通 GitHub）触发服务端 yml 缓存刷新为 2.1.0，短期已恢复。**根治待办：yml feed 改走 COS/本地缓存（download-latest-release.sh 与 upload-to-cos.sh 现均排除 .yml，需要一并镜像）。**
+- **变更文件**：无代码改动；本机 main.log `/Users/mark/Library/Logs/codex-switch/main.log`（证据见 11:47/12:04/12:05/12:11 行）
+- **验证**：curl `www.codex-switch.cloud/api/v1/updates/latest-mac.yml` 与 `latest.yml` 均返回 `version: 2.1.0` HTTP 200 ✅；/update/check（2.0.0 win-x64/macos-arm64）均返回 `has_update:true, latest_version:2.1.0` ✅
+- **注意事项**：根因是"更新检测的 yml feed 仍强依赖 GitHub 实时拉取"，与用户以为的"已和 GitHub 解耦、全走 COS"不符。修复方案需用户确认后再实施（见 decisions-log 待议）。
+
+---
+
+### [TASK-093] yml feed 改走 COS — 客户端自动更新检测与 GitHub 解耦
+- **日期**：2026-09-06
+- **类型**：feat
+- **摘要**：按确认方案根治 TASK-092（2.0.0 检测不到 2.1.0）。①`CosStorage.get_bytes()` 新增读取对象内容；②`UpdateFeedService.get_latest_yml()` 取数顺序改为 **COS 稳定 key（`codex-switch/latest/{latest.yml|latest-mac.yml}`）→ GitHub release asset 兜底 → 陈旧缓存**，`updates.py` 两个 yml 端点注入 `cos=CosStorage()`；③`download-latest-release.sh` 额外下载 latest*.yml 到 `data/codex-switch/{ver}/`；④`upload-to-cos.sh` codex-switch 模式上传版本化 key + 稳定 latest key（稳定 key 每次 force 覆盖，`_cos_upload` 增加 force 参数、空 ContentDisposition 自动省略）。
+- **变更文件**：src/utils/cos_storage.py、src/services/update_feed.py、src/api/v1/updates.py、scripts/download-latest-release.sh、scripts/upload-to-cos.sh、tests/unit/test_cos_storage.py、tests/unit/test_update_feed.py、tests/integration/test_api_updates.py
+- **验证**：ruff ✅、ruff format ✅、pytest 220 passed（1 个既有失败 `test_ai_working_ok_releases` 与本次无关，TASK-091 已记录）✅、import sanity ✅
+- **注意事项**：本次未部署（用户选择只改代码本地验证）。**上线顺序**：① 跑 `download-latest-release.sh`（拉 latest*.yml 到本地）→ ② `upload-to-cos.sh --codex-switch latest`（种 COS 稳定 key，含 yml）→ ③ 部署服务端代码 `git pull && docker compose up -d --build`。部署后 yml 端点从 COS 读最新版，不再依赖广州服务器连 GitHub。

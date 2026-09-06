@@ -222,6 +222,95 @@ class TestUpdateFeedService:
         assert content is None
 
     @pytest.mark.asyncio
+    async def test_get_latest_yml_prefers_cos_when_present(self):
+        """When a COS stable feed key exists, yml is served from COS and GitHub is not hit."""
+
+        class _FakeCos:
+            async def get_bytes(self, key):  # noqa: ANN001
+                assert key == "codex-switch/latest/latest-mac.yml"
+                return b"version: 2.1.0\nfiles:\n  - url: Codex-Switch-2.1.0-mac-arm64.zip\n"
+
+        mock_http = AsyncMock()
+        svc = UpdateFeedService(http=mock_http, cos=_FakeCos())
+
+        content = await svc.get_latest_yml("mac")
+
+        assert content is not None
+        assert "version: 2.1.0" in content
+        mock_http.get_json.assert_not_called()  # COS path must not hit GitHub
+
+    @pytest.mark.asyncio
+    async def test_get_latest_yml_prefers_cos_for_win(self):
+        """Windows feed (latest.yml) also prefers the COS stable key."""
+
+        class _FakeCos:
+            async def get_bytes(self, key):  # noqa: ANN001
+                assert key == "codex-switch/latest/latest.yml"
+                return b"version: 2.1.0\nfiles:\n  - url: Codex-Switch-Setup-2.1.0-win-x64.exe\n"
+
+        svc = UpdateFeedService(http=AsyncMock(), cos=_FakeCos())
+
+        content = await svc.get_latest_yml("win")
+        assert content is not None
+        assert "version: 2.1.0" in content
+
+    @pytest.mark.asyncio
+    async def test_get_latest_yml_falls_back_to_github_when_cos_missing(self):
+        """When COS object is missing (returns None), falls back to the GitHub release asset."""
+
+        class _FakeCos:
+            async def get_bytes(self, key):  # noqa: ANN001
+                return None
+
+        fake_releases = [
+            {
+                "tag_name": "v1.5.0",
+                "assets": [{"name": "latest-mac.yml", "browser_download_url": "https://example.com/latest-mac.yml"}],
+            }
+        ]
+        mock_http = AsyncMock()
+        mock_http.get_json.return_value = fake_releases
+
+        svc = UpdateFeedService(http=mock_http, cos=_FakeCos())
+
+        with patch("src.services.update_feed.httpx.AsyncClient") as mock_client_cls:
+            mock_client = AsyncMock()
+            mock_resp = AsyncMock()
+            mock_resp.text = "version: 1.5.0\nfiles:\n  - url: Codex-Switch-1.5.0-mac-arm64.zip\n"
+            mock_resp.raise_for_status = AsyncMock()
+            mock_client.get.return_value = mock_resp
+            mock_client_cls.return_value.__aenter__.return_value = mock_client
+
+            content = await svc.get_latest_yml("mac")
+
+            assert content is not None
+            assert "version: 1.5.0" in content
+            mock_http.get_json.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_get_latest_yml_returns_stale_cache_when_cos_and_github_fail(self):
+        """When COS is missing and GitHub fails, returns the stale in-memory cache."""
+        _update_feed_module._mac_yml_cache = "stale 2.0.0 content"
+        _update_feed_module._mac_yml_cache_time = 0  # force TTL expiry
+
+        mock_http = AsyncMock()
+        mock_http.get_json.side_effect = Exception("GitHub down")
+
+        svc = UpdateFeedService(http=mock_http)  # cos=None → COS skipped
+
+        content = await svc.get_latest_yml("mac")
+        assert content == "stale 2.0.0 content"
+
+    @pytest.mark.asyncio
+    async def test_get_latest_yml_returns_none_when_no_source_and_no_cache(self):
+        """No COS, GitHub down, and no prior cache → returns None."""
+        mock_http = AsyncMock()
+        mock_http.get_json.side_effect = Exception("GitHub down")
+
+        svc = UpdateFeedService(http=mock_http)  # cos=None
+        assert await svc.get_latest_yml("win") is None
+
+    @pytest.mark.asyncio
     async def test_find_asset_by_filename_found(self):
         """find_asset_by_filename returns asset info when filename matches."""
         fake_releases = [

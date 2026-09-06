@@ -21,21 +21,21 @@ _SAFE_FILENAME_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._-]*$")
 
 @router.get("/latest-mac.yml")
 async def latest_mac_yml() -> Response:
-    """Return latest-mac.yml from GitHub (cached 5 min) for macOS electron-updater."""
-    svc = UpdateFeedService()
+    """Return latest-mac.yml (COS stable key first, GitHub fallback, cached 5 min)."""
+    svc = UpdateFeedService(cos=CosStorage())
     content = await svc.get_latest_yml("mac")
     if content is None:
-        raise HTTPException(status_code=502, detail="Failed to fetch latest-mac.yml from GitHub")
+        raise HTTPException(status_code=502, detail="Failed to fetch latest-mac.yml")
     return Response(content=content, media_type="text/yaml; charset=utf-8")
 
 
 @router.get("/latest.yml")
 async def latest_yml() -> Response:
-    """Return latest.yml from GitHub (cached 5 min) for Windows electron-updater."""
-    svc = UpdateFeedService()
+    """Return latest.yml (COS stable key first, GitHub fallback, cached 5 min)."""
+    svc = UpdateFeedService(cos=CosStorage())
     content = await svc.get_latest_yml("win")
     if content is None:
-        raise HTTPException(status_code=502, detail="Failed to fetch latest.yml from GitHub")
+        raise HTTPException(status_code=502, detail="Failed to fetch latest.yml")
     return Response(content=content, media_type="text/yaml; charset=utf-8")
 
 

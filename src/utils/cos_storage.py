@@ -78,6 +78,27 @@ class CosStorage:
     def public_url(self, cos_key: str) -> str:
         return f"https://{self._bucket}.cos.{settings.cos_region}.myqcloud.com/{cos_key}"
 
+    async def get_bytes(self, cos_key: str) -> bytes | None:
+        """Download an object's content as bytes. Returns None if COS disabled or on error."""
+        if not self.enabled:
+            logger.debug("COS get_bytes skipped: COS not enabled for key=%s", cos_key)
+            return None
+        loop = asyncio.get_event_loop()
+        try:
+            resp = await loop.run_in_executor(
+                None,
+                lambda: self._client.get_object(Bucket=self._bucket, Key=cos_key),
+            )
+            body = resp.get("Body")
+            if body is None:
+                logger.warning("COS get_bytes: object has no body: %s", cos_key)
+                return None
+            data = await loop.run_in_executor(None, body.read)
+            return data
+        except Exception:
+            logger.warning("COS get_bytes failed: %s", cos_key)
+            return None
+
     def delete(self, cos_key: str) -> bool:
         """Delete a file from COS."""
         if not self.enabled:

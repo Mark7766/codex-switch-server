@@ -596,3 +596,40 @@
 > - 缓存目录 `data/packages/ai-working-ok/`，含 `releases.json` 元数据文件
 > - 首页 Hero 区域底部增加链接，改动一行 HTML
 > - 不使用 COS、不需要数据库迁移
+
+---
+
+### ADR-017: electron-updater yml feed 改以 COS 为来源，GitHub 仅兜底
+
+- **日期**：2026-09-06
+- **状态**：✅ 已采纳
+- **决策者**：wangliang + Claude
+
+#### 背景
+> 客户端（electron-updater，`updateMirror=server`）靠服务端 `/api/v1/updates/latest-mac.yml|latest.yml` 的 `version` 判断升级。原实现 `UpdateFeedService.get_latest_yml()` 每次 TTL 过期都实时从 GitHub release asset 下载 yml 字节；广州服务器连 github.com 下载域名不稳定（30s httpx 超时），失败时**静默回退进程内陈旧缓存**。v2.1.0 发布落在 GitHub 不通的窗口，缓存停在 v2.0.0，2.0.0 客户端长期检测不到 2.1.0；而 `/update/latest`、`/update/check`、下载页走 api.github.com（REST，广州可达）正常，形成"页面 2.1.0、客户端 2.0.0"的割裂。此前版本未暴露是因为每个版本有数周窗口、总有一次服务器能连上 GitHub 把缓存刷到新版；失败又静默无告警。
+
+#### 方案对比
+
+| 方案 | 优点 | 缺点 |
+|------|------|------|
+| 保持 GitHub 实时拉取 + 失败回退内存缓存（原状） | 零改动 | 检测依赖广州能连 github.com；失败静默陈旧，无法保证发版即检测 |
+| 服务端最小自愈（成功落盘 + 启动重试） | 改动小 | 仍依赖 GitHub 偶发可达；不是 100% 解耦 |
+| **yml feed 以 COS 稳定 key 为来源（选定）** | 与安装包一样全走 COS，检测彻底脱离 GitHub 可达性 | 需改服务端 + 2 个发布脚本，发布流程要多一步种 yml |
+
+#### 决策
+> 客户端 yml feed（latest.yml / latest-mac.yml）**以 COS 稳定 key `codex-switch/latest/{yml}` 为来源**，GitHub release asset 仅作兜底。发布脚本把 yml 从 GitHub 下载到本地 `data/codex-switch/{ver}/` 并上传 COS（版本化 key + 稳定 key 每次 force 覆盖）。
+
+#### 理由
+> 1) COS（腾讯云广州）对国内服务器始终可达，yml 读取不再受 github.com 抖动影响
+> 2) 稳定 key 每次发版覆盖，服务端无需知道"当前最新是哪个版本目录"，直接读稳定 key
+> 3) 与既有"安装包走 COS"的心智模型一致，符合用户认知
+> 4) COS 禁用/缺失时退回原 GitHub 逻辑，对本地开发/无 COS 环境零行为变化
+> 5) electron-updater 用**配置的 feed URL** 解析 yml 内相对文件名去下载，与服务端从哪读到 yml 文本无关，下载链路（`/api/v1/updates/{filename}` → COS 302）不变
+
+#### 影响
+> - `src/utils/cos_storage.py` 新增 `get_bytes()`（读对象内容）
+> - `src/services/update_feed.py` `get_latest_yml()` 取数顺序：COS 稳定 key → GitHub 兜底 → 陈旧缓存；构造可选注入 `cos`
+> - `src/api/v1/updates.py` 两个 yml 端点 `UpdateFeedService(cos=CosStorage())`
+> - `scripts/download-latest-release.sh` 额外下载 latest*.yml；`scripts/upload-to-cos.sh` 上传版本化 + 稳定 key（force 覆盖）
+> - 上线顺序：先跑 download + upload 种 COS，再部署服务端代码
+> - 已知独立隐患（未修）：GitHub v2.1.0 的 latest-mac.yml 仅含 x64 条目（mac arm64 走客户端自定义 DMG 下载不受影响）；Windows latest.yml 顶层 path 指向无架构 win.exe（electron-updater 按架构选 files[]，历史正常）

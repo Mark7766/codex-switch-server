@@ -33,6 +33,10 @@ class TestCosStorageDisabled:
         cos = CosStorage()
         assert cos.delete("key/test.bin") is False
 
+    async def test_get_bytes_returns_none_when_disabled(self):
+        cos = CosStorage()
+        assert await cos.get_bytes("key/test.bin") is None
+
 
 class TestCosStorageEnabled:
     """When COS is configured, operations should interact with COS client."""
@@ -112,6 +116,36 @@ class TestCosStorageEnabled:
 
         assert cos.delete("key/test.bin") is True
         mock_client.delete_object.assert_called_once_with(Bucket="test-bucket-1250000000", Key="key/test.bin")
+
+    async def test_get_bytes_returns_object_content(self):
+        cos = CosStorage()
+        mock_client = MagicMock()
+        body = MagicMock()
+        body.read.return_value = b"version: 2.1.0\nfiles: []\n"
+        mock_client.get_object.return_value = {"Body": body}
+        cos._client = mock_client
+
+        data = await cos.get_bytes("codex-switch/latest/latest-mac.yml")
+        assert data == b"version: 2.1.0\nfiles: []\n"
+        mock_client.get_object.assert_called_once_with(
+            Bucket="test-bucket-1250000000", Key="codex-switch/latest/latest-mac.yml"
+        )
+
+    async def test_get_bytes_returns_none_on_exception(self):
+        cos = CosStorage()
+        mock_client = MagicMock()
+        mock_client.get_object.side_effect = Exception("Get failed")
+        cos._client = mock_client
+
+        assert await cos.get_bytes("key/missing.yml") is None
+
+    async def test_get_bytes_returns_none_when_no_body(self):
+        cos = CosStorage()
+        mock_client = MagicMock()
+        mock_client.get_object.return_value = {}
+        cos._client = mock_client
+
+        assert await cos.get_bytes("key/empty.yml") is None
 
     def test_delete_returns_false_on_exception(self):
         cos = CosStorage()

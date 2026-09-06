@@ -162,7 +162,7 @@
 | src/api/v1/packages.py | 工具包（Node.js/Git/Desktop）下载 API | ✅ Phase 3 |
 | src/api/v1/telemetry.py | 遥测事件上报 API | ✅ Phase 4 |
 | src/services/release_sync.py | 实时 GitHub 最新版查询 + 首次代理下载缓存 + 下载统计 | ✅ Phase 3（v2: 2026-06-06 重构为实时模式） |
-| src/services/update_feed.py | electron-updater yml 缓存 + 文件查找 + 原始文件名缓存 | ✅ Phase 5 |
+| src/services/update_feed.py | electron-updater yml feed（COS 稳定 key 优先 + GitHub 兜底，ADR-017）+ 文件查找 + 原始文件名缓存 | ✅ Phase 5 |
 | src/services/telemetry.py | 事件验证、去重、聚合统计 | ✅ Phase 4 |
 | src/services/package_manager.py | 包文件索引、上传、代理缓存 | 🚫 合并至 packages API |
 | src/services/ai_working_ok_releases.py | ai-working-ok 版本查询、本地缓存+GitHub 下载兜底 | ✅ 2026-07-26 |
@@ -268,6 +268,7 @@
 | 2 | 首次下载某个平台/架构组合需 1-2 分钟（从 GitHub 拉取并缓存），用户可能以为卡死 | 下载页 JS 显示"首次下载需从 GitHub 获取，请耐心等待"提示 | 2026-06-06 |
 | 3 | `_detect_platform` 要求 Windows .exe 必须有显式 arch 后缀（-x64/-arm64），无后缀文件（如 `-win.exe`）会跳过 | Windows 发布时确保 asset 名称包含 `-x64` 或 `-arm64` | 2026-06-06 |
 | 4 | 本地缓存文件名从 `{platform}-{arch}.{ext}` 改为 GitHub 原始名（ADR-014）。`get_download_path()` 兼容新旧两种命名 | 旧缓存不需要手动迁移，兜底扫描会自动找到 | 2026-06-23 |
+| 5 | 客户端自动更新（electron-updater）读的 `latest-mac.yml`/`latest.yml` feed 曾由 `UpdateFeedService` 实时从 GitHub asset 拉取；广州服务器连 github.com 下载会 30s 超时并回退内存陈旧缓存 → 新版本发布后客户端长期检测不到（2026-09-06 2.1.0 事件根因）。download/update/latest/check 走 api.github.com（可达）故显示正常，易误判 | ✅ 已修复（2026-09-06，ADR-017）：yml feed 以 COS 稳定 key `codex-switch/latest/*.yml` 为来源、GitHub 仅兜底；download/upload 脚本已同步 latest*.yml。⚠️ 尚未部署上线——需先跑脚本种 COS 稳定 key 再部署服务端代码 | 2026-09-06 |
 
 ---
 

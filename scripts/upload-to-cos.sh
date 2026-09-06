@@ -77,11 +77,13 @@ log_warn()  { echo "  ⚠️  $*"; }
 log_error() { echo "  ❌ $*"; }
 
 # Upload a single file to COS using Python SDK.
-# Args: local_path cos_key content_disposition
+# Args: local_path cos_key content_disposition [force]
+#   force=true bypasses SKIP_EXISTING (used for the stable "latest" feed keys).
 _cos_upload() {
   local local_path="$1"
   local cos_key="$2"
   local disposition="$3"
+  local force="${4:-false}"
 
   if [ ! -f "$local_path" ]; then
     log_error "File not found: ${local_path}"
@@ -99,7 +101,7 @@ _cos_upload() {
   fi
 
   # Check if already exists on COS
-  if [ "$SKIP_EXISTING" = true ]; then
+  if [ "$SKIP_EXISTING" = true ] && [ "$force" != "true" ]; then
     local exists
     exists=$(COS_BUCKET="$COS_BUCKET" \
       COS_REGION="$COS_REGION" \
@@ -145,12 +147,14 @@ config = CosConfig(
     SecretKey=os.environ["COS_SECRET_KEY"],
 )
 client = CosS3Client(config)
-client.put_object_from_local_file(
-    Bucket=os.environ["COS_BUCKET"],
-    LocalFilePath=os.environ["LOCAL_PATH"],
-    Key=os.environ["COS_KEY"],
-    ContentDisposition=os.environ["DISPOSITION"],
-)
+kwargs = {
+    "Bucket": os.environ["COS_BUCKET"],
+    "LocalFilePath": os.environ["LOCAL_PATH"],
+    "Key": os.environ["COS_KEY"],
+}
+if os.environ.get("DISPOSITION", ""):
+    kwargs["ContentDisposition"] = os.environ["DISPOSITION"]
+client.put_object_from_local_file(**kwargs)
 ' 2>&1 || {
     log_error "Upload failed: ${cos_key}"
     return 1
@@ -331,6 +335,23 @@ _upload_codex_switch() {
     _cos_upload "$f" "$cos_key" "$disposition" && uploaded=$((uploaded + 1))
     file_count=$((file_count + 1))
   done
+
+  # Upload electron-updater feed yml files. The stable keys (codex-switch/latest/*)
+  # are overwritten on every release so clients always read the current feed,
+  # independent of GitHub reachability from the Guangzhou server.
+  echo ""
+  echo "=== Uploading feed yml files ==="
+  for YML in latest.yml latest-mac.yml; do
+    local yml_path="${src_dir}/${YML}"
+    if [ ! -f "$yml_path" ]; then
+      log_warn "${YML} not found in ${src_dir} — run download-latest-release.sh first."
+      continue
+    fi
+    echo "[${YML}]"
+    _cos_upload "$yml_path" "codex-switch/${ver}/${YML}" ""            # versioned key
+    _cos_upload "$yml_path" "codex-switch/latest/${YML}" "" true       # stable key (force overwrite)
+  done
+  echo ""
 
   echo "=== Codex Switch: ${file_count} file(s) found, ${uploaded} uploaded ==="
   echo ""

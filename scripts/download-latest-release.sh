@@ -226,6 +226,38 @@ while IFS='|' read -r filename plat arch ftype size url; do
   echo ""
 done <<< "$ASSETS"
 
+# ── Download electron-updater feed yml files ────────────
+# latest.yml / latest-mac.yml tell the client which version is newest.
+# Mirroring them here (then to COS via upload-to-cos.sh) makes auto-update
+# detection independent of the Guangzhou server's GitHub reachability.
+
+YML_ASSETS=$(echo "$RELEASE_JSON" | uv run python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+for a in data.get('assets', []):
+    if a['name'] in ('latest.yml', 'latest-mac.yml'):
+        print(f\"{a['name']}|{a['browser_download_url']}\")
+")
+
+if [ -z "$YML_ASSETS" ]; then
+  log_warn "No latest.yml / latest-mac.yml in ${VERSION} release — skipping feed yml."
+else
+  echo "=== Downloading feed yml files ==="
+  echo ""
+  while IFS='|' read -r yml_name yml_url; do
+    [ -z "$yml_name" ] && continue
+    dest="${DEST_DIR}/${yml_name}"
+    if [ -f "$dest" ]; then
+      log_ok "${yml_name} already exists. Skipping."
+      continue
+    fi
+    echo "[${yml_name}]"
+    curl -fSL --progress-bar -o "$dest" "$yml_url"
+    log_ok "Downloaded: ${dest}"
+  done <<< "$YML_ASSETS"
+  echo ""
+fi
+
 # ── Summary ──────────────────────────────────────────────
 
 echo "=== Done: ${VERSION} ==="

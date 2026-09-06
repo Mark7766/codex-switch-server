@@ -6,10 +6,24 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from httpx import AsyncClient
 
+import src.services.update_feed as _update_feed_module
+
+
+@pytest.fixture(autouse=True)
+def _clear_feed_cache():
+    """Reset the process-level UpdateFeedService yml cache between tests."""
+    _update_feed_module._mac_yml_cache = None
+    _update_feed_module._mac_yml_cache_time = 0
+    _update_feed_module._win_yml_cache = None
+    _update_feed_module._win_yml_cache_time = 0
+    yield
+
 
 @pytest.mark.asyncio
 async def test_latest_mac_yml_returns_yaml(client: AsyncClient, monkeypatch):
-    """GET /api/v1/updates/latest-mac.yml returns yml content from GitHub."""
+    """GET /api/v1/updates/latest-mac.yml returns yml content from GitHub when COS disabled."""
+    monkeypatch.setattr("src.utils.cos_storage.settings.cos_secret_id", "")
+    monkeypatch.setattr("src.utils.cos_storage.settings.cos_bucket", "")
     fake_releases = [
         {
             "tag_name": "v1.5.0",
@@ -40,7 +54,9 @@ async def test_latest_mac_yml_returns_yaml(client: AsyncClient, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_latest_yml_returns_yaml(client: AsyncClient, monkeypatch):
-    """GET /api/v1/updates/latest.yml returns yml content from GitHub."""
+    """GET /api/v1/updates/latest.yml returns yml content from GitHub when COS disabled."""
+    monkeypatch.setattr("src.utils.cos_storage.settings.cos_secret_id", "")
+    monkeypatch.setattr("src.utils.cos_storage.settings.cos_bucket", "")
     fake_releases = [
         {
             "tag_name": "v1.5.0",
@@ -67,6 +83,23 @@ async def test_latest_yml_returns_yaml(client: AsyncClient, monkeypatch):
             assert resp.status_code == 200
             assert "text/yaml" in resp.headers["content-type"]
             assert "version: 1.5.0" in resp.text
+
+
+@pytest.mark.asyncio
+async def test_latest_mac_yml_prefers_cos_stable_key(client: AsyncClient, monkeypatch):
+    """When the COS stable feed key exists, latest-mac.yml is served from COS (no GitHub)."""
+
+    class _FakeCos:
+        async def get_bytes(self, key):
+            assert key == "codex-switch/latest/latest-mac.yml"
+            return b"version: 2.1.0\nfiles:\n  - url: Codex-Switch-2.1.0-mac-arm64.zip\n"
+
+    monkeypatch.setattr("src.api.v1.updates.CosStorage", lambda: _FakeCos())
+
+    resp = await client.get("/api/v1/updates/latest-mac.yml")
+    assert resp.status_code == 200
+    assert "text/yaml" in resp.headers["content-type"]
+    assert "version: 2.1.0" in resp.text
 
 
 @pytest.mark.asyncio
