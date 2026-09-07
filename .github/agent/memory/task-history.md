@@ -1072,3 +1072,42 @@
   - `test_portal.py`：+2 测试（codex doc 200/内容含快速开始、sec-key、download、guide、GitHub 链接）；share_nav 加 URL、dropdown/geo 断言补 codex-switch。
 - **验证**：ruff ✅、ruff format ✅、portal+admin+analytics 56/56 ✅、全量（除存量慢/失败文件）221 passed ✅（含该文件应为 226 passed + 1 failed 存量失败与本任务无关）、uvicorn 冒烟 `/tools/codex-switch` 200 + 内容命中、下拉三 href（codex 仅下拉 1 处，页脚不含）、sitemap/llms 含 codex-switch ✅
 - **注意事项**：已 commit `753702d` 并推送 origin/main（2026-09-07，用户准备部署）。页脚未加 codex-switch 文档链接（Codex Switch 站内入口由 下载/使用指南 承担，避免冗余）。文档为一次性改写，wiki/命令变更需人工同步。
+
+---
+
+### [TASK-097] 广州服务器部署：工具下拉 + 三工具文档页上线（含冒烟）
+- **日期**：2026-09-07
+- **类型**：deploy
+- **摘要**：按用户要求把「工具」下拉 + Codex Switch / ai-working-ok / ai-coding-ok 三文档页部署到广州生产（134.175.67.120）。服务器原 HEAD=`ebffe48`（yml COS 已于先前上线），`git pull origin main` fast-forward 到 `3aeb137`（新增 753702d + 3aeb137）。`docker compose up -d --build` 重建容器，`codex-switch-server` Up healthy。公网 https://codex-switch.cloud 冒烟全绿：`/tools/{codex-switch,ai-working-ok,ai-coding-ok}` 均 200（含「快速开始」/`.doc__toc` 左目录），`/tools` 404（旧概览下线符合预期），首页导航含 3 下拉 href 且静态资源带 `?v=20260907`，`/api/v1/update/latest` 200 无回归，robots/sitemap/llms.txt 均收录。
+- **部署记录**：`.deploy/deployments.md` 新增「部署 2026-09-07-001」（本地，gitignore）
+- **注意事项**：纯前端改动，无 DB 迁移/新环境变量。服务器存在与本次无关的 staged/untracked 文件（docker/nginx.conf.bak-certs、docs specs、各目录 ._ 元数据），无冲突。回滚：`git checkout ebffe48 && docker compose up -d --build`。任务历史与部署记录本次为本地更新，未再新增 git 提交（如需提交推送请告知）。
+- **下载链路复核（2026-09-07，公网 https://codex-switch.cloud Range-GET）**：download 页/guide 的 Codex Switch 4 平台 `/api/v1/update/download/2.1.0/{win-x64,win-arm64,mac-arm64,mac-x64}` 均 206（dmg/exe）；guide 桌面包 `/api/v1/packages/{codex-desktop,claude-desktop}/…`（mac-arm64/windows-x64）均 206；`/api/v1/files/2.1.138.zip` 206 zip；`/api/v1/packages/ai-working-ok/latest` 206；electron-updater `/api/v1/updates/latest.yml`、`latest-mac.yml` 200 且 `version: 2.1.0`。全链路正常（由服务端本地缓存直接 sendfile 出包，未见 COS 302 亦健康）。注：HEAD 不被这些 GET-only 端点支持（405），故用 Range 仅取 1KB 探测；探测会各记 1 条下载记录（少量）。
+
+---
+
+### [TASK-099] 门户 UI 体验优化：工具下拉 hover 展开 + 文档页左右字号“微调统一”
+- **日期**：2026-09-07
+- **类型**：feat（纯前端 CSS + base.html 版本号）
+- **摘要**：修两处体验问题（用户本地验证上一功能后提出）。
+  1. **「工具」下拉 hover 展开**：CSS 本就有 `:hover` 展开，但按钮与面板间 `top: calc(100% + 16px)` 的 16px 悬空带不在可 hover 的 `<li>` 内 → 鼠标下移进菜单即失焦关闭，被迫点按固定。修复：`.nav__item--tools::after` 透明桥接（top:100%; height:16px）铺满间隙；展开规则拆为**通用**（`:focus-within`/`.is-open`，键盘与点击保留）与**纯 hover**（`@media (hover:hover) and (min-width:768px)`，开方向 80ms 意图延时、移出即关）；箭头旋转扩到 hover/focus-within/is-open 三种开合态；≤767 汉堡内子菜单静态展开不受影响并显式 `display:none` 桥接。**纯 CSS，portal.js/base.html 结构不动**。
+  2. **文档页左右字号“微调统一”**（用户选方向：正文 17 与 Apple 轻盈风不动）：`.doc` 新增**组件级字号变量** `--doc-title 2.125rem / --doc-h2 1.75rem / --doc-h3 1.25rem / --doc-side-group 0.8125rem / --doc-side-item 0.9375rem / --doc-meta 0.8125rem / --doc-code 0.875rem`；应用：`.doc__group`(13)、`.doc__toc-item`(15/500/**primary 主色**、行高 1.5、padding 7px 12px)、`.doc__crumb`(13)、`.doc__title`(~34)、`.doc__sec h2`(28)、`.doc__sec h3`(20)；13px 字面量（`.doc-code`/`.doc-msg`/changelog `pre code`）归位 14；`.changelog__head::after` 18px→1.125rem、`.changelog__body h3`→1.125rem、`h4` 15px→1rem；移动端 `.doc__title` 1.9rem→1.6rem。改动限定 `.doc` 作用域。
+  3. `base.html` 静态资源 `?v=20260908 → 20260909`。
+- **变更文件**：src/static/css/apple.css、src/portal/templates/base.html
+- **验证**：ruff ✅（既有 1 处 untracked `test_client_community.py` import 序问题非本轮）、portal 集成 28/28 ✅、live 5 页 200 ✅、served CSS 含 `::after` 桥接 / `@media (hover:hover)` / caret 三态 / `--doc-side-item`，无 13px 残留于 doc/code/msg ✅
+- **注意事项**：未 commit/push/deploy（用户后续自行决定）。hover 需真实鼠标（指针）设备，触控平板走 focus/is-open 点击；`@media (hover:hover)` 与 `:focus-within` 为渐进增强，不支持时退化为点击/静态。改动只触碰 `.doc*` 与 `.nav__item--tools*`，首页/下载/指南全局不受影响。
+
+---
+
+### [TASK-098] 工具文档页新增「更新日志」区块 — 读取各工具仓库 CHANGELOG.md
+- **日期**：2026-09-07
+- **类型**：feat
+- **摘要**：三个工具文档页（`/tools/codex-switch`、`/tools/ai-working-ok`、`/tools/ai-coding-ok`）各新增「更新日志」区块（左目录「帮助」组末 + 移动端 chips + 正文末尾），DeepSeek 式时间倒序条目（版本+日期+说明，最新默认展开带「最新」绿标，历史 `<details>` 折叠，零 JS）。**内容源 = 各工具 GitHub 仓库根目录 CHANGELOG.md**（实测三仓库 Release 正文为空，而 CHANGELOG.md 维护良好）——用户决策用工具仓库作单一来源，未来发版只需在仓库更新 CHANGELOG.md，本站 TTL 自动跟上，服务器端零手动维护。
+  - 新 `src/services/tool_changelog.py`：`ToolChangelogService`（REPO_MAP 工具→仓库；内存+磁盘 `data/tool-changelog/{tool}.json` 双层 TTL 缓存，陈旧兜底；`parse_changelog` 静态方法按 `## [ver] - date` 切分、跳过 `[Unreleased]` 与 h1 前言、body 用 python-`markdown`（tables/fenced_code/sane_lists 扩展）预渲染为 `markupsafe.Markup`，信任边界留在 .py 层模板 `{{ e.html }}` 不 `|safe`）。抓取走 `api.github.com/.../contents/CHANGELOG.md`（base64 解码），复用 `HttpClient.get_json`+`LocalStorage`；HttpClient 用短超时（timeout=8, retries=1）防 GitHub 故障拖慢整页；全失败返回 `[]` 路由降级文案仍 200。
+  - `config.py` 新增 `tool_changelog_cache_ttl=300`；`.env.example` 加 `TOOL_CHANGELOG_CACHE_TTL`。
+  - 新依赖 `markdown>=3.7`（纯 Python 运行时依赖，`uv add`）。
+  - 三份 `doc-*.html`：每份 +chips +TOC 项 +`#sec-changelog` section（共用同一模板段落）；`apple.css` 加 `.doc__sec--changelog`/`.changelog__*` scoped 样式块（白卡、去默认 marker + 旋转箭头、最新胶囊、markdown 产物 h3/列表/引用/表格/代码块重置，≤767 微调）；`base.html` 静态资源 bump `?v=20260908`。
+  - `router.py`：三工具路由改经 `_render_doc(request, template)` 注入 `changelog_entries` + `changelog_repo` context（首个带 context 的 portal 路由）。
+  - 测试：新 `tests/unit/test_tool_changelog.py`（6 项：切分/跳 Unreleased/无日期/Markup 渲染含表格代码/GitHub 拉取写缓存+内存命中/Auth 头/失败返回空/磁盘新鲜兜底）+ `test_portal.py` autouse stub 保证离线性 + 参数化 3 页断言 + graceful 失败降级测试。顺带修复存量时间炸弹测试 `test_ai_working_ok_releases.py::test_get_latest_version_from_disk_cache_within_ttl`（原硬编码 `2026-07-26` 作"近期"，越过 300s TTL 后必挂；改为 monkeypatch 大 TTL，另清掉该文件 `time`/`patch` 未用导入）。
+- **变更文件**：src/services/tool_changelog.py（新）、pyproject.toml/uv.lock、src/config.py、.env.example、src/portal/router.py、src/static/css/apple.css、src/portal/templates/base.html、src/portal/templates/doc-{codex-switch,ai-coding-ok,ai-working-ok}.html、tests/unit/test_tool_changelog.py（新）、tests/integration/test_portal.py、tests/unit/test_ai_working_ok_releases.py
+- **验证**：ruff ✅、ruff format ✅、新增单测 + portal 集成 35/35 ✅、全量 pytest 240 passed（另 1 个存量失败已修复）+ 1 存量失败修复后单测通过 ✅、live 冒烟（真实 GitHub）：三 doc 200、`id/href=#sec-changelog` 命中、最新条目 `open`+「最新」徽标、版本正确（codex 42 条 / working 1 条 / coding 8 条）、markdown 正文 h3/blockquote/ul/code 无双重转义 ✅
+- **注意事项**：未 commit/push/部署（用户后续决定）。内容单一来源在**各工具仓库 CHANGELOG.md**——发新版本=在仓库更新该文件，本站 5 分钟 TTL 自动重抓，零手动同步；这与 ADR-018/019「工具文档一次性改写、非运行时拉取」不同，属文档页首个**运行时拉取**区块（例外已在 project-memory 记录）。新服务遵守缓存模式对齐 `ai_working_ok_releases.py`。存量 `test_update_feed.py`/`test_ai_working_ok_releases.py` 的 AsyncMock「coroutine never awaited」RuntimeWarning 为既有现象，非本次引入。

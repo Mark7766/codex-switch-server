@@ -18,6 +18,7 @@
     <a class="doc__chip" href="#sec-structure">项目结构</a>
     <a class="doc__chip" href="#sec-faq">常见问题</a>
     <a class="doc__chip" href="#sec-links">GitHub · Wiki</a>
+    <a class="doc__chip" href="#sec-changelog">更新日志</a>
   </nav>
 
   <!-- 左侧粘性目录 -->
@@ -39,6 +40,7 @@
       <p class="doc__group">帮助</p>
       <a class="doc__toc-item" href="#sec-faq">常见问题</a>
       <a class="doc__toc-item" href="#sec-links">GitHub · Wiki</a>
+      <a class="doc__toc-item" href="#sec-changelog">更新日志</a>
     </nav>
   </aside>
 
@@ -203,6 +205,27 @@
         <a class="btn btn--outline" href="https://github.com/Mark7766/ai-working-ok/issues" target="_blank" rel="noopener">提问题 / 反馈 &#8599;</a>
       </div>
       <p class="doc__note" style="margin-top:var(--space-2)">问题、建议欢迎提 Issue，或点右下角"技术支持"进交流群。</p>
+    </section>
+
+    <section class="doc__sec doc__sec--changelog" id="sec-changelog">
+      <h2>更新日志</h2>
+      <p class="changelog__intro">以下内容直接读取该工具 GitHub 仓库的 CHANGELOG.md——作者发布新版本后此处会自动更新。</p>
+      {% if changelog_entries %}
+        <div class="doc__changelog">
+          {% for e in changelog_entries %}
+          <details class="changelog__entry"{% if e.is_first %} open{% endif %}>
+            <summary class="changelog__head">
+              <span class="changelog__ver">{{ e.version }}</span>
+              {% if e.date %}<span class="changelog__date">{{ e.date }}</span>{% endif %}
+              {% if e.is_first %}<span class="changelog__latest">最新</span>{% endif %}
+            </summary>
+            <div class="changelog__body">{{ e.html }}</div>
+          </details>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="changelog__empty">更新日志暂时无法获取，可到 <a href="https://github.com/{{ changelog_repo }}" target="_blank" rel="noopener">GitHub 查看</a>。</p>
+      {% endif %}
     </section>
   </article>
 </div>

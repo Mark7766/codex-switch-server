@@ -695,3 +695,66 @@
 > - 新增 `doc-codex-switch.html` + `GET /tools/codex-switch`；`base.html` 下拉加 Codex Switch 置顶；sitemap/llms.txt 收录；`schemas/analytics.py` 补页与点位；`test_portal.py` +2。
 > - 下拉顺序确定为 Codex Switch 置顶；ai-working-ok/ai-coding-ok 页面与顺序不变。
 > - 文档一次性与 wiki/README 内容同步；后续 Codex Switch wiki 变更需人工同步本站。
+
+---
+
+### ADR-020: 工具「更新日志」内容源 = 各工具仓库 CHANGELOG.md（本站运行时读取 + 缓存渲染）
+
+- **日期**：2026-09-07
+- **状态**：✅ 已采纳
+- **决策者**：wangliang + Claude
+
+#### 背景
+> 工具升级后（尤其 Codex Switch 桌面应用自动更新），用户与内部伙伴看不到"新版改了什么"，无法判断是否升级。需求：在「工具」三个文档页里加 DeepSeek 式更新日志（时间倒序、版本+日期+说明）。关键实测：三个仓库（codex-switch/ai-working-ok/ai-coding-ok）的 **GitHub Release 正文基本为空**（自动生成的 compare 链接），但三仓库都**维护良好的根目录 CHANGELOG.md**（Keep-a-Changelog、最新在前、中文详尽）。因此核心问题是**内容从哪来、发版后怎么自动跟上**。
+
+#### 方案对比
+
+| 方案 | 优点 | 缺点 |
+|------|------|------|
+| 自动拉 GitHub Release 正文 | 零额外内容维护 | 现正文基本为空 → 需改变发版习惯写详尽 notes，历史版本缺失，与用户实际维护方式不符 |
+| 本站独立维护更新日志数据 | 可像 DeepSeek 精修措辞、完全可控 | 每次发版多一步手动同步本站，易遗漏；内容分两处（工具仓库 + 本站） |
+| **读各工具仓库 CHANGELOG.md（选定）** | 内容单一来源在工具仓库、随发版提交自动更新；本站只读+缓存 TTL 自动跟上 | 需服务端加轻量 markdown 渲染依赖 + 每工具一次抓取；页面加载首次可能等 GitHub |
+
+#### 决策
+> 每个工具文档页的「更新日志」区块，**运行时读取该工具 GitHub 仓库根目录 CHANGELOG.md** 渲染：`api.github.com/.../contents/CHANGELOG.md`（REST，广州可达）→ base64 解码 → 按 `## [版本] - 日期` 切分（跳过 `[Unreleased]` 与 h1 前言）→ 每个版本 body 用 python-`markdown`（tables/fenced_code/sane_lists）预渲染为 `markupsafe.Markup` → 内存 + 磁盘（`data/tool-changelog/{tool}.json`）双层 TTL 300s 缓存，GitHub 不可达时回退陈旧缓存/降级文案。最新条目默认展开带「最新」徽标，历史 `<details>` 折叠。展示位置：工具文档页左目录「帮助」组末 + 正文末尾 `#sec-changelog` section（无独立子页，内容长列表仍折叠）。
+
+#### 理由
+> 1) **维护闭环最省心**：发新版本 = 作者在工具仓库把 CHANGELOG.md 写好（随发版 commit），本站 TTL 过期后自动重抓，服务器端零手动步骤，恰好回答"以后更新日志怎么跟上"。2) 三仓库 CHANGELOG.md 已是高质量中文编辑内容 → 不重复撰写、无需迁移历史。3) 延续 ADR-018/019"GitHub=内容单一来源、本站只读展示"哲学；但这是文档页**首个运行时拉取**区块（此前工具文档为一次性改写、wiki 变更需人工同步，project-memory 已注明此例外）。4) 复用 `ai_working_ok_releases.py` 缓存模式与 `HttpClient`/`LocalStorage` 工具层；HttpClient 用短超时（timeout=8, retries=1），全失败返回 `[]`、页面 200 降级，不拖垮首屏。5) 路由仅注入 context，保持薄路由 + 独立 service 分层。
+
+#### 影响
+> - 新 `src/services/tool_changelog.py`（`ToolChangelogService`、`REPO_MAP`、`repo_for`）；`config.py` 加 `tool_changelog_cache_ttl`；新依赖 `markdown`。
+> - `router.py` 三工具路由改经 `_render_doc()` 注入 `changelog_entries`/`changelog_repo`（首个带 context 的 portal 路由）；模板加 chips/TOC/section（共用段落）；`apple.css` 加 `.changelog__*`；`base.html` 静态版本 bump。
+> - 测试：service 单测 + portal 集成 autouse stub（离线性）+ graceful 降级。
+> - 新工具接入 = `REPO_MAP` 加一条；ai-coding-ok 版本号带 v 前缀不影响解析。
+> - **后续维护**：发版在工具仓库更新 CHANGELOG.md 即可；若新增工具/仓库改名需同步 `REPO_MAP` 与模板对应 repo 链接。
+
+---
+
+### ADR-021: 门户 UI 体验：工具下拉 hover 展开（间隙桥接）；文档页字号“微调统一”为组件级变量
+
+- **日期**：2026-09-07
+- **状态**：✅ 已采纳
+- **决策者**：wangliang + Claude
+
+#### 背景
+> 用户本地复验时提出两个体验问题：①顶部「工具」下拉必须点击才展开，期望悬停即展开；②三个工具文档页“左目录小、右正文大”不协调，要求按系统整体设计达到业内常规排版水平。勘察发现：CSS 其实已有 `.nav__item--tools:hover .nav__menu` 展开，但下拉面板定位 `top: calc(100% + 16px)` 的 16px 悬空带不在 `<li>` 可 hover 区，鼠标一移向选项即失焦关闭 → 用户被迫点击。排版侧：左栏 12/14px 灰字并列右栏 40→32→21→17px 正文阶梯，代码用脱离 token 的 13px、changelog h3/h4 用 17/15 字面量，左右两套阶梯互不衔接。
+
+#### 方案对比
+
+| 方案 | 优点 | 缺点 |
+|------|------|------|
+| 仅放大左栏 / 或仅缩右栏 | 改动最小 | 不改结构问题，仍不协调；没让两栏共享一个可读阶梯 |
+| 全站改字号 token（全局） | 一次性统一 | 波及首页/下载/指南，风险大、破坏既有 Apple 大标题体系 |
+| 重构下拉为 JS mouseenter/leave | 可精确控 | 需动 JS、易与现有点击/Esc/点外逻辑打架 |
+| **纯 CSS：桥接 + pointer 门控；文档字号收敛到 `.doc` 组件级变量（选定）** | 不碰 JS/结构；只影响文档页与下拉；可回退 | 需浏览器支持 `:focus-within`/`@media(hover:hover)`（老浏览器退化点击/静态） |
+
+#### 决策
+> ① 下拉：`.nav__item--tools::after` 加 16px 透明桥接覆盖间隙（保持 li:hover 连续性）；展开规则按“通用（`:focus-within`/`.is-open`，键盘+点击）”与“纯 hover（`@media (hover:hover) and (min-width:768px)`，80ms 意图延时、移出即关）”拆分；箭头 hover/focus/is-open 三态旋转；≤767 汉堡静态展开并禁用桥接。纯 CSS。② 文档排版：在 `.doc` 上定义组件级字号变量（`--doc-title ~34 / --doc-h2 28 / --doc-h3 20 / --doc-side-group 13 / --doc-side-item 15 / --doc-meta 13 / --doc-code 14`），左栏升一档（组标 13、项 15/500 主色/行高 1.5）、右栏标题降一档（页题 ~34、h2 28、h3 20），正文 17 与全局 token 不动；13/15/18px 等字面量 rem 化或归位 14，changelog h3→1.125rem、h4→1rem。移动端 `.doc__title` 1.6rem。静态资源 `?v=20260909`。
+
+#### 理由
+> 1) 悬空带是“必须点击”的根因，桥接是最小修复；hover 门控防触控误触与路过误开。2) `.doc` 组件级变量把“双栏阶梯”做成显式单一事实、便于复核与整体回退，且作用域限定文档页，首页/下载/指南与全局 token 零影响（符合 ADR-002 Apple 体系不被破坏）。3) 正文 17px 不变契合中文可读性；仅把标题与左栏拉近一个梯队即达“业内常规”。4) 改动纯 CSS+版本号，无测试/依赖/后端变化，可随时微调 ±1px。
+
+#### 影响
+> - `apple.css`：`.nav__item--tools::after`、hover 门控/箭头、`.doc` 组件字号变量及各选择器换值、字面量 rem 化、≤767 细节；`base.html` 静态版本 bump。
+> - 无 `portal.js`/结构/Python 变更；旧浏览器（无 `:focus-within`/`(hover:hover)`）自动退化为点击或静态展开。
+> - 后续调文档字号 = 只改 `.doc` 里一行变量；其它页面继续用全局 `--text-*` token。

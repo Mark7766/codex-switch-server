@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import json
-import time
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -50,8 +49,13 @@ class TestAiWorkingOkReleaseService:
         mock_storage.put.assert_called()
 
     @pytest.mark.asyncio
-    async def test_get_latest_version_from_disk_cache_within_ttl(self, service, mock_http, mock_storage):
-        """Should return version from disk cache when within TTL."""
+    async def test_get_latest_version_from_disk_cache_within_ttl(self, service, mock_http, mock_storage, monkeypatch):
+        """Should return version from disk cache when within TTL.
+
+        Uses a very large TTL instead of a wall-clock-fixed checked_at date, so
+        the test stays valid regardless of when it runs.
+        """
+        monkeypatch.setattr("src.config.settings.ai_working_ok_cache_ttl", 10**9)
         releases_data = {
             "latest": "1.0.0",
             "latest_checked_at": "2026-07-26T10:00:00+00:00",

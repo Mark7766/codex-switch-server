@@ -169,6 +169,7 @@
 | src/services/telemetry.py | 事件验证、去重、聚合统计 | ✅ Phase 4 |
 | src/services/package_manager.py | 包文件索引、上传、代理缓存 | 🚫 合并至 packages API |
 | src/services/ai_working_ok_releases.py | ai-working-ok 版本查询、本地缓存+GitHub 下载兜底 | ✅ 2026-07-26 |
+| src/services/tool_changelog.py | 工具文档页「更新日志」：读各工具仓库 CHANGELOG.md → markdown 渲染 + 内存/磁盘 TTL 缓存 | ✅ 2026-09-07 |
 | src/portal/ | 门户路由 + 首页/下载/指南/工具文档模板（下拉 codex-switch + ai-* 三页） | ✅ Phase 2（工具文档 2026-09-07） |
 | src/admin/ | 管理员路由 + 登录/仪表盘模板 | ✅ Phase 3 |
 | src/static/ | Apple 风格 CSS + 图标 + 极简 JS | ✅ Phase 2 |
@@ -239,7 +240,7 @@
 
 **使用指南**：三步向导交互（4 工具卡片 2×2 网格 → 选平台 → 动态步骤）：支持 Codex Desktop / Claude Desktop（6 步）+ Codex CLI / Claude Code CLI（8 步，含 git/node/python 安装 + Git Bash 使用引导）。Codex Switch CLI 管理统一配置（设置 → CLI 管理 → 保存并应用）。URL 参数 `?tool=xxx` 可预选工具。`renderGuide()` 数组驱动动态渲染。16 张截图按场景加载。
 
-**工具文档页（/tools/codex-switch、/tools/ai-coding-ok、/tools/ai-working-ok）**：导航「工具」为**下拉菜单**（顺序 **Codex Switch → ai-working-ok → ai-coding-ok**，无父级 URL），子项进入各自「左粘性目录 + 右正文」单页长文档（参考 codexguide.ai/start）；目录分组：开始/快速开始/理解/帮助，锚点 + 滚动高亮，移动端退化为顶部横向 chips。面向使用者中文写作、快速开始为重点。ai-working-ok 复用 `/api/v1/packages/ai-working-ok/latest` 国内镜像下载；ai-coding-ok 无下载（git 安装）；Codex Switch 的快速开始=精简 3 步，下载/图文深链站内 `/download` 与 `/guide`（安装细节单一来源）。**首页 hero 已移除 AI Working OK 直链**（入口收敛到下拉 + 页脚两条 ai 文档直链；Codex Switch 页脚入口即 下载/使用指南）。样式：apple.css `.nav__menu*`（下拉）与 `.doc*`（文档布局）。内容为一次性改写（非运行时拉取 wiki），wiki 变更需手动同步。
+**工具文档页（/tools/codex-switch、/tools/ai-coding-ok、/tools/ai-working-ok）**：导航「工具」为**下拉菜单**（顺序 **Codex Switch → ai-working-ok → ai-coding-ok**，无父级 URL），子项进入各自「左粘性目录 + 右正文」单页长文档（参考 codexguide.ai/start）；目录分组：开始/快速开始/理解/帮助，锚点 + 滚动高亮，移动端退化为顶部横向 chips。面向使用者中文写作、快速开始为重点。ai-working-ok 复用 `/api/v1/packages/ai-working-ok/latest` 国内镜像下载；ai-coding-ok 无下载（git 安装）；Codex Switch 的快速开始=精简 3 步，下载/图文深链站内 `/download` 与 `/guide`（安装细节单一来源）。**首页 hero 已移除 AI Working OK 直链**（入口收敛到下拉 + 页脚两条 ai 文档直链；Codex Switch 页脚入口即 下载/使用指南）。样式：apple.css `.nav__menu*`（下拉）与 `.doc*`（文档布局）。三个文档页正文末尾均含**「更新日志」区块**（`#sec-changelog`，左目录「帮助」组末 + 移动端 chips + 正文末尾；DeepSeek 式时间倒序，最新默认展开带「最新」徽标，历史 `<details>` 折叠）：这是文档页**唯一运行时拉取区块**——`ToolChangelogService` 读各工具仓库 CHANGELOG.md（api.github.com contents，python-markdown 渲染，内存+磁盘 TTL 300s，GitHub 不可达降级文案），发版只需在工具仓库更新 CHANGELOG.md 即自动跟上。其余内容为一次性改写（非运行时拉取 wiki），wiki 变更需手动同步。**排版与交互（ADR-021）**：桌面「工具」下拉**悬停即展开**（CSS `::after` 桥接按钮与面板 16px 间隙 + `@media (hover:hover)` 门控 + 箭头随开合旋转；触控/≤767 走点击/静态展开）。文档双栏字号采用 **`.doc` 组件级变量** `--doc-title(~34)/--doc-h2(28)/--doc-h3(20)/--doc-side-group(13)/--doc-side-item(15)/--doc-meta(13)/--doc-code(14)`——左栏升一档、右栏标题降一档、正文 17 与全局 token 不动；调整字号只改 `.doc` 里这组变量，其它页面用全局 `--text-*`。
 
 **运营后台**：3 个指标卡片（总下载量/活跃用户/今日事件）→ 下载趋势折线图（Chart.js）→ 功能使用分布柱状图 → 最近事件表。仅管理员可访问。
 
@@ -291,4 +292,6 @@ ADMIN_TOKEN=your-secret-token-here
 GITHUB_TOKEN=github_pat_xxx  # 必需！否则 GitHub API 403，下载页无版本数据
 COS_BUCKET=  # 可选，部署到腾讯云时填写
 ICP_FILING_NUMBER=  # ICP 备案号，生产环境必填（如 京ICP备2026035967号-1）
+AI_WORKING_OK_CACHE_TTL=300  # ai-working-ok 版本查询 TTL
+TOOL_CHANGELOG_CACHE_TTL=300  # 工具文档页 CHANGELOG.md 抓取缓存 TTL
 ```

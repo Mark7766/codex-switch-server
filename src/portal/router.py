@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import logging
 from pathlib import Path
 
 from fastapi import APIRouter, Request
@@ -11,8 +12,10 @@ from starlette.templating import Jinja2Templates
 from src.config import settings
 from src.database import async_session
 from src.models.page_event import PageEvent
+from src.services.tool_changelog import ToolChangelogService, repo_for
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 _tpl_dir = Path(__file__).parent / "templates"
 templates = Jinja2Templates(directory=str(_tpl_dir))
 
@@ -173,19 +176,40 @@ async def guide(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(request, "guide.html")
 
 
+# Tool doc template → repo slug, used to render each tool's 更新日志 from GitHub.
+_DOC_TOOL = {
+    "doc-codex-switch.html": "codex-switch",
+    "doc-ai-coding-ok.html": "ai-coding-ok",
+    "doc-ai-working-ok.html": "ai-working-ok",
+}
+
+
+async def _render_doc(request: Request, template: str) -> HTMLResponse:
+    """Render a tool doc page, injecting its changelog entries from GitHub."""
+    tool = _DOC_TOOL[template]
+    try:
+        entries = await ToolChangelogService().get_changelog(tool)
+    except Exception:
+        logger.warning("Changelog unavailable for %s", tool, exc_info=True)
+        entries = []
+    return templates.TemplateResponse(
+        request, template, {"changelog_entries": entries, "changelog_repo": repo_for(tool)}
+    )
+
+
 @router.get("/tools/ai-coding-ok", response_class=HTMLResponse)
 async def tool_ai_coding_ok(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(request, "doc-ai-coding-ok.html")
+    return await _render_doc(request, "doc-ai-coding-ok.html")
 
 
 @router.get("/tools/ai-working-ok", response_class=HTMLResponse)
 async def tool_ai_working_ok(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(request, "doc-ai-working-ok.html")
+    return await _render_doc(request, "doc-ai-working-ok.html")
 
 
 @router.get("/tools/codex-switch", response_class=HTMLResponse)
 async def tool_codex_switch(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(request, "doc-codex-switch.html")
+    return await _render_doc(request, "doc-codex-switch.html")
 
 
 async def _record_guide_ref(ref: str, ip_hash: str, user_agent: str) -> None:

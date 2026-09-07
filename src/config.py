@@ -32,5 +32,8 @@ class Settings(BaseSettings):
     # ai-working-ok release cache TTL (seconds)
     ai_working_ok_cache_ttl: int = 300
 
+    # Tool doc CHANGELOG.md fetch cache TTL (seconds)
+    tool_changelog_cache_ttl: int = 300
+
 
 settings = Settings()

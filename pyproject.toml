@@ -15,6 +15,7 @@ dependencies = [
     "python-multipart>=0.0.32",
     "cos-python-sdk-v5>=1.9",
     "alembic>=1.13",
+    "markdown>=3.7",
 ]
 
 [project.optional-dependencies]

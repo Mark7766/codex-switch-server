@@ -2,6 +2,32 @@ from __future__ import annotations
 
 import pytest
 from httpx import AsyncClient
+from markupsafe import Markup
+
+TOOL_DOC_URLS = ["/tools/codex-switch", "/tools/ai-coding-ok", "/tools/ai-working-ok"]
+
+
+@pytest.fixture(autouse=True)
+def _stub_tool_changelog(monkeypatch):
+    """Keep doc-page tests hermetic: stub the GitHub-backed changelog fetch."""
+
+    async def _fake_get_changelog(self, tool):
+        return [
+            {
+                "version": "2.1.0",
+                "date": "2026-09-06",
+                "html": Markup("<h3>重磅新增</h3><ul><li>Codex 可以看图</li></ul>"),
+                "is_first": True,
+            },
+            {
+                "version": "2.0.0",
+                "date": "2026-08-19",
+                "html": Markup("<h3>核心变更</h3><p>Codex 直连 DeepSeek。</p>"),
+                "is_first": False,
+            },
+        ]
+
+    monkeypatch.setattr("src.services.tool_changelog.ToolChangelogService.get_changelog", _fake_get_changelog)
 
 
 @pytest.mark.asyncio
@@ -202,3 +228,34 @@ async def test_all_pages_share_nav(client: AsyncClient):
 async def test_nonexistent_page_returns_404(client: AsyncClient):
     response = await client.get("/nonexistent")
     assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("url", TOOL_DOC_URLS)
+async def test_tool_doc_has_changelog_section(client: AsyncClient, url: str):
+    response = await client.get(url)
+    assert response.status_code == 200
+    # 左侧目录 / 移动端 chips 锚点 + 正文 section
+    assert 'href="#sec-changelog"' in response.text
+    assert 'id="sec-changelog"' in response.text
+    assert "更新日志" in response.text
+    # 条目渲染：最新默认展开带「最新」，历史 <details> 折叠
+    assert '<details class="changelog__entry"' in response.text
+    assert "changelog__latest" in response.text
+    assert "最新" in response.text
+    assert "Codex 可以看图" in response.text  # 罐头最新条目正文
+    assert "changelog__body" in response.text
+
+
+@pytest.mark.asyncio
+async def test_tool_doc_changelog_graceful_when_fetch_fails(client: AsyncClient, monkeypatch):
+    """GitHub 不可达时文档页降级：仍 200 + 显示获取失败提示，而不是 500。"""
+
+    async def _boom(self, tool):
+        raise RuntimeError("github down")
+
+    monkeypatch.setattr("src.services.tool_changelog.ToolChangelogService.get_changelog", _boom)
+    response = await client.get("/tools/codex-switch")
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+    assert "更新日志暂时无法获取" in response.text
