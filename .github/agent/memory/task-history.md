@@ -1210,3 +1210,18 @@
 - **变更文件**：**仅服务器** `/home/lighthouse/codex-switch-server/.env`（备份为 `.env.bak-20261007124835`）。**仓库无任何文件改动**——新 token 不落库、不写文档、不写记忆。
 - **验证**：旧值 `change-me` → **401**；新值 → **302** 并成功 `GET /admin` **200**；无 cookie → 401；随机值 → 401；站点 `/`、`/support` 仍 200。已用 `grep -r` 确认新 token **未出现在工作区任何文件**中。
 - **注意事项**：① 轮换后 `ADMIN_TOKEN` 同时是后台会话 cookie 的签名密钥（`itsdangerous` salt），**旧的管理员登录会话全部失效**，需用新 token 重新登录；② **本地 `.env` 仍是 `change-me`，本次未改**（用户只要求改服务器），如需一并更换可另行处理；③ `src/config.py` 的默认值仍是 `change-me`，**漏配 `.env` 会静默降级到弱口令**，建议后续加「生产环境仍为默认值则启动失败」的保护（见 project-memory 已知问题 #20）；④ 服务器上保留了 `.env.bak-*` 备份（内含旧值），回滚即用它换回。
+
+---
+
+### [TASK-107] 清理 docs/ 与仓库里的 68MB 静态大文件
+- **日期**：2026-10-07
+- **类型**：chore（仓库瘦身）
+- **摘要**：按用户要求清空 `docs/`，并顺带移除仓库里跟踪的 68MB 静态大文件。
+  - **删 `docs/` 全树**（48 个已跟踪文件 / 7.9MB）：3 份早期规划文档（GEO-PLAN / SUPPORT-SYSTEM-DESIGN / SHANGHAI-PRODUCTION-ERROR-INSIGHT）+ 4 篇评估验收报告 + 41 张证据截图。**内容仍在 git 历史里**（如提交 `284aa95`），需要时可 `git show` 取回。
+  - **删 `src/static/files/2.1.138.zip`（68MB，占 `.git` 的 85%）**：**无需先上传**——核查发现 COS 上 `files/2.1.138.zip` 已存在且 `Content-Length` 与本地逐字节等长（71,302,634），源站实测 `/api/v1/files/2.1.138.zip` 已返回 **302** 跳 COS，CDN 侧那份 200 只是旧的直出缓存。故删除不影响任何下载链接。
+  - **修 4 处悬空引用**：`src/api/v1/plugins.py` 的模块 docstring、`tests/integration/test_portal.py` 的护栏注释、`project-memory.md` 发布门禁条、`.github/copilot-instructions.md` 目录树里的 `docs/` 行。
+  - **清两条失效忽略规则**：`.gitignore` 的 `!src/static/files/2.1.138.zip` 负向规则、`.dockerignore` 的 `!src/static/files/*.zip`。
+  - **本地零风险清理（约 71MB，均为 gitignored/可再生）**：仓库根目录的 `2.1.138.zip`（sha256 与被跟踪那份逐字节相同）、`.coverage`、`.pytest_cache/`、`.ruff_cache/`。
+- **变更文件**：`docs/**`（删 48）、`src/static/files/2.1.138.zip`（删）、`src/api/v1/plugins.py`、`tests/integration/test_portal.py`、`.gitignore`、`.dockerignore`、`.github/copilot-instructions.md`、`.github/agent/memory/{project-memory,task-history}.md`
+- **验证**：`uv run pytest` **263 passed**；`git ls-files docs | wc -l` = **0**；`docs/` 与 `src/static/files/` 目录已消失；源站 `/api/v1/files/2.1.138.zip` → 302（Location 指向 COS）。**未做历史重写**，`.git` 仍约 81MB（用户选择保留历史）。
+- **注意事项**：① **不需要重新部署**——`docs/` 本就在 `.dockerignore` 里，zip 只影响未来构建的镜像，而 COS 已在提供服务；② 行为变化：`src/static/files/` 不再有副本，**COS 不可用则该类文件会 404**；③ 未跟踪文件 `tests/integration/test_client_community.py` 非本次产出，**未动**；④ `data/` 下 3.1GB 下载缓存与 `.venv` 按用户选择保留；⑤ 顺带提醒（未处理）：`.deploy/production-cn.md` 明文保存服务器 SSH 密码。

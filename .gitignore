@@ -36,5 +36,5 @@ codexswtich.cloud_nginx.zip
 # Large binary files (user content, not code)
 2.1.138.zip
 *.pdf
+# 该目录不再随仓库分发：/api/v1/files/* 现由 COS 提供（仓库内不留副本，避免大文件入库）
 src/static/files/
-!src/static/files/2.1.138.zip
