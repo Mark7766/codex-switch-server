@@ -1200,3 +1200,13 @@
 - **变更文件**：`Dockerfile`、`src/static/images/guide/`（9 个文件的 mode 100755→100644）、`src/portal/templates/guide.html`（img() 加版本串）、新增 `docs/assessment/2026-10-07-生产UAT验收报告.md` + `docs/assessment/uat-2026-10-07/`（10 张证据截图）。
 - **验证**：本地 `263 passed`（每次提交前）；生产侧 CDN+源站双重探针、浏览器逐一渲染、后台鉴权链路、8 条指南流程全部复验。UAT 期间的探针产生极少量记录（遥测 2 条 + 若干下载记录），已在报告中说明。
 - **注意事项**：**遗留 3 项**——① `step-install-claude-{windows,macos}.png` 文件本身不存在（需作者供图）；② **`/llms.txt` 仍是 CDN 旧缓存**（源站已正确，需在腾讯云控制台刷 URL 或等 TTL）；③ 移动端 29px 横向溢出（既有，需单独立项动 `apple.css`）。回滚点 `67edb33`，本次无 DB schema 变更。
+
+---
+
+### [TASK-106] 轮换生产 ADMIN_TOKEN（消除默认弱口令）
+- **日期**：2026-10-07
+- **类型**：ops（安全加固）
+- **摘要**：用户指出后台登录 token 是默认值、不安全。核查确认**本地与生产的 `ADMIN_TOKEN` 都是 `change-me`**（9 字符，即 `config.py` 的默认值）——等于后台无密码。已把**广州生产**的 `.env` 换成 **48 字符随机 token**（`secrets.token_urlsafe(36)`），并 `docker compose up -d --force-recreate` 使其生效。
+- **变更文件**：**仅服务器** `/home/lighthouse/codex-switch-server/.env`（备份为 `.env.bak-20261007124835`）。**仓库无任何文件改动**——新 token 不落库、不写文档、不写记忆。
+- **验证**：旧值 `change-me` → **401**；新值 → **302** 并成功 `GET /admin` **200**；无 cookie → 401；随机值 → 401；站点 `/`、`/support` 仍 200。已用 `grep -r` 确认新 token **未出现在工作区任何文件**中。
+- **注意事项**：① 轮换后 `ADMIN_TOKEN` 同时是后台会话 cookie 的签名密钥（`itsdangerous` salt），**旧的管理员登录会话全部失效**，需用新 token 重新登录；② **本地 `.env` 仍是 `change-me`，本次未改**（用户只要求改服务器），如需一并更换可另行处理；③ `src/config.py` 的默认值仍是 `change-me`，**漏配 `.env` 会静默降级到弱口令**，建议后续加「生产环境仍为默认值则启动失败」的保护（见 project-memory 已知问题 #20）；④ 服务器上保留了 `.env.bak-*` 备份（内含旧值），回滚即用它换回。

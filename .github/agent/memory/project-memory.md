@@ -290,6 +290,8 @@
 | 16 | **指南 9 张图片在生产返回 403**（`step-cli-*-win.png`、`step-install-codex-windows.png` 等），Windows CLI 流程一张图都不显示 | ✅ **已修复（2026-10-07，TASK-105）**：根因是文件以 git mode **100755** 提交、检出后为 **0700**，Docker 原样拷贝后 root 所有，nginx worker 降权读不到 → 403。已把 9 个文件改 0644（`100755→100644`），并在 Dockerfile 加 `chmod -R a+rX /app/src/static` 兜底。**教训：静态资源一律不要带可执行位** | 2026-10-07 修复 |
 | 17 | **`/llms.txt` 经 CDN 仍是旧内容**（源站已正确）；同站的 robots/sitemap 却是新的 | ⚠️ 未处理：腾讯云 CDN 对该文件缓存了旧副本。处置：控制台 → CDN → 刷新预热 → URL 刷新填 `https://codex-switch.cloud/llms.txt`；或等 TTL 自然过期。**注意 CDN 忽略 query string，加 `?v=` 无效** | 2026-10-07 记录 |
 | 18 | 静态资源带可执行位（`100755`）是**本项目的历史习惯**（多个 guide 图片都曾如此） | 预防：已由 Dockerfile 的 `chmod -R a+rX /app/src/static` 兜底；新增图片建议保持 0644 | 2026-10-07 记录 |
+| 19 | **生产 `ADMIN_TOKEN` 长期是默认值 `change-me`**（9 字符）——等于后台无密码；本地 `.env` 同样是该默认值 | ✅ **已轮换（2026-10-07，TASK-106）**：服务器 `.env` 换为 **48 字符随机 token**（值不记录在此）。旧值实测 401、新值 302/200。⚠️ **本地 `.env` 仍是 `change-me`**（未改，用户未要求） | 2026-10-07 修复 |
+| 20 | `src/config.py` 的 `admin_token` 默认值是 `change-me`，**若 `.env` 漏配会静默用这个弱值启动** | 建议：生产环境启动时若仍为默认值应**报错退出**而不是静默降级（本次未做，避免改动 `config.py` 默认值影响 `tests/unit/test_config.py` 等既有断言） | 2026-10-07 记录 |
 
 ---
 
