@@ -115,7 +115,6 @@ codex-switch-server/
 │   ├── unit/              # 单元测试
 │   ├── integration/       # 集成测试
 │   └── conftest.py        # pytest fixtures
-├── docs/                  # 文档
 ├── scripts/               # 工具脚本
 ├── pyproject.toml         # 项目配置
 ├── .env.example           # 环境变量模板
@@ -170,4 +169,3 @@ Agent 完成任务时，输出应包含：
 ```
 
 ---
-

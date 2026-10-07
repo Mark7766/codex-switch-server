@@ -6,7 +6,7 @@ from markupsafe import Markup
 
 TOOL_DOC_URLS = ["/tools/codex-switch", "/tools/ai-coding-ok", "/tools/ai-working-ok"]
 
-# 「本地代理」时代的字样：门户四页不得再出现（见 docs/assessment/2026-10-07-服务端升级评估报告.md）
+# 「本地代理」时代的字样：门户四页不得再出现（v3.0.0 对齐护栏，背景见项目记忆）
 STALE_COPY_URLS = ["/", "/download", "/guide", "/tools/codex-switch"]
 STALE_TOKENS = ["代理", "11435", "Agnes", "deepseek-chat", "deepseek-reasoner", "173", "Windows 11"]
 
