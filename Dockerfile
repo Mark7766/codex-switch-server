@@ -32,7 +32,8 @@ COPY alembic/ ./alembic/
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
+# chmod -R a+rX：静态资源若带 0700（macOS 上常见）nginx worker（非 root）读不到，会返回 403
+RUN chmod +x /app/entrypoint.sh && chmod -R a+rX /app/src/static
 
 RUN mkdir -p /app/data /etc/nginx/ssl /var/log/supervisor
 
