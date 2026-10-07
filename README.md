@@ -2,7 +2,7 @@
 
 [codex-switch](https://github.com/Mark7766/codex-switch) 配套门户 + 服务端。
 
-**网站**: [https://www.codexswtich.cloud](https://www.codexswtich.cloud)
+**网站**: [https://codex-switch.cloud](https://codex-switch.cloud)
 
 为 codex-switch 用户提供产品门户、版本更新镜像下载、AI 编程工具安装包（Claude Desktop / Codex Desktop）托管、运营后台和遥测数据收集。
 

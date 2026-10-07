@@ -24,15 +24,17 @@ async def ingest_events(
     svc = TelemetryService(db)
     result = await svc.ingest(payload, ip_hash=ip_hash)
 
-    # Auto-register new clients on first app_start
-    from sqlalchemy import insert
+    # Auto-register new clients on first report (老客户端会带 client_id)。
+    # v3.0.0 起客户端不再上报 client_id——此时必须跳过，否则会往 client_registry 写入空串脏数据。
+    if payload.client_id:
+        from sqlalchemy import insert
 
-    from src.models.client_registry import ClientRegistry
+        from src.models.client_registry import ClientRegistry
 
-    try:
-        await db.execute(insert(ClientRegistry).values(client_id=payload.client_id).prefix_with("OR IGNORE"))
-        await db.commit()
-    except Exception:
-        pass
+        try:
+            await db.execute(insert(ClientRegistry).values(client_id=payload.client_id).prefix_with("OR IGNORE"))
+            await db.commit()
+        except Exception:
+            pass
 
     return APIResponse(data=result)

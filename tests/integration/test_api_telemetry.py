@@ -61,8 +61,77 @@ async def test_ingest_empty_payload(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_ingest_missing_required_fields_returns_422(client: AsyncClient):
-    resp = await client.post("/api/v1/telemetry/events", json={"bad": "data"})
+    # v3.0.0 起 client_id 变为可选，空对象已是合法 payload；这里改用**真正畸形**的事件体
+    # （events 里的元素缺 event_type / timestamp）来保持「畸形输入 → 422」的断言。
+    resp = await client.post("/api/v1/telemetry/events", json={"events": [{"properties": {}}]})
     assert resp.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_ingest_without_client_id_returns_200(client: AsyncClient):
+    """v3.0.0 客户端不再上报 client_id —— 必须 200（修复前是 422，事件被静默丢弃）。"""
+    payload = {
+        "app_version": "3.0.0",
+        "platform": "darwin",
+        "arch": "arm64",
+        "os_version": "15.0",
+        "events": [
+            {
+                "event_type": "config_write",
+                "timestamp": "2026-10-07T10:00:00Z",
+                "properties": {"fields_changed": ["codex"]},
+            },
+            {"event_type": "tool_install", "timestamp": "2026-10-07T10:01:00Z", "properties": {"tool": "codex"}},
+        ],
+    }
+    resp = await client.post("/api/v1/telemetry/events", json=payload)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["code"] == 0
+    assert data["data"]["accepted"] == 2
+    assert data["data"]["rejected"] == 0
+
+
+@pytest.mark.asyncio
+async def test_ingest_without_client_id_does_not_register_empty_client(client: AsyncClient, db_session):
+    """空 client_id 不得写进 client_registry（否则表里会出现 '' 脏数据）。"""
+    from sqlalchemy import func, select
+
+    from src.models.client_registry import ClientRegistry
+
+    payload = {
+        "app_version": "3.0.0",
+        "events": [{"event_type": "tool_install", "timestamp": "2026-10-07T10:02:00Z"}],
+    }
+    resp = await client.post("/api/v1/telemetry/events", json=payload)
+    assert resp.status_code == 200
+
+    empty_rows = await db_session.scalar(
+        select(func.count()).select_from(ClientRegistry).where(ClientRegistry.client_id == "")
+    )
+    assert empty_rows == 0
+
+
+@pytest.mark.asyncio
+async def test_ingest_legacy_client_still_registers(client: AsyncClient, db_session):
+    """老客户端仍带 client_id —— 自动注册行为与升级前一致。"""
+    from sqlalchemy import func, select
+
+    from src.models.client_registry import ClientRegistry
+
+    payload = {
+        "client_id": "legacy-client-1",
+        "app_version": "2.3.0",
+        "events": [{"event_type": "app_start", "timestamp": "2026-10-07T10:03:00Z"}],
+    }
+    resp = await client.post("/api/v1/telemetry/events", json=payload)
+    assert resp.status_code == 200
+    assert resp.json()["data"]["accepted"] == 1
+
+    registered = await db_session.scalar(
+        select(func.count()).select_from(ClientRegistry).where(ClientRegistry.client_id == "legacy-client-1")
+    )
+    assert registered == 1
 
 
 @pytest.mark.asyncio

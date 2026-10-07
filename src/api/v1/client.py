@@ -29,6 +29,9 @@ async def community_stats(db: AsyncSession = _db_dep) -> dict:
     if _community_cache and (now - _community_cache_time) < _COMMUNITY_CACHE_TTL:
         return _community_cache
 
+    # NOTE: active_users 依赖客户端上报的 client_id。v3.0.0 起客户端已不再上报该标识，
+    # 因此这个数字会随老客户端逐步退出而自然衰减；社区规模请以 total_clients 为准
+    # （客户端侧边栏也是优先读 total_clients）。
     cutoff = datetime.now(UTC).replace(tzinfo=None) - timedelta(days=30)
     active = await db.scalar(
         select(func.count(func.distinct(TelemetryEvent.client_id))).where(
@@ -60,8 +63,9 @@ async def client_profile(client_id: str, db: AsyncSession = _db_dep) -> dict:
     # Joined date: earliest app_start
     joined = await db.scalar(select(func.min(TelemetryEvent.created_at)).where(TelemetryEvent.client_id == client_id))
 
-    # Early member: first used Codex Switch before v1.11.0 shipped
-    v111_ship_date = datetime(2026, 6, 17).replace(tzinfo=None)
+    # Early member: first used Codex Switch before v1.11.0 shipped.
+    # 1.11.0 发布日期为 2026-06-16（见客户端 CHANGELOG），与客户端离线兜底阈值保持一致。
+    v111_ship_date = datetime(2026, 6, 16).replace(tzinfo=None)
     is_early = bool(joined and joined < v111_ship_date)
 
     # Invite count

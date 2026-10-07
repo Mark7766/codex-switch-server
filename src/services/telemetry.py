@@ -37,6 +37,8 @@ logger = logging.getLogger(__name__)
 
 # Event types that need deduplication (same client_id+event_type+timestamp).
 # High-frequency or one-shot events are excluded — dedup would be wasteful or incorrect.
+# NOTE: 这些都是老客户端（2.x）才会发的事件；v3.0.0 起客户端不再上报 client_id，
+# 也不发这些事件，因此去重表实际只对老客户端生效。保留以免老客户端重复计数。
 _DEDUP_TYPES = frozenset({"app_start", "proxy_start", "proxy_error", "update_check"})
 
 

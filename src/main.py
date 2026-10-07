@@ -82,6 +82,8 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
+    # version 是**服务端包**的版本（pyproject.toml），与门户展示的 codex-switch 客户端版本无关；
+    # 客户端版本由 /api/v1/update/latest 实时从 GitHub Releases 取得。
     app = FastAPI(title="codex-switch-server", version="0.1.0", lifespan=lifespan)
 
     @app.middleware("http")

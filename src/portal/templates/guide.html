@@ -129,8 +129,8 @@
   <div class="faq-section">
     <h2>常见问题</h2>
     <dl>
-      <dt>代理无法启动？</dt><dd>检查端口 11435 是否被占用，可在设置中更换。</dd>
-      <dt>模型调用报错？</dt><dd>检查 API Key 是否正确、DeepSeek 账户是否有余额。</dd>
+      <dt>Codex 发消息没反应？</dt><dd>先确认「设置 → 供应商设置」里该供应商的 API Key 已保存，再到对应工具卡片点一次「保存并应用」，然后把 Codex <strong>完全退出后重开</strong>（CLI 需新开一个终端窗口）。</dd>
+      <dt>模型调用报错？</dt><dd>检查 API Key 是否正确、账户是否有余额；并确认「设置」里对应工具卡片已选好供应商与模型、点过「保存并应用」。</dd>
       <dt>Claude Desktop 安装失败？</dt><dd>确保已启用 Windows 虚拟机平台（VirtualMachinePlatform），在"Windows 功能"中勾选并重启。</dd>
       <dt>PowerShell 命令报错？</dt><dd>确认以<strong>管理员身份</strong>运行 PowerShell，且已 cd 到 <code>Claude.msix</code> 所在目录。</dd>
       <dt>找不到 Git Bash？</dt><dd>开始菜单搜索 "Git Bash"；或文件夹空白处右键 → "Git Bash Here"；或打开 C:\Program Files\Git\git-bash.exe。</dd>
@@ -193,6 +193,12 @@ function toolLabel() {
   return 'Claude Code CLI';
 }
 
+// 客户端 v3.0.0 起，配置统一在各工具的「接入」卡片里完成（旧版的命令管理页已移除）
+function cardLabel() {
+  if (selTool === 'codex' || selTool === 'codex-cli') return 'Codex 接入';
+  return selTool === 'claude' ? 'Claude Desktop 接入' : 'Claude Code CLI 接入';
+}
+
 // ── Build guide steps ─────────────────────────────────────
 function renderGuide() {
   var steps = [];
@@ -226,11 +232,11 @@ function renderGuide() {
       steps.push({title:'安装 ' + toolLabel(), body:installCmd() + imgTag(selTool === 'codex-cli' ? 'step-cli-codex-install-win.png' : 'step-cli-claude-install-win.png')});
     }
     // CLI common: Codex Switch + config + verify
-    steps.push({title:'下载 Codex Switch', body:'<p>下载并安装 Codex Switch，用于统一的 API Key 管理和代理。</p><div id="step-dl-switch"></div>' + (isMac ? xattrWarning() : '<p style="margin-top:8px;">运行下载的 <code>.exe</code> 安装程序，按向导完成安装。</p>') + imgTag(isMac ? 'codex-switch-mac-error.jpg' : 'step-dl-switch-windows.png')});
-    steps.push({title:'配置 Codex Switch', body:'<p>打开 Codex Switch，进入<strong>设置 → CLI 管理</strong>，找到 "' + toolLabel() + '"，点击<strong>"保存并应用"</strong>完成配置。</p><p style="color:#86868b;">填入 API Key → 选择模型 → 启动代理</p>' + '<img src="' + img('step-config-switch.png') + '" alt="Codex Switch 配置" class="guide-step__img" onload="this.classList.add(\'guide-step__img--loaded\')" onerror="this.style.display=\'none\'">'});
+    steps.push({title:'下载 Codex Switch', body:'<p>下载并安装 Codex Switch，用它统一管理供应商与 API Key。</p><div id="step-dl-switch"></div>' + (isMac ? xattrWarning() : '<p style="margin-top:8px;">运行下载的 <code>.exe</code> 安装程序，按向导完成安装。</p>') + imgTag(isMac ? 'codex-switch-mac-error.jpg' : 'step-dl-switch-windows.png')});
+    steps.push({title:'配置 Codex Switch', body:'<p>打开 Codex Switch（默认进入<strong>设置</strong>），在「<strong>' + cardLabel() + '</strong>」卡片里选好供应商与模型，点击<strong>"保存并应用"</strong>完成配置。</p><p style="color:#86868b;">填入 API Key → 选择模型 → 保存并应用</p>' + '<img src="' + img('step-config-switch-v3.png') + '" alt="Codex Switch 配置" class="guide-step__img" onload="this.classList.add(\'guide-step__img--loaded\')" onerror="this.style.display=\'none\'">'});
     steps.push({title:'验证', body:isMac ?
-      '<p>终端执行 <code>' + cliBin() + '</code>，确认能正常交互。</p><p style="color:#86868b;">如报错，检查 Codex Switch 代理是否运行中。</p>' + imgTag('step-cli-' + (selTool === 'codex-cli' ? 'codex' : 'claude') + '-verify.png') :
-      '<p>在 <strong>Git Bash</strong> 中执行 <code>' + cliBin() + '</code>，确认能正常交互。</p><p style="color:#86868b;">如报错，检查 Codex Switch 代理是否运行中。</p>' + imgTag('step-cli-' + (selTool === 'codex-cli' ? 'codex' : 'claude') + '-verify.png')
+      '<p>终端执行 <code>' + cliBin() + '</code>，确认能正常交互。</p><p style="color:#86868b;">如报错，确认已点过「保存并应用」，并<strong>新开一个终端窗口</strong>再运行。</p>' + imgTag('step-cli-' + (selTool === 'codex-cli' ? 'codex' : 'claude') + '-verify.png') :
+      '<p>在 <strong>Git Bash</strong> 中执行 <code>' + cliBin() + '</code>，确认能正常交互。</p><p style="color:#86868b;">如报错，确认已点过「保存并应用」，并<strong>新开一个终端窗口</strong>再运行。</p>' + imgTag('step-cli-' + (selTool === 'codex-cli' ? 'codex' : 'claude') + '-verify.png')
     });
 
   } else {
@@ -253,9 +259,9 @@ function renderGuide() {
     }
     steps.push({title:'下载 ' + toolLabel(), body: dlBody});
     steps.push({title:'安装 ' + toolLabel(), body:desktopInstall() + imgTag('step-install-' + selTool + '-' + selPlat + '.png')});
-    steps.push({title:'下载 Codex Switch', body:'<p>本地代理管理工具，让 Codex / Claude 通过 DeepSeek API 工作。</p><div id="step-dl-switch"></div><div id="step-dl-switch-install"></div>' + imgTag(isMac ? 'codex-switch-mac-error.jpg' : 'step-dl-switch-windows.png')});
-    steps.push({title:'配置 Codex Switch', body:'<ol style="margin:0;padding-left:20px;font-size:15px;color:var(--color-text-secondary);line-height:1.6;"><li>启动 Codex Switch，进入<strong>设置</strong></li><li>填入第一步获取的 <strong>DeepSeek API Key</strong>（<code>sk-xxx</code>）</li><li>选择模型（推荐 <strong>DeepSeek V4 Flash</strong>）</li><li>点击<strong>"启动代理"</strong>，等待绿色"运行中"状态</li></ol><p style="margin-top:8px;color:var(--color-text-tertiary);">代理地址：<code>http://127.0.0.1:11435</code></p>' + '<img src="' + img('step-config-switch.png') + '" alt="Codex Switch 配置" class="guide-step__img" onload="this.classList.add(\'guide-step__img--loaded\')" onerror="this.style.display=\'none\'">'});
-    steps.push({title:'启动验证', body:'<p>启动 ' + toolLabel() + '，如果 Codex Switch 代理已运行，' + toolLabel() + ' 将自动通过代理连接 DeepSeek API。</p>'});
+    steps.push({title:'下载 Codex Switch', body:'<p>统一的供应商与 API Key 管理工具，把 Codex / Claude 的配置一次写好。</p><div id="step-dl-switch"></div><div id="step-dl-switch-install"></div>' + imgTag(isMac ? 'codex-switch-mac-error.jpg' : 'step-dl-switch-windows.png')});
+    steps.push({title:'配置 Codex Switch', body:'<ol style="margin:0;padding-left:20px;font-size:15px;color:var(--color-text-secondary);line-height:1.6;"><li>打开 Codex Switch（默认进入<strong>设置</strong>）</li><li>在「<strong>供应商设置</strong>」里选好供应商、填入第一步获取的 API Key，点<strong>「保存 Key」</strong></li><li>在「<strong>' + cardLabel() + '</strong>」卡片里选择模型（日常推荐 <strong>Flash</strong>）</li><li>点<strong>「保存并应用」</strong></li></ol><p style="margin-top:8px;color:var(--color-text-tertiary);">然后切到左侧「工具接入状态」，该工具显示「已配置」即完成。</p>' + '<img src="' + img('step-config-switch-v3.png') + '" alt="Codex Switch 配置" class="guide-step__img" onload="this.classList.add(\'guide-step__img--loaded\')" onerror="this.style.display=\'none\'">'});
+    steps.push({title:'启动验证', body:'<p>打开 ' + toolLabel() + ' 直接开始对话。若没有反应，确认已点过「保存并应用」，并把应用<strong>完全退出后重开</strong>。</p>' + '<img src="' + img('step-tools-status.png') + '" alt="工具接入状态" class="guide-step__img" onload="this.classList.add(\'guide-step__img--loaded\')" onerror="this.style.display=\'none\'">'});
     // Codex Desktop 汉化（感谢伙伴 风影 提供方法，让 Codex 自己搞定）
     if (selTool === 'codex') {
       steps.push({title:'汉化 Codex Desktop（感谢风影提供）', body:
@@ -345,16 +351,16 @@ function desktopInstall() {
         '<div style="background:#1d1d1f;border-radius:8px;padding:16px;font-size:13px;color:#e8e8ed;line-height:1.9;overflow-x:auto;font-family:SF Mono,Menlo,Consolas,monospace;white-space:pre-wrap;">' +
           '<span style="color:#f5a623;"># ① claude.app.tar.zst → 解压后把 claude.app 放到：</span>\n' +
           '<span style="color:#34c759;">zstd -d claude.app.tar.zst && tar -xf claude.app.tar</span>\n' +
-          '<span style="color:#e8e8ed;">mkdir -p ~/Library/Application\\ Support/Claude/claude-code/2.1.142</span>\n' +
-          '<span style="color:#e8e8ed;">cp claude.app ~/Library/Application\\ Support/Claude/claude-code/2.1.142/claude.app</span>\n\n' +
+          '<span style="color:#e8e8ed;">mkdir -p ~/Library/Application\\ Support/Claude/claude-code/2.1.138</span>\n' +
+          '<span style="color:#e8e8ed;">cp claude.app ~/Library/Application\\ Support/Claude/claude-code/2.1.138/claude.app</span>\n\n' +
           '<span style="color:#f5a623;"># ② rootfs.img.zst → 解压后把 rootfs.img 放到：</span>\n' +
           '<span style="color:#34c759;">zstd -d rootfs.img.zst</span>\n' +
           '<span style="color:#e8e8ed;">mkdir -p ~/Library/Application\\ Support/Claude/vm_bundles/claudevm.bundle</span>\n' +
           '<span style="color:#e8e8ed;">cp rootfs.img ~/Library/Application\\ Support/Claude/vm_bundles/claudevm.bundle/rootfs.img</span>\n\n' +
           '<span style="color:#f5a623;"># ③ claude.zst → 解压后把 claude 二进制放到：</span>\n' +
           '<span style="color:#34c759;">zstd -d claude.zst</span>\n' +
-          '<span style="color:#e8e8ed;">mkdir -p ~/Library/Application\\ Support/Claude/claude-code-vm/2.1.142</span>\n' +
-          '<span style="color:#e8e8ed;">cp claude ~/Library/Application\\ Support/Claude/claude-code-vm/2.1.142/claude</span>' +
+          '<span style="color:#e8e8ed;">mkdir -p ~/Library/Application\\ Support/Claude/claude-code-vm/2.1.138</span>\n' +
+          '<span style="color:#e8e8ed;">cp claude ~/Library/Application\\ Support/Claude/claude-code-vm/2.1.138/claude</span>' +
         '</div>' +
         '<p style="font-size:13px;color:var(--color-text-tertiary);margin-top:10px;">💡 提示：<code>~/Library</code> 是隐藏目录，在访达中按 <code>Cmd+Shift+G</code> 输入 <code>~/Library/Application Support/Claude</code> 即可直达。所有命令请在解压后的 <code>mac-claude-core</code> 目录中执行。</p>' +
       '</div>';
@@ -420,7 +426,7 @@ function loadDesktopDownloads() {
       "name": "Codex Switch 是什么？",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Codex Switch 是一款免费、开源的桌面工具，帮你解决网络问题，在国内流畅使用 Codex 和 Claude。它通过本地代理自动配置网络，无需手动设置任何参数，支持 DeepSeek 和 Agnes AI 模型。"
+        "text": "Codex Switch 是一款免费、开源的桌面配置工具，帮你解决网络问题，在国内顺畅使用 Codex 和 Claude。你在图形界面里填一次 API Key、点几下按钮，它就把各方需要的配置文件写好，不用记命令、不用手改配置。支持 DeepSeek、智谱 GLM 与自定义供应商。"
       }
     },
     {
@@ -428,7 +434,7 @@ function loadDesktopDownloads() {
       "name": "Codex Switch 支持哪些 AI 模型？",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "支持 DeepSeek 全系列模型（deepseek-chat V3 模型和 deepseek-reasoner R1 推理模型）、Agnes AI（免费，256K 上下文窗口），以及任何 OpenAI 兼容的 API（如 GLM、自定义模型）。"
+        "text": "支持 DeepSeek（deepseek-flash、deepseek-v4-pro）、智谱 GLM（glm-5.3、glm-5.3-flash、glm-5.2），以及任何兼容 OpenAI Responses API / Anthropic Messages API 的自定义供应商。"
       }
     },
     {
@@ -436,7 +442,7 @@ function loadDesktopDownloads() {
       "name": "Codex Switch 安全吗？API Key 会泄露吗？",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "完全本地安全。所有数据不出本机，API Key 存储在操作系统钥匙串（macOS Keychain / Windows Credential Manager）中，不落盘明文。代理仅监听 127.0.0.1（本机回环地址），外网无法访问。"
+        "text": "API Key 存储在操作系统钥匙串（macOS Keychain / Windows 凭据管理器）中，不以明文落盘。Codex 和 Claude 直连你选择的供应商，不经过任何第三方中转。"
       }
     },
     {
@@ -444,7 +450,7 @@ function loadDesktopDownloads() {
       "name": "Codex Switch 免费吗？",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "完全免费开源（MIT 许可）。Codex Switch 本身不收取任何费用。用户只需自行准备 DeepSeek API Key（注册即用，首次充值几块钱即可）或 Agnes AI Key。"
+        "text": "完全免费开源（MIT 许可）。Codex Switch 本身不收取任何费用，你只需自行准备所选供应商的 API Key（例如 DeepSeek 注册后首次充值几块钱即可）。"
       }
     },
     {
@@ -452,7 +458,7 @@ function loadDesktopDownloads() {
       "name": "如何在国内使用 Codex 或 Claude？",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "使用 Codex Switch 即可。步骤：1) 前往 codex-switch.cloud 下载安装包；2) 双击安装后启动 Setup 向导；3) 填入 DeepSeek API Key（在 platform.deepseek.com 申请）；4) 点击「完成并启动代理」。Codex/Claude 会自动通过本地代理解决网络问题。整个过程无需命令行操作。"
+        "text": "使用 Codex Switch 即可。步骤：1) 前往 codex-switch.cloud 下载安装包；2) 双击安装，打开「设置」；3) 在「供应商设置」里选好供应商并填入 API Key（例如在 platform.deepseek.com 申请）；4) 在对应工具卡片里选好模型，点击「保存并应用」。整个过程无需命令行操作。"
       }
     },
     {
@@ -476,7 +482,7 @@ function loadDesktopDownloads() {
       "name": "DeepSeek API Key 怎么获取？",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "访问 platform.deepseek.com 注册账号，在 API Keys 页面创建 Key。注册后需要充值（几块钱即可），然后即可使用。将 Key 粘贴到 Codex Switch 的 Setup 向导中即可。"
+        "text": "访问 platform.deepseek.com 注册账号，在 API Keys 页面创建 Key。注册后需要充值（几块钱即可），然后即可使用。将 Key 粘贴到 Codex Switch「设置 → 供应商设置」中并保存即可。"
       }
     }
   ]

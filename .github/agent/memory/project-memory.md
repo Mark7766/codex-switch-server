@@ -170,7 +170,7 @@
 | src/services/package_manager.py | 包文件索引、上传、代理缓存 | 🚫 合并至 packages API |
 | src/services/ai_working_ok_releases.py | ai-working-ok 版本查询、本地缓存+GitHub 下载兜底 | ✅ 2026-07-26 |
 | src/services/tool_changelog.py | 工具文档页「更新日志」：读各工具仓库 CHANGELOG.md → markdown 渲染 + 内存/磁盘 TTL 缓存 | ✅ 2026-09-07 |
-| src/portal/ | 门户路由 + 首页/下载/指南/工具文档模板（下拉 codex-switch + ai-* 三页） | ✅ Phase 2（工具文档 2026-09-07） |
+| src/portal/ | 门户路由 + 首页/下载/指南/工具文档模板（下拉 codex-switch + ai-* 三页）+ **技术支持页 `/support`**（2026-10-07，复用 `.doc` 布局） | ✅ Phase 2（工具文档 2026-09-07；支持页 2026-10-07） |
 | src/admin/ | 管理员路由 + 登录/仪表盘模板 | ✅ Phase 3 |
 | src/static/ | Apple 风格 CSS + 图标 + 极简 JS | ✅ Phase 2 |
 | src/utils/ | HTTP 客户端封装 + 存储抽象层 | ✅ Phase 3 |
@@ -234,7 +234,7 @@
 
 ### 页面设计要点
 
-**首页**：Hero（双按钮：查看安装指南 / 直接下载）→ 安装指南快捷入口（4 卡片 → `/guide?tool=xxx`）→ 下载安装包（2 桌面版卡片）→ 价值主张（三列功能卡片）→ 用户故事 → 底部 CTA → 页脚。指南是用户最常用功能，Hero 直接引导。
+**首页**：Hero（双按钮：Windows 安装指南 / Mac 安装指南）→ 安装指南快捷入口（4 卡片 → `/guide?tool=xxx`）→ 价值主张（三列功能卡片）→ 页脚。（2026-10-07 浏览器实测校正：线上**没有**「下载安装包 2 张桌面版卡片」与「用户故事」区块，此前本条记忆有漂移。）页脚「产品」列含 下载 / 使用指南 / ai-working-ok / ai-coding-ok，「资源」列含 GitHub / 反馈；右下角有全局「技术支持」悬浮按钮（微信二维码弹窗）。
 
 **下载页**：平台切换（分段控件）→ 最新版本大卡片（版本号 + 日期 + 文件大小 + CTA 按钮）→ 系统要求 → 历史版本（details/summary 可折叠）。
 
@@ -263,6 +263,8 @@
 4. 前端零框架 — 不用 React/Vue/Angular。服务器渲染 + 极简 vanilla JS
 5. Chart.js 仅限 admin 页面使用，从 CDN 按需加载，不计入前端构建
 6. 门户设计严格遵循 Apple HIG：清晰、遵从、深度。每一个视觉元素都要有存在的理由
+7. **发布门禁（用户明确要求，2026-10-07）**：Agent **不得自行 `git push`、不得自行部署到服务器**。流程固定为「本地开发 → 本地**全量**验收测试（覆盖全部功能，不只改动点）→ 人工确认 → 才 `git push` → 再确认 → 才部署」。详见 `docs/assessment/2026-10-07-服务端升级评估报告.md` §8/§9。
+8. **修改策略**：非必要不修改 —— 只改有证据的过时点，不做顺带重构/优化/依赖升级；下载更新链路、存储层、认证、Apple CSS 设计系统、数据库 schema 一律不动（见同报告 §6）。
 
 ---
 
@@ -275,6 +277,16 @@
 | 3 | `_detect_platform` 要求 Windows .exe 必须有显式 arch 后缀（-x64/-arm64），无后缀文件（如 `-win.exe`）会跳过 | Windows 发布时确保 asset 名称包含 `-x64` 或 `-arm64` | 2026-06-06 |
 | 4 | 本地缓存文件名从 `{platform}-{arch}.{ext}` 改为 GitHub 原始名（ADR-014）。`get_download_path()` 兼容新旧两种命名 | 旧缓存不需要手动迁移，兜底扫描会自动找到 | 2026-06-23 |
 | 5 | 客户端自动更新（electron-updater）读的 `latest-mac.yml`/`latest.yml` feed 曾由 `UpdateFeedService` 实时从 GitHub asset 拉取；广州服务器连 github.com 下载会 30s 超时并回退内存陈旧缓存 → 新版本发布后客户端长期检测不到（2026-09-06 2.1.0 事件根因）。download/update/latest/check 走 api.github.com（可达）故显示正常，易误判 | ✅ 已修复（2026-09-06，ADR-017）：yml feed 以 COS 稳定 key `codex-switch/latest/*.yml` 为来源、GitHub 仅兜底；download/upload 脚本已同步 latest*.yml。⚠️ 尚未部署上线——需先跑脚本种 COS 稳定 key 再部署服务端代码 | 2026-09-06 |
+| 6 | **门户内容整体停留在「本地代理时代」**，而客户端 v3.0.0（2026-09-10）已转型为「纯配置工具」。首页/下载页/指南/工具文档页仍在讲本地代理、端口 `11435`、Agnes、「启动代理」；「使用指南」共用的旧截图是 **v1.0.6 界面** | ✅ **已修复（2026-10-07，TASK-104）**：四页文案按 v3.0.0 重写，截图用真实客户端重截（**`step-config-switch-v3.png`** + 新增 `step-tools-status.png`），并加反向断言护栏（门户四页不得出现 代理/11435/Agnes/deepseek-chat/deepseek-reasoner/173/Windows 11） | 2026-10-07 修复 |
+| 7 | `robots.txt`（`Allow: /support`、`/faq`）与 `llms.txt`（链接 `/support`）都指向技术支持页，但 `/support` 与 `/faq` 实测 **404**，且 `sitemap.xml` 未收录二者 → 三处口径不一致 | ✅ **已修复（2026-10-07，TASK-104）**：采用方案 A 落 `src/portal/templates/support.html` + `GET /support`；robots 去掉不存在的 `/faq`，sitemap 收录 `/support`；页脚新增「技术支持」链接 | 2026-10-07 修复 |
+| 8 | `base.html` 的 `baidu-site-verification` 是占位符 `codeva-xxxxxxxxxx`；全站无 `rel=canonical`；`og:url`/`og:image` 指向旧域名 `www.codexswtich.cloud` | ✅ **已修复（2026-10-07，TASK-104）**：验证码改为 `BAIDU_SITE_VERIFICATION` 配置项（未配置不输出）；新增 canonical；og 统一 `codex-switch.cloud`。⚠️ 上线前需在 `.env` 填真实验证码，否则等于移除该标签 | 2026-10-07 修复 |
+| 9 | 客户端 v3.0.0 起遥测上报体**不再含 `client_id`**，而 `src/schemas/telemetry.py` 仍将其设为**必填** → v3.0.0 全部 **422 被静默丢弃** | ✅ **已修复（2026-10-07，TASK-104）**：`client_id` 改可选，空值跳过 `ClientRegistry` 注册；实测无 id → 200、带 id → 200。**不要试图让客户端加回 `client_id`**（合规） | 2026-10-07 修复 |
+| 10 | 未跟踪文件 `tests/integration/test_client_community.py` 存在 import 顺序告警，使 `uv run ruff check .` 非全绿 | 非本次引入；改动该文件前需确认归属，或直接 `uv run ruff check --fix` | 2026-10-07 记录 |
+| 11 | `src/static/images/guide/step-dl-switch-windows.png` 文件不存在（指南「下载 Codex Switch」步骤引用它） | ✅ **已修复（2026-10-07，TASK-104）**：补上下载页 Windows 卡片截图（含修正后的系统要求），无需改代码、两处引用自动生效；指南 5 张图全部正常加载 | 2026-10-07 修复 |
+| 12 | 移动端文档页 `.doc__chips` 与固定导航重叠（既有 `/tools/*` 三页 + 新 `/support` 同样表现） | 既有问题；修它需动 `apple.css`，按最小化修改纪律暂缓 | 2026-10-07 记录 |
+| 13 | **`/static/` 的 `?v=` 缓存刷新在本站 CDN 上不生效**：腾讯云 CDN 对 `/static/` **忽略 query string**（实测 `apple.css` 带 `?v=1` / `?v=20260909` / `?v=zzz999` 与无参数返回**同一 ETag 与 Expires**）。nginx 对 `/static/` 设 `expires 7d` + `immutable`，CDN 侧 `max-age=86400` | 要真正刷新静态资源，**必须改文件名**（如 `xxx-v3.png`）或手动刷 CDN；改 `?v=` 无效。HTML 不受影响（`main.py` 的 `no_cache_html` 中间件给 `text/html` 加 `no-store`，线上实测 `GET /` 为 Cache Miss） | 2026-10-07 记录 |
+| 14 | **Claude Desktop 安装步骤的 2 张插图缺失**：`step-install-claude-windows.png`、`step-install-claude-macos.png`（`guide.html` 的 `imgTag('step-install-' + selTool + '-' + selPlat + '.png')` 会请求它们） | 既有缺失（`onerror` 隐藏，不裂图，仅该步无插图）。补图需作者提供真实安装过程截图——**凭空造图会失真，故未补**。跑全「4 工具 × 2 平台」才发现的 | 2026-10-07 记录 |
+| 15 | 移动端（≤400px）**所有门户页横向溢出 29px**（`scrollWidth 429` vs `innerWidth 400`），可轻微左右横滑 | 既有问题，**已用 `git stash` 基线对比确认非某次改动引入**（改动前四页同样是 429）。桌面/平板无溢出。根因在 `apple.css` 全局布局，修它需动设计系统，按最小化纪律暂缓 | 2026-10-07 记录 |
 
 ---
 
@@ -292,6 +304,7 @@ ADMIN_TOKEN=your-secret-token-here
 GITHUB_TOKEN=github_pat_xxx  # 必需！否则 GitHub API 403，下载页无版本数据
 COS_BUCKET=  # 可选，部署到腾讯云时填写
 ICP_FILING_NUMBER=  # ICP 备案号，生产环境必填（如 京ICP备2026035967号-1）
+BAIDU_SITE_VERIFICATION=  # 百度站长验证码；留空则 <head> 不输出 baidu-site-verification 标签
 AI_WORKING_OK_CACHE_TTL=300  # ai-working-ok 版本查询 TTL
 TOOL_CHANGELOG_CACHE_TTL=300  # 工具文档页 CHANGELOG.md 抓取缓存 TTL
 ```

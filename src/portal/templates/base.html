@@ -4,15 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Codex Switch{% endblock %} — 让 AI 编程触手可及</title>
-  <meta name="description" content="Codex Switch 帮你解决网络问题，在国内流畅使用 Codex 和 Claude，接入 DeepSeek 模型，免费、快速、安全。">
+  <meta name="description" content="Codex Switch 帮你解决网络问题，在国内顺畅使用 Codex 和 Claude，接入 DeepSeek、智谱 GLM 与自定义供应商——免费、开源、无需懂命令行。">
+  <link rel="canonical" href="{{ request.base_url }}{{ request.url.path.lstrip('/') }}">
 
   <!-- Open Graph (微信 / Facebook / Twitter 分享卡片) -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Codex Switch">
   <meta property="og:title" content="Codex Switch — 让 AI 编程触手可及">
-  <meta property="og:description" content="Codex Switch 帮你解决网络问题，在国内流畅使用 Codex 和 Claude，接入 DeepSeek 模型，免费、快速、本地安全。">
-  <meta property="og:url" content="https://www.codexswtich.cloud">
-  <meta property="og:image" content="https://www.codexswtich.cloud/static/images/logo.png">
+  <meta property="og:description" content="Codex Switch 帮你解决网络问题，在国内顺畅使用 Codex 和 Claude，接入 DeepSeek、智谱 GLM 与自定义供应商——免费、开源、无需懂命令行。">
+  <meta property="og:url" content="https://codex-switch.cloud">
+  <meta property="og:image" content="https://codex-switch.cloud/static/images/logo.png">
   <meta property="og:image:width" content="1024">
   <meta property="og:image:height" content="1024">
 
@@ -24,10 +25,12 @@
   <!-- ═══════════════════════════════════════════════════════════════ -->
 
   <!-- AI-friendly keywords (Baidu still references this tag) -->
-  <meta name="keywords" content="Codex Switch, Codex, Claude, DeepSeek, AI编程, AI编程工具, 国内使用Codex, 国内使用Claude, Codex代理, Codex国内, Claude国内, 免费开源, 代理工具, AI编程网络问题">
+  <meta name="keywords" content="Codex Switch, Codex, Claude, DeepSeek, 智谱GLM, GLM, AI编程, AI编程工具, 国内使用Codex, 国内使用Claude, Codex国内, Claude国内, 免费开源, Codex配置工具, AI编程网络问题">
 
-  <!-- Baidu site verification (replace codeva-xxxxxxxxxx with actual code after registering at ziyuan.baidu.com) -->
-  <meta name="baidu-site-verification" content="codeva-xxxxxxxxxx">
+  <!-- Baidu site verification — set BAIDU_SITE_VERIFICATION in .env to emit the tag -->
+  {% if baidu_site_verification %}
+  <meta name="baidu-site-verification" content="{{ baidu_site_verification }}">
+  {% endif %}
 
   <!-- Application identity -->
   <meta name="application-name" content="Codex Switch">
@@ -44,7 +47,7 @@
     "name": "Codex Switch",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "Windows 10+, macOS 11+",
-    "description": "Codex Switch 帮你解决网络问题，在国内流畅使用 Codex 和 Claude，接入 DeepSeek 和 Agnes AI——免费、快速、本地安全。",
+    "description": "Codex Switch 帮你解决网络问题，在国内顺畅使用 Codex 和 Claude，接入 DeepSeek、智谱 GLM 与自定义供应商——免费、开源、无需懂命令行。",
     "url": "https://codex-switch.cloud",
     "sameAs": "https://github.com/Mark7766/codex-switch",
     "image": "https://codex-switch.cloud/static/images/logo.png",
@@ -140,6 +143,7 @@
           <ul class="footer__col">
             <li><a href="https://github.com/Mark7766/codex-switch" target="_blank" rel="noopener" data-track="footer-github">GitHub</a></li>
             <li><a href="https://github.com/Mark7766/codex-switch/issues" target="_blank" rel="noopener">反馈</a></li>
+            <li><a href="/support">技术支持</a></li>
           </ul>
         </div>
       </div>

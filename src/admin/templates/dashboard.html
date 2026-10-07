@@ -130,6 +130,11 @@
         <div class="stat-card"><div class="stat-card__num">{{ telemetry.model_call_total }}</div><div class="stat-card__label">模型调用 (今日)</div></div>
         <div class="stat-card"><div class="stat-card__num">{{ telemetry.install_success_rate }}</div><div class="stat-card__label">安装成功率</div></div>
       </div>
+      <p class="stat-card__label" style="margin:-8px 0 16px;">
+        注：「活跃用户」「模型调用」沿用老客户端（2.x）的遥测口径——它们依赖客户端上报的设备标识与
+        model_call 事件；v3.0.0 起客户端已不再上报这两类数据，故这两项会逐步归零，社区规模请以
+        「累计注册客户端数」为准。
+      </p>
 
       <div class="chart-grid">
         <div class="chart-section">

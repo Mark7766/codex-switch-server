@@ -6,6 +6,10 @@ from markupsafe import Markup
 
 TOOL_DOC_URLS = ["/tools/codex-switch", "/tools/ai-coding-ok", "/tools/ai-working-ok"]
 
+# 「本地代理」时代的字样：门户四页不得再出现（见 docs/assessment/2026-10-07-服务端升级评估报告.md）
+STALE_COPY_URLS = ["/", "/download", "/guide", "/tools/codex-switch"]
+STALE_TOKENS = ["代理", "11435", "Agnes", "deepseek-chat", "deepseek-reasoner", "173", "Windows 11"]
+
 
 @pytest.fixture(autouse=True)
 def _stub_tool_changelog(monkeypatch):
@@ -213,7 +217,15 @@ async def test_template_inheritance_base_structure(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_all_pages_share_nav(client: AsyncClient):
-    urls = ["/", "/download", "/guide", "/tools/codex-switch", "/tools/ai-coding-ok", "/tools/ai-working-ok"]
+    urls = [
+        "/",
+        "/download",
+        "/guide",
+        "/support",
+        "/tools/codex-switch",
+        "/tools/ai-coding-ok",
+        "/tools/ai-working-ok",
+    ]
     for url in urls:
         response = await client.get(url)
         assert "Codex Switch" in response.text
@@ -259,3 +271,109 @@ async def test_tool_doc_changelog_graceful_when_fetch_fails(client: AsyncClient,
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
     assert "更新日志暂时无法获取" in response.text
+
+
+# ═══════════════════════════════════════════════════════════════
+# v3.0.0 对齐护栏（客户端已从「代理工具」转为「纯配置工具」）
+# ═══════════════════════════════════════════════════════════════
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("url", STALE_COPY_URLS)
+async def test_portal_page_has_no_stale_proxy_copy(client: AsyncClient, url: str):
+    """门户四页不得再出现「本地代理」时代的字样（反向断言护栏）。"""
+    response = await client.get(url)
+    assert response.status_code == 200
+    for token in STALE_TOKENS:
+        assert token not in response.text, f"{url} 仍含过时字样：{token}"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("url", ["/", "/download", "/tools/codex-switch"])
+async def test_portal_page_mentions_current_suppliers(client: AsyncClient, url: str):
+    """三家供应商（DeepSeek / 智谱 GLM / 自定义）都要能对上。"""
+    response = await client.get(url)
+    assert "DeepSeek" in response.text
+    assert "智谱 GLM" in response.text
+    assert "自定义" in response.text
+
+
+@pytest.mark.asyncio
+async def test_guide_points_at_current_client_ui(client: AsyncClient):
+    """指南必须指向 v3.0.0 的真实界面（设置 / 保存并应用 / 工具接入状态）。"""
+    response = await client.get("/guide")
+    assert "保存并应用" in response.text
+    assert "工具接入状态" in response.text
+    assert "供应商设置" in response.text
+    assert "CLI 管理" not in response.text
+
+
+@pytest.mark.asyncio
+async def test_guide_claude_core_version_consistent(client: AsyncClient):
+    """Claude Desktop 虚拟机核心的版本号：目录路径与下载链接必须一致。"""
+    response = await client.get("/guide")
+    assert "/api/v1/files/2.1.138.zip" in response.text
+    assert "2.1.142" not in response.text
+
+
+@pytest.mark.asyncio
+async def test_download_system_requirements_current(client: AsyncClient):
+    response = await client.get("/download")
+    assert "Windows 10" in response.text
+    assert "macOS 11.0 及以上" in response.text
+    assert "Apple 芯片 / Intel 芯片" in response.text
+
+
+@pytest.mark.asyncio
+async def test_support_page_returns_200(client: AsyncClient):
+    response = await client.get("/support")
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+    assert "技术支持" in response.text
+    assert "github.com/Mark7766/codex-switch/issues" in response.text
+
+
+@pytest.mark.asyncio
+async def test_geo_artifacts_consistent(client: AsyncClient):
+    """robots / sitemap / llms 三处页面清单必须一致，且不再声明不存在的 /faq。"""
+    robots = await client.get("/robots.txt")
+    assert "Allow: /support" in robots.text
+    assert "/faq" not in robots.text
+
+    sitemap = await client.get("/sitemap.xml")
+    assert "/support" in sitemap.text
+
+    llms = await client.get("/llms.txt")
+    assert "/support" in llms.text
+
+
+@pytest.mark.asyncio
+async def test_llms_txt_reflects_current_product(client: AsyncClient):
+    llms = await client.get("/llms.txt")
+    for token in ["Agnes", "本地 HTTP 代理", "deepseek-chat", "deepseek-reasoner", "完成并启动代理"]:
+        assert token not in llms.text, f"llms.txt 仍含过时内容：{token}"
+    assert "智谱 GLM" in llms.text
+    assert "deepseek-flash" in llms.text
+    assert "保存并应用" in llms.text
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("url", ["/", "/download", "/guide", "/support"])
+async def test_pages_have_canonical_and_current_og_domain(client: AsyncClient, url: str):
+    response = await client.get(url)
+    assert 'rel="canonical"' in response.text
+    assert "codexswtich" not in response.text  # 旧域名（缺连字符）不得残留
+    assert 'property="og:url" content="https://codex-switch.cloud"' in response.text
+
+
+@pytest.mark.asyncio
+async def test_no_baidu_verification_placeholder(client: AsyncClient):
+    """百度站长验证码未配置时应整段省略，而不是留一个假占位符。"""
+    response = await client.get("/")
+    assert "codeva-xxxxxxxxxx" not in response.text
+
+
+@pytest.mark.asyncio
+async def test_footer_links_to_support(client: AsyncClient):
+    response = await client.get("/")
+    assert 'href="/support"' in response.text

@@ -1,3 +1,12 @@
+"""离线插件包下载端点（**已废弃，仅为兼容老客户端保留**）。
+
+客户端 v3.0.0 已删除插件子系统（`electron/plugins/**`、插件页），全仓不再调用
+`/api/v1/plugins/*`。此处保留原有响应，是为了不弄坏仍在使用的 2.x 老客户端。
+
+后续处置：先看访问日志确认长期无调用，再整体移除（见
+docs/assessment/2026-10-07-服务端升级评估报告.md 的 C-29）。
+"""
+
 from __future__ import annotations
 
 from pathlib import Path

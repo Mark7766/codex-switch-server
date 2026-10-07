@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     # WeChat QA group QR code image path
     support_qr_image: str = "/static/images/wechat-qr.jpg"
 
+    # Baidu webmaster verification code (optional; empty = tag omitted from <head>)
+    baidu_site_verification: str = ""
+
     # ai-working-ok release cache TTL (seconds)
     ai_working_ok_cache_ttl: int = 300
 

@@ -274,6 +274,8 @@ tests/
 | `/` | 首页 | 公开 | 产品介绍 + 核心价值 + CTA |
 | `/download` | 下载页 | 公开 | 平台选择 + 版本信息 + 系统要求 |
 | `/guide` | 使用指南 | 公开 | 安装教程 + 配置说明 + FAQ |
+| `/support` | 技术支持 | 公开 | 微信交流群 + GitHub Issues 入口 + 自助排查（2026-10-07 新增） |
+| `/tools/*` | 工具文档 | 公开 | Codex Switch / ai-working-ok / ai-coding-ok 三篇文档页 |
 | `/admin/login` | 管理员登录 | 公开 | Bearer Token 认证 |
 | `/admin` | 运营仪表盘 | 管理员 | 下载量、用户数、遥测数据 |
 | `/api/v1/*` | REST API | 公开 | 客户端调用，JSON 响应 |

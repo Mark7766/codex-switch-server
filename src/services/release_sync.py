@@ -196,8 +196,9 @@ class ReleaseSyncService:
         except (ValueError, IndexError):
             has_update = current_version != version
 
+        # 文案只服务于仍调用本端点的老客户端：v3.0.0 起客户端改用
+        # electron-updater 直读 /api/v1/updates/*.yml，不再走 /update/check。
         highlights = [
-            "一键安装 Codex 插件（173 个精选离线包）",
             "COS 国内高速下载，15 秒完成",
         ]
 

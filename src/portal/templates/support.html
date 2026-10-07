@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}技术支持{% endblock %}
+
+{% block content %}
+
+<div class="doc">
+  <!-- 移动端横向目录 -->
+  <nav class="doc__chips" aria-label="目录">
+    <a class="doc__chip" href="#sec-group">交流群</a>
+    <a class="doc__chip" href="#sec-issues">报告问题</a>
+    <a class="doc__chip" href="#sec-help">自助排查</a>
+  </nav>
+
+  <!-- 左侧粘性目录 -->
+  <aside class="doc__side">
+    <nav class="doc__toc" aria-label="本页目录">
+      <p class="doc__group">获取帮助</p>
+      <a class="doc__toc-item" href="#sec-group">微信交流群</a>
+      <a class="doc__toc-item" href="#sec-issues">报告问题 / 提建议</a>
+      <p class="doc__group">帮助</p>
+      <a class="doc__toc-item" href="#sec-help">自助排查</a>
+    </nav>
+  </aside>
+
+  <!-- 右侧正文 -->
+  <article class="doc__body">
+    <p class="doc__crumb"><a href="/">Codex Switch</a> · 技术支持</p>
+    <h1 class="doc__title">技术支持</h1>
+    <p class="doc__lede">
+      安装或使用中遇到问题？先看「<a href="/guide">使用指南</a>」里的常见问题，
+      如果还解决不了，可以扫码进群或到 GitHub 提问题。
+    </p>
+
+    <section class="doc__sec" id="sec-group">
+      <h2>微信交流群</h2>
+      <p>扫码添加作者微信，拉你进技术支持群——反馈问题、获取使用技巧。</p>
+      {% if support_qr_image %}
+      <img src="{{ support_qr_image }}" alt="微信交流群二维码"
+           style="max-width:260px;width:100%;border-radius:var(--radius-lg);margin-top:var(--space-2);">
+      {% else %}
+      <p class="doc__note">（未提供二维码图片）</p>
+      {% endif %}
+    </section>
+
+    <section class="doc__sec" id="sec-issues">
+      <h2>报告问题 / 提建议</h2>
+      <p>Bug、功能建议、文档纠错都欢迎到 GitHub 提 Issue；也欢迎直接看源码和提交记录。</p>
+      <div class="doc__ctas">
+        <a class="btn btn--primary" href="https://github.com/Mark7766/codex-switch/issues"
+           target="_blank" rel="noopener" data-track="support-issues">提问题 / 反馈 &#8599;</a>
+        <a class="btn btn--outline" href="https://github.com/Mark7766/codex-switch"
+           target="_blank" rel="noopener" data-track="support-github">GitHub 仓库 &#8599;</a>
+        <a class="btn btn--outline" href="https://github.com/Mark7766/codex-switch/releases"
+           target="_blank" rel="noopener">更新记录 &#8599;</a>
+      </div>
+    </section>
+
+    <section class="doc__sec" id="sec-help">
+      <h2>自助排查</h2>
+      <ul>
+        <li><a href="/guide">使用指南</a>：四款工具的分步安装教程 + 常见问题。</li>
+        <li><a href="/tools/codex-switch">Codex Switch 文档</a>：是什么、怎么配、支持哪些模型。</li>
+        <li><a href="/download">下载页</a>：拿最新安装包，或查看历史版本入口。</li>
+      </ul>
+      <div class="doc__note">💡 应用内遇到问题，可先在「设置」里点一次「保存并应用」重写配置，再把 Codex / Claude 完全退出后重开。</div>
+    </section>
+  </article>
+</div>
+
+{% endblock %}
