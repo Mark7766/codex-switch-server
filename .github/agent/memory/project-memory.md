@@ -287,6 +287,9 @@
 | 13 | **`/static/` 的 `?v=` 缓存刷新在本站 CDN 上不生效**：腾讯云 CDN 对 `/static/` **忽略 query string**（实测 `apple.css` 带 `?v=1` / `?v=20260909` / `?v=zzz999` 与无参数返回**同一 ETag 与 Expires**）。nginx 对 `/static/` 设 `expires 7d` + `immutable`，CDN 侧 `max-age=86400` | 要真正刷新静态资源，**必须改文件名**（如 `xxx-v3.png`）或手动刷 CDN；改 `?v=` 无效。HTML 不受影响（`main.py` 的 `no_cache_html` 中间件给 `text/html` 加 `no-store`，线上实测 `GET /` 为 Cache Miss） | 2026-10-07 记录 |
 | 14 | **Claude Desktop 安装步骤的 2 张插图缺失**：`step-install-claude-windows.png`、`step-install-claude-macos.png`（`guide.html` 的 `imgTag('step-install-' + selTool + '-' + selPlat + '.png')` 会请求它们） | 既有缺失（`onerror` 隐藏，不裂图，仅该步无插图）。补图需作者提供真实安装过程截图——**凭空造图会失真，故未补**。跑全「4 工具 × 2 平台」才发现的 | 2026-10-07 记录 |
 | 15 | 移动端（≤400px）**所有门户页横向溢出 29px**（`scrollWidth 429` vs `innerWidth 400`），可轻微左右横滑 | 既有问题，**已用 `git stash` 基线对比确认非某次改动引入**（改动前四页同样是 429）。桌面/平板无溢出。根因在 `apple.css` 全局布局，修它需动设计系统，按最小化纪律暂缓 | 2026-10-07 记录 |
+| 16 | **指南 9 张图片在生产返回 403**（`step-cli-*-win.png`、`step-install-codex-windows.png` 等），Windows CLI 流程一张图都不显示 | ✅ **已修复（2026-10-07，TASK-105）**：根因是文件以 git mode **100755** 提交、检出后为 **0700**，Docker 原样拷贝后 root 所有，nginx worker 降权读不到 → 403。已把 9 个文件改 0644（`100755→100644`），并在 Dockerfile 加 `chmod -R a+rX /app/src/static` 兜底。**教训：静态资源一律不要带可执行位** | 2026-10-07 修复 |
+| 17 | **`/llms.txt` 经 CDN 仍是旧内容**（源站已正确）；同站的 robots/sitemap 却是新的 | ⚠️ 未处理：腾讯云 CDN 对该文件缓存了旧副本。处置：控制台 → CDN → 刷新预热 → URL 刷新填 `https://codex-switch.cloud/llms.txt`；或等 TTL 自然过期。**注意 CDN 忽略 query string，加 `?v=` 无效** | 2026-10-07 记录 |
+| 18 | 静态资源带可执行位（`100755`）是**本项目的历史习惯**（多个 guide 图片都曾如此） | 预防：已由 Dockerfile 的 `chmod -R a+rX /app/src/static` 兜底；新增图片建议保持 0644 | 2026-10-07 记录 |
 
 ---
 
