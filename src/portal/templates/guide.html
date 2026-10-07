@@ -185,7 +185,9 @@ function goBack(to) {
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-function img(name) { return '/static/images/guide/' + name; }
+// 带版本查询串：浏览器按完整 URL 缓存，换版本号即可让老访客（含曾拿到 403 的）重新取图。
+// 注意：本站 CDN 对 /static/ 忽略 query string，所以这里只影响浏览器缓存、不影响 CDN。
+function img(name) { return '/static/images/guide/' + name + '?v=20261007'; }
 function toolLabel() {
   if (selTool === 'codex') return 'Codex Desktop';
   if (selTool === 'claude') return 'Claude Desktop';
